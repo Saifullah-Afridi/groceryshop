@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useProducts } from "../hooks/useProducts";
 import { useCategories } from "../hooks/useShopData";
 import { Container } from "./Container";
+import { Skeleton } from "./Skeleton";
 
 const ICONS = { Carrot, Apple, Beef, Milk, CupSoda, Wheat };
 
@@ -10,7 +11,7 @@ const ICONS = { Carrot, Apple, Beef, Milk, CupSoda, Wheat };
 // Clicking a card opens the Shop page filtered by that category.
 export function CategoryGrid() {
   const { data } = useProducts({});
-  const { data: categories = [] } = useCategories();
+  const { data: categories = [], isLoading } = useCategories();
   const countOf = (id: string) =>
     data?.filter((p) => p.categoryId === id).length;
 
@@ -21,6 +22,12 @@ export function CategoryGrid() {
       </div>
 
       <ul className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4">
+        {isLoading &&
+          Array.from({ length: 6 }, (_, i) => (
+            <li key={i} className="w-40 shrink-0 sm:w-44 xl:w-auto xl:flex-1">
+              <Skeleton className="h-60 rounded-2xl" />
+            </li>
+          ))}
         {categories.map((c) => {
           const Icon = ICONS[c.icon];
           const count = countOf(c.id);

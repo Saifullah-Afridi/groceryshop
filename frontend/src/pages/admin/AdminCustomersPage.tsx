@@ -1,4 +1,5 @@
 import { Pencil, Plus, Trash2 } from "lucide-react";
+import { TableSkeleton } from "../../components/Skeleton";
 import { useState } from "react";
 import { ConfirmDialog } from "../../components/admin/ConfirmDialog";
 import { CustomerForm } from "../../components/admin/CustomerForm";
@@ -31,7 +32,7 @@ export function AdminCustomersPage() {
         }
       />
 
-      {isLoading && <div className="h-64 animate-pulse rounded-2xl bg-white" />}
+      {isLoading && <TableSkeleton />}
       {!isLoading && customers.length === 0 && <Message title="No users yet" text="Accounts created on the website appear here." />}
       {customers.length > 0 && (
         <div className="overflow-x-auto rounded-2xl border border-line bg-white">

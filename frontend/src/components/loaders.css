@@ -1,0 +1,10 @@
+/* The site turns off animations for people who prefer reduced motion (see index.css).
+   A loader that does not move looks frozen, so the spinner and the skeleton pulse keep their gentle animation. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-spin {
+    animation-duration: 1.2s !important;
+  }
+  .animate-pulse {
+    animation-duration: 2s !important;
+  }
+}

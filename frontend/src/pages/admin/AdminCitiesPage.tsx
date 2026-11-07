@@ -1,4 +1,5 @@
 import { Pencil, Plus, Trash2 } from "lucide-react";
+import { TableSkeleton } from "../../components/Skeleton";
 import { useState } from "react";
 import { CityForm } from "../../components/admin/CityForm";
 import { ConfirmDialog } from "../../components/admin/ConfirmDialog";
@@ -31,7 +32,7 @@ export function AdminCitiesPage() {
         }
       />
 
-      {isLoading && <div className="h-40 animate-pulse rounded-2xl bg-white" />}
+      {isLoading && <TableSkeleton />}
       {!isLoading && cities.length === 0 && <Message title="No delivery cities yet" text="Shoppers cannot check out until you add at least one city." />}
       {cities.length > 0 && (
         <div className="overflow-x-auto rounded-2xl border border-line bg-white">

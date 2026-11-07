@@ -1,4 +1,5 @@
 import { ProductCard } from "./ProductCard";
+import { ProductCardSkeleton } from "./Skeleton";
 import type { Product } from "../types";
 
 export const gridClass =
@@ -16,9 +17,9 @@ export function ProductGrid({ products }: { products: Product[] }) {
 
 export function ProductGridSkeleton() {
   return (
-    <div className={gridClass}>
+    <div className={gridClass} role="status" aria-label="Loading products">
       {Array.from({ length: 8 }, (_, i) => (
-        <div key={i} className="h-64 animate-pulse rounded-2xl bg-card" />
+        <ProductCardSkeleton key={i} />
       ))}
     </div>
   );

@@ -69,6 +69,7 @@ export const useAdminOrders = (query: { status?: OrderStatus; q?: string }) =>
     queryKey: ["admin", "orders", query],
     queryFn: () => getAdminOrders(query),
     placeholderData: keepPreviousData,
+    meta: { silent: true }, // typing in the search box must not trigger the full-page spinner
     refetchInterval: 30_000, // new orders show up without a refresh
   });
 export const useSetOrderStatus = () =>

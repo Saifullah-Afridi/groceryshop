@@ -1,4 +1,5 @@
 import { Pencil, Plus, Trash2 } from "lucide-react";
+import { TableSkeleton } from "../../components/Skeleton";
 import { useState } from "react";
 import { Message } from "../../components/Message";
 import {
@@ -49,7 +50,7 @@ export function AdminCategoriesPage() {
         }
       />
 
-      {isLoading && <div className="h-64 animate-pulse rounded-2xl bg-white" />}
+      {isLoading && <TableSkeleton />}
 
       {!isLoading && categories.length === 0 && (
         <Message

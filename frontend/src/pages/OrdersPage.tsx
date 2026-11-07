@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { TableSkeleton } from "../components/Skeleton";
 import { ConfirmDialog } from "../components/admin/ConfirmDialog";
 import { Container } from "../components/Container";
 import { Message } from "../components/Message";
@@ -85,7 +86,7 @@ export function OrdersPage() {
   return (
     <Container className="py-10">
       <h1 className="mb-6 text-2xl font-bold text-brand">My orders</h1>
-      {isLoading && <div className="h-48 animate-pulse rounded-2xl bg-card" />}
+      {isLoading && <TableSkeleton rows={4} />}
       {isError && <Message title="Could not load your orders" text="Check your connection and try again." action={{ label: "Try again", onClick: () => refetch() }} />}
       {orders && orders.length === 0 && <Message title="No orders yet" text="When you place an order you can follow it here." />}
       <div className="space-y-5">

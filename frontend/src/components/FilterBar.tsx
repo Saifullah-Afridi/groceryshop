@@ -82,6 +82,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useCategories } from "../hooks/useShopData";
+import { Skeleton } from "./Skeleton";
 
 interface Props {
   params: URLSearchParams;
@@ -99,7 +100,7 @@ const categoryIcons: Record<string, LucideIcon> = {
 };
 
 export function FilterBar({ params, onChange }: Props) {
-  const { data: categories = [] } = useCategories();
+  const { data: categories = [], isLoading } = useCategories();
   const selectedCategory = params.get("category") ?? "";
 
   const selectCategory = (categoryId: string) => {
@@ -122,6 +123,9 @@ export function FilterBar({ params, onChange }: Props) {
           <ListFilter size={16} />
           All
         </button>
+
+        {isLoading &&
+          [0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-10 w-28 shrink-0 rounded-full" />)}
 
         {categories.map((category) => {
           const Icon = categoryIcons[category.icon];

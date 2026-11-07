@@ -1,4 +1,5 @@
 import { Package, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { TableSkeleton } from "../../components/Skeleton";
 import { useMemo, useState } from "react";
 
 import { ConfirmDialog } from "../../components/admin/ConfirmDialog";
@@ -137,7 +138,7 @@ export function AdminProductsPage() {
         </span>
       </div>
 
-      {isLoading && <div className="h-64 animate-pulse rounded-2xl bg-white" />}
+      {isLoading && <TableSkeleton />}
 
       {!isLoading && list.length === 0 && (
         <Message

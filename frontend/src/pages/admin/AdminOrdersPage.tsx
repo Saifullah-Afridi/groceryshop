@@ -1,4 +1,5 @@
 import { Eye, Search } from "lucide-react";
+import { TableSkeleton } from "../../components/Skeleton";
 import { useState } from "react";
 import { inputClass } from "../../components/admin/FormField";
 import { Modal } from "../../components/admin/Modal";
@@ -33,7 +34,7 @@ export function AdminOrdersPage() {
         <span className="self-center text-sm text-muted">{orders.length} orders</span>
       </div>
 
-      {isLoading && <div className="h-64 animate-pulse rounded-2xl bg-white" />}
+      {isLoading && <TableSkeleton />}
       {!isLoading && orders.length === 0 && <Message title="No orders found" text="Orders placed by shoppers will show up here." />}
       {orders.length > 0 && (
         <div className="overflow-x-auto rounded-2xl border border-line bg-white">

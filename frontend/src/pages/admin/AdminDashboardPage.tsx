@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { TableSkeleton } from "../../components/Skeleton";
 import { useAdminCategories, useAdminProducts } from "../../hooks/useAdmin";
 import { formatPrice } from "../../utils/format";
 import { PageHeader } from "../../components/admin/PageHeader";
@@ -17,7 +18,7 @@ export function AdminDashboardPage() {
   const { data: products = [], isLoading: loadingP } = useAdminProducts();
 
   if (loadingC || loadingP) {
-    return <div className="h-64 animate-pulse rounded-2xl bg-white" />;
+    return <TableSkeleton />;
   }
 
   const counts = categories.map((category) => ({
