@@ -1,10 +1,7 @@
-/* The site turns off animations for people who prefer reduced motion (see index.css).
-   A loader that does not move looks frozen, so the spinner and the skeleton pulse keep their gentle animation. */
-@media (prefers-reduced-motion: reduce) {
-  .animate-spin {
-    animation-duration: 1.2s !important;
-  }
-  .animate-pulse {
-    animation-duration: 2s !important;
-  }
-}
+.fresh-loader-ring { animation: fresh-rotate 5s linear infinite; }
+.fresh-loader-leaf { animation: fresh-breathe 1.4s ease-in-out infinite; }
+.fresh-loader-bar { animation: fresh-progress 1.5s ease-in-out infinite; transform-origin: left; }
+@keyframes fresh-rotate { to { transform: rotate(360deg); } }
+@keyframes fresh-breathe { 0%,100% { transform: scale(.92) rotate(-8deg); } 50% { transform: scale(1.08) rotate(8deg); } }
+@keyframes fresh-progress { 0% { transform: translateX(-100%) scaleX(.35); } 50% { transform: translateX(30%) scaleX(.7); } 100% { transform: translateX(160%) scaleX(.35); } }
+@media (prefers-reduced-motion: reduce) { .fresh-loader-ring,.fresh-loader-leaf,.fresh-loader-bar { animation-duration: 3s; } }

@@ -1,5 +1,6 @@
 // These shapes will match the MongoDB models when we build the API.
-export type Unit = "kg" | "bunch" | "head" | "bottle" | "pack";
+// kg is priced per 0.25 kg; all other units are priced per selected selling unit.
+export type Unit = "kg" | "item" | "pack" | "dozen" | "bunch" | "head" | "bottle";
 export type IconKey =
   | "Carrot"
   | "Apple"

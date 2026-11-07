@@ -48,3 +48,31 @@ input:focus-visible {
   --toastify-color-error: var(--color-sale, #e03131);
   --toastify-font-family: "Plus Jakarta Sans", system-ui, sans-serif;
 }
+
+/* Arabic storefront font and right-to-left layout are enabled by LanguageContext. */
+html[lang="ar"] body {
+  font-family: "Noto Sans Arabic", "Plus Jakarta Sans", system-ui, sans-serif;
+}
+html[dir="rtl"] {
+  direction: rtl;
+}
+
+/* Arabic language support */
+html[dir="rtl"] body {
+  direction: rtl;
+  text-align: right;
+  font-family: "Tahoma", "Arial", sans-serif;
+}
+
+/* Keep icons and certain controls in their natural direction */
+html[dir="rtl"] input[type="email"],
+html[dir="rtl"] input[type="tel"],
+html[dir="rtl"] input[type="number"] {
+  direction: ltr;
+  text-align: right;
+}
+
+/* Arabic font rendering */
+html[lang="ar"] {
+  font-family: "Tahoma", "Arial", sans-serif;
+}

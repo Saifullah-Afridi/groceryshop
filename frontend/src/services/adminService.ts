@@ -23,6 +23,7 @@ function productForm(input: ProductInput, imageFile?: File | null) {
   form.append("description", input.description);
   form.append("categoryId", input.categoryId);
   form.append("price", String(input.price));
+  form.append("unit", input.unit);
   form.append("minQuantity", String(input.minQuantity));
   if (imageFile) form.append("image", imageFile);
   return form;

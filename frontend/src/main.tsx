@@ -3,33 +3,53 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
+
 import "react-toastify/dist/ReactToastify.css";
+
 import App from "./App";
 import { AuthModal } from "./components/auth/AuthModal";
 import { GlobalLoader } from "./components/GlobalLoader";
+
 import { CartProvider } from "./context/CartContext";
 import { CustomerAuthProvider } from "./context/CustomerAuthContext";
+import { LanguageProvider } from "./context/LanguageContext";
+
 import "./index.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { staleTime: 60_000, refetchOnWindowFocus: false, retry: 1 },
+    queries: {
+      staleTime: 60_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
   },
 });
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <CustomerAuthProvider>
-          <CartProvider>
-            <App />
-          </CartProvider>
-          <AuthModal />
-        </CustomerAuthProvider>
-        <GlobalLoader />
-      </BrowserRouter>
-      <ToastContainer position="top-right" autoClose={2500} limit={3} closeOnClick pauseOnHover />
+      <LanguageProvider>
+        <BrowserRouter>
+          <CustomerAuthProvider>
+            <CartProvider>
+              <App />
+            </CartProvider>
+
+            <AuthModal />
+          </CustomerAuthProvider>
+
+          <GlobalLoader />
+        </BrowserRouter>
+
+        <ToastContainer
+          position="top-right"
+          autoClose={2500}
+          limit={3}
+          closeOnClick
+          pauseOnHover
+        />
+      </LanguageProvider>
     </QueryClientProvider>
   </StrictMode>,
 );

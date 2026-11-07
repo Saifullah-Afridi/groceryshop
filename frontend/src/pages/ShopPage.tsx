@@ -1,4 +1,5 @@
 import { useSearchParams } from "react-router-dom";
+import { useEffect } from "react";
 import { Container } from "../components/Container";
 import { FilterBar } from "../components/FilterBar";
 import { Message } from "../components/Message";
@@ -10,6 +11,10 @@ import type { ProductQuery, SortKey } from "../types";
 export function ShopPage() {
   const [params, setParams] = useSearchParams();
   const { data: categories = [] } = useCategories();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+  }, [params.get("category")]);
   const query: ProductQuery = {
     category: params.get("category") ?? undefined,
     q: params.get("q") ?? undefined,

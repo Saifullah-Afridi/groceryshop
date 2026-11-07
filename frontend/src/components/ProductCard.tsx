@@ -45,8 +45,8 @@ export function ProductCard({ product }: { product: Product }) {
           {product.name}
         </p>
 
-        {/* Supplier */}
-        <p className="mt-1 text-xs text-muted">{product.farm}</p>
+        {/* Price unit */}
+        <p className="mt-1 text-xs text-muted">{isWeightBased ? "Price per 0.25 kg" : `Price per ${product.unit}`}</p>
 
         {/* Weight Selection */}
         {isWeightBased && (

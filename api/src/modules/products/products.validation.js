@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const UNITS = ["kg", "bunch", "head", "bottle", "pack"];
+const UNITS = ["kg", "item", "pack", "dozen", "bunch", "head", "bottle"];
 
 // Form data arrives as text, so numbers are converted with z.coerce.
 const fields = z.object({

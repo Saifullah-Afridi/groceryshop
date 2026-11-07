@@ -1,63 +1,44 @@
 import { useIsFetching } from "@tanstack/react-query";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { Apple, Carrot, Leaf } from "lucide-react";
 import "./loaders.css";
 
-const SETTLE_MS = 120; // wait a moment after the last request, in case the page starts another one
-const MIN_VISIBLE_MS = 400; // once shown, it stays long enough to be seen
+const MIN_VISIBLE_MS = 650;
 
-// A spinner over the whole website. It is the FIRST thing people see:
-//  - when the site opens or is refreshed, it covers the page from the very first paint until the data has loaded
-//    (index.html shows the same spinner before React starts), so nobody sees empty pages or skeletons first;
-//  - when another page opens and it needs data that is not saved yet, it covers that page the same way.
-// Changing a filter or a search on the same page does not use it. The list shows a skeleton instead.
 export function GlobalLoader() {
   const { pathname } = useLocation();
-  const loading = useIsFetching({ predicate: (query) => query.state.data === undefined }) > 0;
-  const [watching, setWatching] = useState(true); // true at the start: the site has just opened
+  const fetching = useIsFetching({ predicate: (query) => query.state.data === undefined }) > 0;
   const [visible, setVisible] = useState(true);
   const shownAt = useRef(Date.now());
-  const firstPage = useRef(true);
-
-  // The spinner from index.html is already on screen. This one looks the same, so hand over without a flicker.
-  useLayoutEffect(() => {
-    document.getElementById("app-loader")?.remove();
-  }, []);
-
-  // Another page opened: watch its data too. This runs before the browser paints.
-  useLayoutEffect(() => {
-    if (firstPage.current) {
-      firstPage.current = false;
-      return;
-    }
-    setWatching(true);
-  }, [pathname]);
+  const first = useRef(true);
 
   useEffect(() => {
-    if (!watching) return;
-    if (loading) {
-      if (!visible) {
-        shownAt.current = Date.now();
-        setVisible(true);
-      }
-      return;
-    }
-    // Nothing is loading. Hide after a short moment (and not before the minimum time).
-    const shownFor = Date.now() - shownAt.current;
-    const wait = Math.max(SETTLE_MS, (visible ? MIN_VISIBLE_MS : 0) - shownFor);
-    const timer = setTimeout(() => {
-      setWatching(false);
-      setVisible(false);
-    }, wait);
-    return () => clearTimeout(timer);
-  }, [watching, loading, visible]);
+    if (first.current) { first.current = false; }
+    else if (fetching) { shownAt.current = Date.now(); setVisible(true); }
+  }, [pathname, fetching]);
+
+  useEffect(() => {
+    if (fetching) { setVisible(true); return; }
+    if (!visible) return;
+    const delay = Math.max(180, MIN_VISIBLE_MS - (Date.now() - shownAt.current));
+    const timer = window.setTimeout(() => setVisible(false), delay);
+    return () => window.clearTimeout(timer);
+  }, [fetching, visible]);
 
   if (!visible) return null;
   return (
-    <div role="status" aria-live="polite" aria-label="Loading" className="fixed inset-0 z-[70] grid place-items-center bg-white">
-      <div className="flex flex-col items-center gap-3">
-        <span className="h-12 w-12 animate-spin rounded-full border-4 border-line border-t-brand" />
-        <p className="text-sm font-medium text-brand">Loading...</p>
+    <div role="status" aria-live="polite" aria-label="Preparing your fresh groceries" className="fixed inset-0 z-[100] grid place-items-center bg-[#fbfdfb]">
+      <div className="flex flex-col items-center">
+        <div className="relative grid h-24 w-24 place-items-center rounded-[2rem] border border-green-100 bg-white shadow-[0_12px_40px_rgba(19,128,64,0.10)]">
+          <div className="fresh-loader-ring absolute inset-2 rounded-full border-2 border-dashed border-green-200" />
+          <Apple className="absolute left-5 top-5 text-red-500" size={22} strokeWidth={1.8} />
+          <Carrot className="absolute bottom-5 right-5 text-orange-500" size={25} strokeWidth={1.8} />
+          <Leaf className="text-brand fresh-loader-leaf" size={34} strokeWidth={1.8} />
+        </div>
+        <p className="mt-5 text-base font-extrabold tracking-tight text-brand">Rakan</p>
+        <p className="mt-1 text-xs font-medium tracking-wide text-muted">Preparing freshness for you...</p>
+        <div className="mt-4 h-1.5 w-36 overflow-hidden rounded-full bg-green-100"><span className="fresh-loader-bar block h-full rounded-full bg-brand" /></div>
       </div>
     </div>
   );

@@ -25,6 +25,7 @@ export function ProductForm({
     description: initial?.description ?? "",
     categoryId: initial?.categoryId ?? categories[0]?.id ?? "",
     price: initial ? String(initial.price) : "",
+    unit: initial?.unit ?? "kg",
     minQuantity:
       initial?.minQuantity != null ? String(initial.minQuantity) : "",
     image: initial?.image ?? "",
@@ -75,7 +76,7 @@ export function ProductForm({
     }
     if (!f.categoryId) found.categoryId = "Choose a category";
     if (!(price > 0)) {
-      found.price = "Price per 0.25 kg must be more than 0";
+      found.price = "Price must be more than 0";
     }
 
     if (f.minQuantity.trim() && !(minQuantity > 0)) {
@@ -91,6 +92,7 @@ export function ProductForm({
         description: f.description.trim(),
         categoryId: f.categoryId,
         price,
+        unit: f.unit as Product["unit"],
         minQuantity: f.minQuantity.trim() ? minQuantity : 0,
         image: f.image.trim(),
       },
@@ -142,7 +144,19 @@ export function ProductForm({
           </select>
         </FormField>
 
-        <FormField label="Price per 0.25 kg (JOD)" error={errors.price}>
+        <FormField label="Selling unit">
+          <select value={f.unit} onChange={set("unit")} className={inputClass}>
+            <option value="kg">Kilogram (kg)</option>
+            <option value="item">Item / Piece</option>
+            <option value="pack">Pack</option>
+            <option value="dozen">Dozen (12 items)</option>
+            <option value="bunch">Bunch</option>
+            <option value="head">Head</option>
+            <option value="bottle">Bottle</option>
+          </select>
+        </FormField>
+
+        <FormField label={f.unit === "kg" ? "Price per 0.25 kg (JOD)" : `Price per ${f.unit} (JOD)`} error={errors.price}>
           <input
             type="number"
             step="0.01"
@@ -155,12 +169,12 @@ export function ProductForm({
         </FormField>
 
         <FormField
-          label="Minimum stock quantity (kg)"
+          label={`Minimum stock quantity (${f.unit})`}
           error={errors.minQuantity}
         >
           <input
             type="number"
-            step="0.25"
+            step={f.unit === "kg" ? "0.25" : "1"}
             min="0"
             value={f.minQuantity}
             onChange={set("minQuantity")}

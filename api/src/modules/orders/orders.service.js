@@ -28,7 +28,7 @@ const toDto = (o) => ({
   items: (o.items ?? []).map(itemDto),
 });
 
-// A product's price is for 0.25 kg (or for one piece, when it is not sold by weight).
+// A product's price is for 0.25 kg when sold by weight, otherwise for one selected selling unit.
 // This turns the quantity into the number of price units, and refuses anything that does not fit.
 function priceUnits(product, quantity) {
   const step = product.unit === "kg" ? 0.25 : 1;

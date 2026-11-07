@@ -23,8 +23,8 @@ export function AdminCitiesPage() {
   return (
     <>
       <PageHeader
-        title="Delivery"
-        text="The cities we deliver to and the delivery fee added to each order."
+        title="Delivery Fees"
+        text="Manage delivery areas and the fee charged for each city."
         action={
           <button onClick={() => openForm("new")} className="flex h-10 items-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white hover:bg-brand-dark">
             <Plus size={16} /> Add city
@@ -38,18 +38,13 @@ export function AdminCitiesPage() {
         <div className="overflow-x-auto rounded-2xl border border-line bg-white">
           <table className="w-full min-w-[520px] text-left text-sm">
             <thead className="bg-card text-xs text-muted">
-              <tr><th className="px-4 py-3">City</th><th className="px-4 py-3">Delivery fee</th><th className="px-4 py-3">Status</th><th className="px-4 py-3 text-right">Actions</th></tr>
+              <tr><th className="px-4 py-3">City</th><th className="px-4 py-3">Delivery fee</th><th className="px-4 py-3 text-right">Actions</th></tr>
             </thead>
             <tbody className="divide-y divide-line">
               {cities.map((c) => (
                 <tr key={c.id}>
                   <td className="px-4 py-3 font-semibold">{c.name}</td>
                   <td className="px-4 py-3">{formatPrice(c.fee)} JOD</td>
-                  <td className="px-4 py-3">
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${c.active ? "bg-green-50 text-green-700" : "bg-card text-muted"}`}>
-                      {c.active ? "Delivering" : "Paused"}
-                    </span>
-                  </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
                       <button onClick={() => openForm(c)} aria-label={`Edit ${c.name}`} className="grid h-9 w-9 place-items-center rounded-lg hover:bg-card"><Pencil size={16} /></button>

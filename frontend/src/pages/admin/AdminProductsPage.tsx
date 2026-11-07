@@ -58,6 +58,8 @@ export function AdminProductsPage() {
   const [deleting, setDeleting] = useState<Product | null>(null);
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   const list = useMemo(() => {
     const text = search.trim().toLowerCase();
@@ -71,6 +73,9 @@ export function AdminProductsPage() {
             .includes(text)),
     );
   }, [products, search, categoryId]);
+
+  const pageCount = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  const paginatedList = list.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const categoryOf = (id: string) =>
     categories.find((category) => category.id === id);
@@ -113,7 +118,7 @@ export function AdminProductsPage() {
           />
           <input
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => { setSearch(event.target.value); setPage(1); }}
             placeholder="Search by name or description"
             className={`${inputClass} pl-9`}
           />
@@ -121,7 +126,7 @@ export function AdminProductsPage() {
 
         <select
           value={categoryId}
-          onChange={(event) => setCategoryId(event.target.value)}
+          onChange={(event) => { setCategoryId(event.target.value); setPage(1); }}
           className={`${inputClass} w-auto`}
           aria-label="Filter by category"
         >
@@ -156,13 +161,13 @@ export function AdminProductsPage() {
                 <th className="px-4 py-3">Product</th>
                 <th className="px-4 py-3">Description</th>
                 <th className="px-4 py-3">Category</th>
-                <th className="px-4 py-3">Price / 0.25 kg</th>
+                <th className="px-4 py-3">Price / unit</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
 
             <tbody className="divide-y divide-line">
-              {list.map((product) => (
+              {paginatedList.map((product) => (
                 <tr key={product.id}>
                   <td className="px-4 py-3">
                     <ProductImage
@@ -186,7 +191,7 @@ export function AdminProductsPage() {
                   <td className="whitespace-nowrap px-4 py-3 font-semibold">
                     {formatPrice(product.price)} JOD
                     <span className="ml-1 text-xs font-normal text-muted">
-                      / 0.25 kg
+                      / {product.unit === "kg" ? "0.25 kg" : product.unit}
                     </span>
                   </td>
 
@@ -213,6 +218,17 @@ export function AdminProductsPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {list.length > 0 && (
+        <div className="mt-4 flex items-center justify-between gap-3 text-sm">
+          <span className="text-muted">Showing {Math.min((page - 1) * PAGE_SIZE + 1, list.length)}–{Math.min(page * PAGE_SIZE, list.length)} of {list.length} products</span>
+          <div className="flex items-center gap-2">
+            <button type="button" disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="rounded-lg border border-line px-3 py-2 font-medium disabled:cursor-not-allowed disabled:opacity-40">Previous</button>
+            <span className="min-w-16 text-center text-muted">Page {page} of {pageCount}</span>
+            <button type="button" disabled={page >= pageCount} onClick={() => setPage((p) => Math.min(pageCount, p + 1))} className="rounded-lg border border-line px-3 py-2 font-medium disabled:cursor-not-allowed disabled:opacity-40">Next</button>
+          </div>
         </div>
       )}
 
