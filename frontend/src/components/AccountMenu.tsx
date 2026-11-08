@@ -3,10 +3,12 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useCustomerAuth } from "../context/CustomerAuthContext";
+import { useLanguage } from "../context/LanguageContext";
 
 // The person icon in the navbar. Signed out: opens the sign-in window. Signed in: a small menu.
 export function AccountMenu() {
   const { customer, openAuth, logout } = useCustomerAuth();
+  const { t, isArabic } = useLanguage();
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
 
@@ -30,7 +32,7 @@ export function AccountMenu() {
       <button
         type="button"
         onClick={() => openAuth()}
-        aria-label="Sign in"
+        aria-label={t("signIn")}
         className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line bg-white text-brand transition hover:border-brand"
       >
         <User size={19} />
@@ -45,14 +47,14 @@ export function AccountMenu() {
         onClick={() => setOpen(!open)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Account menu"
+        aria-label={t("account")}
         className="grid h-10 w-10 place-items-center rounded-full bg-mint text-sm font-bold text-brand transition hover:ring-2 hover:ring-brand/30"
       >
         {customer.name.charAt(0).toUpperCase()}
       </button>
 
       {open && (
-        <div role="menu" className="absolute right-0 top-12 z-50 w-64 overflow-hidden rounded-xl border border-line bg-white shadow-lg">
+        <div role="menu" className={`absolute ${isArabic ? "left-0" : "right-0"} top-12 z-50 w-64 overflow-hidden rounded-xl border border-line bg-white shadow-lg`}>
           <div className="border-b border-line px-4 py-3">
             <p className="truncate text-sm font-semibold text-ink">{customer.name}</p>
             <p className="truncate text-xs text-muted">{customer.email}</p>
@@ -66,11 +68,11 @@ export function AccountMenu() {
             onClick={() => {
               setOpen(false);
               logout();
-              toast.info("You have been signed out");
+              toast.info(isArabic ? "تم تسجيل الخروج" : "You have been signed out");
             }}
             className="flex w-full items-center gap-3 border-t border-line px-4 py-3 text-left text-sm text-sale hover:bg-red-50"
           >
-            <LogOut size={17} /> Sign out
+            <LogOut size={17} /> {t("signOut")}
           </button>
         </div>
       )}

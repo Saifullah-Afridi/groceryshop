@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Plus, Minus } from "lucide-react";
 
 import { useCart } from "../context/CartContext";
+import { useLanguage } from "../context/LanguageContext";
 import { formatPrice, amountLabel } from "../utils/format";
 import { ProductImage } from "./ProductImage";
 import type { Product } from "../types";
@@ -10,6 +11,7 @@ const WEIGHT_OPTIONS = [0.25, 0.5, 0.75, 1];
 
 export function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart();
+  const { t, isArabic } = useLanguage();
 
   const [selectedWeight, setSelectedWeight] = useState(0.25);
 
@@ -46,7 +48,7 @@ export function ProductCard({ product }: { product: Product }) {
         </p>
 
         {/* Price unit */}
-        <p className="mt-1 text-xs text-muted">{isWeightBased ? "Price per 0.25 kg" : `Price per ${product.unit}`}</p>
+        <p className="mt-1 text-xs text-muted">{isWeightBased ? (isArabic ? "السعر لكل 0.25 كغ" : t("pricePerQuarter")) : `${t("pricePer")} ${product.unit}`}</p>
 
         {/* Weight Selection */}
         {isWeightBased && (
@@ -131,7 +133,7 @@ export function ProductCard({ product }: { product: Product }) {
             className="flex items-center gap-1 rounded-lg bg-brand px-2.5 py-2 text-xs font-semibold text-white transition hover:bg-brand-light sm:px-3"
           >
             <Plus size={15} />
-            Add to Cart
+            {t("addToCart")}
           </button>
         </div>
       </div>

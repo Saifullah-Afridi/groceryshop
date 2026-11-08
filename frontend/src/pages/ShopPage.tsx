@@ -6,10 +6,12 @@ import { Message } from "../components/Message";
 import { ProductGrid, ProductGridSkeleton } from "../components/ProductGrid";
 import { useProducts } from "../hooks/useProducts";
 import { useCategories } from "../hooks/useShopData";
+import { useLanguage } from "../context/LanguageContext";
 import type { ProductQuery, SortKey } from "../types";
 
 export function ShopPage() {
   const [params, setParams] = useSearchParams();
+  const { t, isArabic } = useLanguage();
   const { data: categories = [] } = useCategories();
 
   useEffect(() => {
@@ -33,7 +35,7 @@ export function ShopPage() {
   };
   const title = query.q
     ? `Results for "${query.q}"`
-    : (categories.find((c) => c.id === query.category)?.name ?? "All products");
+    : (categories.find((c) => c.id === query.category)?.name ?? t("allProducts"));
 
   return (
     <>
@@ -52,16 +54,16 @@ export function ShopPage() {
         {isLoading && <ProductGridSkeleton />}
         {isError && (
           <Message
-            title="Could not load products"
-            text="Check your connection and try again."
-            action={{ label: "Try again", onClick: () => refetch() }}
+            title={t("couldNotLoad")}
+            text={t("checkConnection")}
+            action={{ label: t("tryAgain"), onClick: () => refetch() }}
           />
         )}
         {data && data.length === 0 && (
           <Message
-            title="No products found"
-            text="Clear a filter or try a shorter search word."
-            action={{ label: "Clear filters", onClick: () => setParams({}) }}
+            title={t("noProducts")}
+            text={isArabic ? "أزل أحد عوامل التصفية أو جرّب كلمة بحث أقصر." : "Clear a filter or try a shorter search word."}
+            action={{ label: t("clearFilters"), onClick: () => setParams({}) }}
           />
         )}
         {data && data.length > 0 && <ProductGrid products={data} />}

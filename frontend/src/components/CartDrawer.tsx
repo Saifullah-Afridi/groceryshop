@@ -1,12 +1,14 @@
 import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import { useLanguage } from "../context/LanguageContext";
 import { amountLabel, formatPrice } from "../utils/format";
 
 export function CartDrawer() {
   const { items, subtotal, setAmount, removeItem, clearCart, isOpen, close } =
     useCart();
   const navigate = useNavigate();
+  const { t, isArabic } = useLanguage();
 
   const getLineTotal = (item: (typeof items)[number]) =>
     item.unit === "kg"
@@ -31,7 +33,7 @@ export function CartDrawer() {
       {/* Backdrop */}
       <button
         type="button"
-        aria-label="Close shopping cart"
+        aria-label={t("cart")}
         onClick={close}
         className={`fixed inset-0 z-40 bg-black/40 transition-opacity ${
           isOpen ? "opacity-100" : "pointer-events-none opacity-0"
@@ -40,18 +42,18 @@ export function CartDrawer() {
 
       {/* Cart drawer */}
       <aside
-        aria-label="Shopping cart"
+        aria-label={t("cart")}
         aria-hidden={!isOpen}
-        className={`fixed inset-y-0 right-0 z-50 flex w-full max-w-xl flex-col bg-white shadow-2xl transition-transform duration-300 ${
-          isOpen ? "translate-x-0" : "translate-x-full"
+        className={`fixed inset-y-0 ${isArabic ? "left-0" : "right-0"} z-50 flex w-full max-w-xl flex-col bg-white shadow-2xl transition-transform duration-300 ${
+          isOpen ? "translate-x-0" : isArabic ? "-translate-x-full" : "translate-x-full"
         }`}
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-line px-6 py-5">
           <h2 className="text-lg font-bold text-neutral-900">
-            Shopping cart{" "}
+            {t("cart")}{" "}
             <span className="font-medium text-muted">
-              ({items.length} items)
+              ({items.length})
             </span>
           </h2>
 
@@ -63,14 +65,14 @@ export function CartDrawer() {
                 className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
               >
                 <Trash2 size={15} />
-                Clear cart
+                {t("clearCart")}
               </button>
             )}
 
             <button
               type="button"
               onClick={close}
-              aria-label="Close cart"
+              aria-label={t("cart")}
               className="grid h-9 w-9 place-items-center rounded-full text-neutral-500 transition hover:bg-card hover:text-neutral-900"
             >
               <X size={20} />
@@ -87,11 +89,11 @@ export function CartDrawer() {
               </span>
 
               <h3 className="mt-4 font-semibold text-neutral-900">
-                Your cart is empty
+                {t("emptyCart")}
               </h3>
 
               <p className="mt-1 max-w-xs text-sm text-muted">
-                Your fresh picks will show up here when you add them.
+                {isArabic ? "ستظهر المنتجات التي تضيفها إلى سلتك هنا." : "Your fresh picks will show up here when you add them."}
               </p>
 
               <button
@@ -99,7 +101,7 @@ export function CartDrawer() {
                 onClick={close}
                 className="mt-5 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-light"
               >
-                Continue shopping
+                {t("continueShopping")}
               </button>
             </div>
           ) : (
@@ -134,7 +136,7 @@ export function CartDrawer() {
                         type="button"
                         onClick={() => changeAmount(item, "decrease")}
                         disabled={isAtMinimum}
-                        aria-label={`Decrease ${item.name} quantity`}
+                        aria-label={`${t("quantity")} - ${item.name}`}
                         className="grid h-full w-8 shrink-0 place-items-center text-neutral-700 transition hover:bg-card disabled:cursor-not-allowed disabled:text-neutral-300"
                       >
                         <Minus size={13} />
@@ -147,7 +149,7 @@ export function CartDrawer() {
                       <button
                         type="button"
                         onClick={() => changeAmount(item, "increase")}
-                        aria-label={`Increase ${item.name} quantity`}
+                        aria-label={`${t("quantity")} + ${item.name}`}
                         className="grid h-full w-8 shrink-0 place-items-center text-neutral-700 transition hover:bg-card"
                       >
                         <Plus size={13} />
@@ -158,7 +160,7 @@ export function CartDrawer() {
                     <button
                       type="button"
                       onClick={() => removeItem(item.productId)}
-                      aria-label={`Remove ${item.name} from cart`}
+                      aria-label={`${t("remove")} ${item.name}`}
                       className="grid h-8 w-8 place-items-center rounded-lg text-neutral-400 transition hover:bg-red-50 hover:text-red-600"
                     >
                       <Trash2 size={15} />
@@ -175,17 +177,17 @@ export function CartDrawer() {
           <div className="border-t border-line bg-white p-6">
             <div className="mb-4 space-y-2 text-sm">
               <div className="flex justify-between text-muted">
-                <span>Subtotal</span>
+                <span>{t("subtotal")}</span>
                 <span>{formatPrice(subtotal)} JOD</span>
               </div>
 
               <div className="flex justify-between text-muted">
-                <span>Delivery</span>
-                <span>Calculated at checkout</span>
+                <span>{t("delivery")}</span>
+                <span>{t("calculatedAtCheckout")}</span>
               </div>
 
               <div className="flex justify-between border-t border-line pt-3 text-base font-bold text-neutral-900">
-                <span>Subtotal</span>
+                <span>{t("subtotal")}</span>
                 <span>{formatPrice(subtotal)} JOD</span>
               </div>
             </div>
@@ -198,7 +200,7 @@ export function CartDrawer() {
               }}
               className="w-full rounded-xl bg-brand py-3.5 text-sm font-semibold text-white transition hover:bg-brand-light"
             >
-              Continue order
+              {t("continueOrder")}
             </button>
           </div>
         )}

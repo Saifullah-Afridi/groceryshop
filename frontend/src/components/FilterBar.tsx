@@ -60,10 +60,10 @@
 
 //       <div className="ml-auto">
 //         <Select value={params.get("sort") ?? ""} onChange={set("sort")}>
-//           <option value="">Sort by</option>
-//           <option value="price-asc">Price: low to high</option>
-//           <option value="price-desc">Price: high to low</option>
-//           <option value="rating">Top rated</option>
+//           <option value="">{t("sortBy")}</option>
+//           <option value="price-asc">{t("lowToHigh")}</option>
+//           <option value="price-desc">{t("highToLow")}</option>
+//           <option value="rating">{t("topRated")}</option>
 //         </Select>
 //       </div>
 //     </div>
@@ -83,6 +83,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { useCategories } from "../hooks/useShopData";
 import { Skeleton } from "./Skeleton";
+import { useLanguage } from "../context/LanguageContext";
 
 interface Props {
   params: URLSearchParams;
@@ -101,6 +102,7 @@ const categoryIcons: Record<string, LucideIcon> = {
 
 export function FilterBar({ params, onChange }: Props) {
   const { data: categories = [], isLoading } = useCategories();
+  const { t } = useLanguage();
   const selectedCategory = params.get("category") ?? "";
 
   const selectCategory = (categoryId: string) => {
@@ -164,10 +166,10 @@ export function FilterBar({ params, onChange }: Props) {
             }
             className="h-full cursor-pointer appearance-none bg-transparent pl-4 pr-9 text-inherit [&>option]:text-black"
           >
-            <option value="">Sort by</option>
-            <option value="price-asc">Price: low to high</option>
-            <option value="price-desc">Price: high to low</option>
-            <option value="rating">Top rated</option>
+            <option value="">{t("sortBy")}</option>
+            <option value="price-asc">{t("lowToHigh")}</option>
+            <option value="price-desc">{t("highToLow")}</option>
+            <option value="rating">{t("topRated")}</option>
           </select>
 
           <ChevronDown

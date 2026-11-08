@@ -11,7 +11,7 @@ import { Container } from "./Container";
 
 export function Navbar() {
   const { count, open } = useCart();
-  const { language, toggleLanguage, t, isArabic } = useLanguage();
+  const { language, toggleLanguage, t } = useLanguage();
 
   const navigate = useNavigate();
   const [params] = useSearchParams();
