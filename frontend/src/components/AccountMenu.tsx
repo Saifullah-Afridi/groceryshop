@@ -54,12 +54,22 @@ export function AccountMenu() {
       </button>
 
       {open && (
-        <div role="menu" className={`absolute ${isArabic ? "left-0" : "right-0"} top-12 z-50 w-64 overflow-hidden rounded-xl border border-line bg-white shadow-lg`}>
+        <div
+          role="menu"
+          className={`absolute ${isArabic ? "left-0" : "right-0"} top-12 z-50 w-64 overflow-hidden rounded-xl border border-line bg-white shadow-lg`}
+        >
           <div className="border-b border-line px-4 py-3">
-            <p className="truncate text-sm font-semibold text-ink">{customer.name}</p>
+            <p className="truncate text-sm font-semibold text-ink">
+              {customer.name}
+            </p>
             <p className="truncate text-xs text-muted">{customer.email}</p>
           </div>
-          <Link role="menuitem" to="/orders" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm text-ink hover:bg-card">
+          <Link
+            role="menuitem"
+            to="/orders"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-3 px-4 py-3 text-sm text-ink hover:bg-card"
+          >
             <ClipboardList size={17} /> My orders
           </Link>
           <button
@@ -68,7 +78,9 @@ export function AccountMenu() {
             onClick={() => {
               setOpen(false);
               logout();
-              toast.info(isArabic ? "تم تسجيل الخروج" : "You have been signed out");
+              toast.info(
+                isArabic ? "تم تسجيل الخروج" : "You have been signed out",
+              );
             }}
             className="flex w-full items-center gap-3 border-t border-line px-4 py-3 text-left text-sm text-sale hover:bg-red-50"
           >

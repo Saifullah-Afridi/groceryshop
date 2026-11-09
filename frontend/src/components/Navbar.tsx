@@ -1,4 +1,4 @@
-import { Globe, MapPin, Search, ShoppingCart } from "lucide-react";
+import { Globe, Search, ShoppingCart } from "lucide-react";
 import type { FormEvent } from "react";
 import { Link, NavLink, useNavigate, useSearchParams } from "react-router-dom";
 
@@ -24,46 +24,52 @@ export function Navbar() {
     navigate(q ? `/shop?q=${encodeURIComponent(q)}` : "/shop");
   };
 
+  const navClass = ({ isActive }: { isActive: boolean }) =>
+    `relative whitespace-nowrap px-3 py-2 text-sm font-semibold transition-colors ${
+      isActive
+        ? "text-brand after:absolute after:bottom-0 after:left-3 after:right-3 after:h-[3px] after:rounded-full after:bg-brand"
+        : "text-neutral-700 hover:text-brand"
+    }`;
+
   return (
-    <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white/95 backdrop-blur">
-      {/* Main Navbar */}
-      <div className="bg-neutral-50/90 backdrop-blur-md">
-        <Container>
-          <div className="flex items-center gap-3 py-3 sm:gap-5">
+    <header className="relative z-50 -mb-[120px] pt-3 sm:pt-5">
+      <Container>
+        <div className="rounded-2xl border border-white/80 bg-white/95 px-3 py-3 shadow-lg shadow-black/5 backdrop-blur-xl sm:rounded-full sm:px-5 lg:px-8">
+          {/* Main navbar row */}
+          <div className="flex min-h-11 items-center gap-2 sm:gap-3 lg:gap-5">
             {/* Logo */}
             <Link
               to="/"
-              className="flex shrink-0 items-center gap-2 text-xl font-extrabold text-brand"
+              className="flex shrink-0 items-center gap-2 text-base font-extrabold tracking-tight text-brand sm:text-xl"
             >
-              <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand text-base font-bold text-white">
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand text-base font-bold text-white sm:h-10 sm:w-10">
                 R
               </span>
 
               <span>{STORE.name}</span>
             </Link>
 
-            {/* Delivery Location */}
-            <div className="hidden shrink-0 items-center gap-2 sm:flex">
-              <MapPin size={19} className="text-brand" />
+            {/* Navigation */}
+            <nav
+              aria-label="Main navigation"
+              className="ml-1 flex shrink-0 items-center gap-0.5 sm:ml-2 sm:gap-2"
+            >
+              <NavLink to="/" end className={navClass}>
+                {t("home")}
+              </NavLink>
 
-              <div className="leading-tight">
-                <span className="block text-[11px] text-neutral-500">
-                  {t("deliveringTo")}
-                </span>
+              <NavLink to="/shop" className={navClass}>
+                {t("shop")}
+              </NavLink>
+            </nav>
 
-                <span className="block text-sm font-semibold text-neutral-900">
-                  {t("location")}
-                </span>
-              </div>
-            </div>
-
-            {/* Search */}
+            {/* Desktop search */}
             <form
               onSubmit={onSearch}
               role="search"
-              className="ml-auto flex h-10 min-w-0 max-w-[620px] flex-1 items-center gap-2 rounded-full border border-neutral-200 bg-neutral-100/80 px-4 transition focus-within:border-brand focus-within:bg-white focus-within:ring-2 focus-within:ring-brand/10"
+              className="ml-auto hidden h-11 min-w-0 max-w-[560px] flex-1 items-center gap-3 rounded-full border border-neutral-200/80 bg-neutral-50/80 px-4 transition focus-within:border-brand focus-within:bg-white focus-within:ring-2 focus-within:ring-brand/10 sm:flex"
             >
-              <Search size={17} className="shrink-0 text-neutral-400" />
+              <Search size={19} className="shrink-0 text-neutral-500" />
 
               <input
                 key={`${language}-${params.get("q") ?? ""}`}
@@ -74,16 +80,15 @@ export function Navbar() {
               />
             </form>
 
-            {/* Language Switcher */}
+            {/* Language switcher */}
             <button
               type="button"
               onClick={toggleLanguage}
               aria-label="Change language"
-              className="flex h-10 shrink-0 items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 text-sm font-semibold text-neutral-700 transition hover:border-brand hover:bg-mint hover:text-brand"
+              className="ml-auto flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-2.5 text-xs font-semibold text-neutral-800 transition hover:border-brand hover:bg-green-50 sm:ml-0 sm:h-11 sm:gap-2 sm:px-4 sm:text-sm"
             >
               <Globe size={17} />
-
-              <span>{language === "ar" ? "English" : "العربية"}</span>
+              <span>{language === "ar" ? "EN" : "عربي"}</span>
             </button>
 
             {/* Account */}
@@ -94,7 +99,7 @@ export function Navbar() {
               type="button"
               onClick={open}
               aria-label={`${t("cart")}, ${count}`}
-              className="relative flex h-10 shrink-0 items-center gap-2 rounded-full bg-brand px-4 text-white transition hover:bg-brand/90"
+              className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand text-white shadow-sm transition hover:bg-brand/90 sm:h-11 sm:w-auto sm:gap-2 sm:px-5"
             >
               <ShoppingCart size={19} />
 
@@ -103,48 +108,31 @@ export function Navbar() {
               </span>
 
               {count > 0 && (
-                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-accent px-1.5 text-[11px] font-bold text-brand">
+                <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-accent px-1 text-[11px] font-bold text-brand sm:static">
                   {count}
                 </span>
               )}
             </button>
           </div>
-        </Container>
-      </div>
 
-      {/* Secondary Navigation */}
-      <nav aria-label="Main navigation" className="bg-white">
-        <Container>
-          <div className="flex items-center gap-2 py-1 sm:gap-6">
-            <NavLink
-              to="/"
-              end
-              className={({ isActive }) =>
-                `border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "border-brand text-brand"
-                    : "border-transparent text-neutral-600 hover:text-brand"
-                }`
-              }
-            >
-              {t("home")}
-            </NavLink>
+          {/* Mobile search */}
+          <form
+            onSubmit={onSearch}
+            role="search"
+            className="mt-3 flex h-10 w-full items-center gap-2 rounded-full border border-neutral-200/80 bg-neutral-50/80 px-4 transition focus-within:border-brand focus-within:bg-white focus-within:ring-2 focus-within:ring-brand/10 sm:hidden"
+          >
+            <Search size={17} className="shrink-0 text-neutral-500" />
 
-            <NavLink
-              to="/shop"
-              className={({ isActive }) =>
-                `border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "border-brand text-brand"
-                    : "border-transparent text-neutral-600 hover:text-brand"
-                }`
-              }
-            >
-              {t("shop")}
-            </NavLink>
-          </div>
-        </Container>
-      </nav>
+            <input
+              key={`mobile-${language}-${params.get("q") ?? ""}`}
+              name="q"
+              defaultValue={params.get("q") ?? ""}
+              placeholder={t("search")}
+              className="w-full min-w-0 bg-transparent text-sm text-neutral-900 outline-none placeholder:text-neutral-400"
+            />
+          </form>
+        </div>
+      </Container>
     </header>
   );
 }
