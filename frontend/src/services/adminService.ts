@@ -73,3 +73,14 @@ export function getAdminOrders(query: { status?: OrderStatus; q?: string }) {
 }
 export const updateOrderStatus = (id: number, status: OrderStatus) =>
   api<Order>(`/orders/${id}/status`, { method: "PUT", body: { status } });
+
+export interface DashboardData {
+  todayRevenue: number; todayOrders: number; averageOrderValue: number;
+  monthRevenue: number; pendingOrders: number; productsCount: number;
+  categoriesCount: number; newCustomersToday: number;
+  lowStock: { id:number; name:string; nameAr:string; stockQuantity:number; minQuantity:number; unit:string }[];
+  outOfStock: { id:number; name:string; nameAr:string; stockQuantity:number; unit:string }[];
+  bestSellers: { name:string; quantity:number; revenue:number }[];
+  recentOrders: { id:number; name:string; total:number; status:string; createdAt:string; itemsCount:number }[];
+}
+export const getDashboard = () => api<DashboardData>("/admin/dashboard");

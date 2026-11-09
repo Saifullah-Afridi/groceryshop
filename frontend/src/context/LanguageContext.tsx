@@ -105,8 +105,15 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     try { localStorage.setItem("rakan-language", language); } catch { /* storage may be unavailable */ }
   }, [language]);
 
-  const setLanguage = (next: Language) => setLanguageState(next);
-  const toggleLanguage = () => setLanguageState((current) => current === "ar" ? "en" : "ar");
+  const applyLanguage = (next: Language) => {
+    if (next === language) return;
+    const root = document.documentElement;
+    root.classList.add("language-switch-no-motion");
+    setLanguageState(next);
+    window.setTimeout(() => root.classList.remove("language-switch-no-motion"), 0);
+  };
+  const setLanguage = (next: Language) => applyLanguage(next);
+  const toggleLanguage = () => applyLanguage(language === "ar" ? "en" : "ar");
   const t = (key: TranslationKey) => translations[language][key] ?? translations.en[key];
 
   return (

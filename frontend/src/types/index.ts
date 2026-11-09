@@ -13,7 +13,9 @@ export type SortKey = "featured" | "price-asc" | "price-desc" | "rating";
 export interface Category {
   id: string;
   name: string;
+  nameAr?: string;
   description: string;
+  descriptionAr?: string;
   icon: IconKey;
   tint: string;
   color: string;

@@ -28,6 +28,9 @@ export function ProductForm({
     unit: initial?.unit ?? "kg",
     minQuantity:
       initial?.minQuantity != null ? String(initial.minQuantity) : "",
+    stockQuantity: initial?.stockQuantity != null ? String(initial.stockQuantity) : "0",
+    unitPrices: initial?.unitPrices ?? {},
+    unitDiscounts: initial?.unitDiscounts ?? {},
     image: initial?.image ?? "",
   });
 
@@ -94,6 +97,9 @@ export function ProductForm({
         price,
         unit: f.unit as Product["unit"],
         minQuantity: f.minQuantity.trim() ? minQuantity : 0,
+        stockQuantity: Math.max(0, Number(f.stockQuantity) || 0),
+        unitPrices: f.unitPrices,
+        unitDiscounts: f.unitDiscounts,
         image: f.image.trim(),
       },
       imageFile,
@@ -182,6 +188,36 @@ export function ProductForm({
             placeholder="e.g. 5"
           />
         </FormField>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <FormField label={`Available stock (${f.unit})`}>
+          <input type="number" min="0" step={f.unit === "kg" ? "0.25" : "1"} value={f.stockQuantity}
+            onChange={set("stockQuantity")} className={inputClass} />
+        </FormField>
+        {f.unit === "kg" && (
+          <div className="rounded-xl border border-line p-3 sm:col-span-2">
+            <p className="mb-3 text-sm font-semibold">Weight-specific prices and discounts (JOD / %)</p>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[0.25, 0.5, 0.75, 1, 2, 3].map((weight) => {
+                const key = String(weight);
+                return <div key={key} className="space-y-1">
+                  <label className="text-xs text-muted">{weight} kg price</label>
+                  <input type="number" min="0" step="0.01" placeholder="Auto"
+                    value={f.unitPrices[key] ?? ""}
+                    onChange={(e) => setF(v => ({...v, unitPrices:{...v.unitPrices, [key]: Number(e.target.value)}}))}
+                    className={inputClass} />
+                  <label className="text-xs text-muted">Discount %</label>
+                  <input type="number" min="0" max="100" step="1" placeholder="0"
+                    value={f.unitDiscounts[key] ?? ""}
+                    onChange={(e) => setF(v => ({...v, unitDiscounts:{...v.unitDiscounts, [key]: Number(e.target.value)}}))}
+                    className={inputClass} />
+                </div>;
+              })}
+            </div>
+            <p className="mt-2 text-xs text-muted">Leave a price blank to calculate it from the base quarter-kilogram price.</p>
+          </div>
+        )}
       </div>
 
       <FormField label="Product image">

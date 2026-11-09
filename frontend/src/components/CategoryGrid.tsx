@@ -7,11 +7,10 @@ import { Skeleton } from "./Skeleton";
 
 const ICONS = { Carrot, Apple, Beef, Milk, CupSoda, Wheat };
 
-// A row of colored category cards. It scrolls sideways on small screens.
-// Clicking a card opens the Shop page filtered by that category.
 export function CategoryGrid() {
   const { data } = useProducts({});
   const { data: categories = [], isLoading } = useCategories();
+
   const countOf = (id: string) =>
     data?.filter((p) => p.categoryId === id).length;
 
@@ -21,46 +20,54 @@ export function CategoryGrid() {
         <h2 className="text-2xl font-bold text-brand">Shop by categories</h2>
       </div>
 
-      <ul className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4">
+      <ul className="flex gap-3 overflow-x-auto pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4">
         {isLoading &&
           Array.from({ length: 6 }, (_, i) => (
-            <li key={i} className="w-40 shrink-0 sm:w-44 xl:w-auto xl:flex-1">
+            <li key={i} className="w-40 shrink-0 sm:w-44 xl:flex-1">
               <Skeleton className="h-60 rounded-2xl" />
             </li>
           ))}
+
         {categories.map((c) => {
-          const Icon = ICONS[c.icon];
+          const Icon = ICONS[c.icon as keyof typeof ICONS];
           const count = countOf(c.id);
+
           return (
-            <li
-              key={c.id}
-              className="w-40 shrink-0 sm:w-44 xl:w-auto xl:flex-1"
-            >
+            <li key={c.id} className="w-40 shrink-0 sm:w-44 xl:flex-1">
               <Link
                 to={`/shop?category=${c.id}`}
-                className="group relative block h-60 overflow-hidden rounded-2xl text-center text-white transition hover:-translate-y-1 hover:shadow-lg"
-                style={{ background: c.color }}
+                className="group relative block h-60 overflow-hidden rounded-2xl text-center text-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
+                style={{ backgroundColor: c.color }}
               >
-                <div className="relative z-10 px-3 pt-5">
-                  <h3 className="text-lg font-semibold leading-tight">
+                {/* Full-height category image */}
+                {c.image && (
+                  <img
+                    src={c.image}
+                    alt={c.name}
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                )}
+
+                {/* Dark overlay for readable text */}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/10 to-black/30" />
+
+                {/* Category title and item count */}
+                <div className="relative z-10 px-2 pt-5">
+                  <h3 className="text-lg font-semibold leading-tight drop-shadow-md">
                     {c.name}
                   </h3>
-                  <p className="mt-1 text-xs text-white/80">
+
+                  <p className="mt-1 text-xs text-white/90 drop-shadow">
                     {count !== undefined ? `${count} items` : "\u00A0"}
                   </p>
                 </div>
 
-                {c.image ? (
-                  <img
-                    src={c.image}
-                    alt=""
-                    className="absolute inset-x-0 bottom-0 h-3/5 w-full object-contain object-bottom transition group-hover:scale-105"
-                  />
-                ) : (
+                {/* Icon for categories without an uploaded image */}
+                {!c.image && Icon && (
                   <Icon
-                    size={72}
+                    size={76}
                     strokeWidth={1.3}
-                    className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/35 transition group-hover:scale-110"
+                    className="absolute bottom-7 left-1/2 -translate-x-1/2 text-white/55 transition-transform duration-300 group-hover:scale-110"
                   />
                 )}
               </Link>

@@ -16,11 +16,20 @@ export function ProductCard({ product }: { product: Product }) {
   const [selectedWeight, setSelectedWeight] = useState(0.25);
 
   const isWeightBased = product.unit === "kg";
+  const outOfStock = product.stockQuantity <= 0;
 
   // Calculate the price according to the selected weight.
-  const displayPrice = isWeightBased
-    ? product.price * (selectedWeight / 0.25) // the price is per 0.25 kg
+  const weightKey = String(selectedWeight);
+  const basePrice = isWeightBased
+    ? (product.unitPrices?.[weightKey] ??
+      product.price * (selectedWeight / 0.25))
     : product.price;
+  const discount = product.unitDiscounts?.[weightKey] ?? 0;
+  const displayPrice = basePrice * (1 - discount / 100);
+  const displayName = isArabic ? product.nameAr || product.name : product.name;
+  const displayDescription = isArabic
+    ? product.descriptionAr || product.description
+    : product.description;
 
   // Increase or decrease weight in 250g increments.
   const changeWeight = (amount: number) => {
@@ -44,17 +53,23 @@ export function ProductCard({ product }: { product: Product }) {
       <div className="flex flex-1 flex-col p-4">
         {/* Product Name */}
         <p className="text-base font-semibold leading-snug text-brand">
-          {product.name}
+          {displayName}
         </p>
 
         {/* Price unit */}
-        <p className="mt-1 text-xs text-muted">{isWeightBased ? (isArabic ? "السعر لكل 0.25 كغ" : t("pricePerQuarter")) : `${t("pricePer")} ${product.unit}`}</p>
+        <p className="mt-1 text-xs text-muted">
+          {isWeightBased
+            ? isArabic
+              ? "السعر لكل 0.25 كغ"
+              : t("pricePerQuarter")
+            : `${t("pricePer")} ${product.unit}`}
+        </p>
 
         {/* Weight Selection */}
         {isWeightBased && (
           <div className="mt-3">
             <p className="mb-2 text-xs font-medium text-neutral-700">
-              Choose weight
+              {t("chooseWeight")}
             </p>
 
             <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
@@ -77,7 +92,7 @@ export function ProductCard({ product }: { product: Product }) {
             {/* Custom Weight */}
             <div className="mt-3">
               <p className="mb-2 text-xs font-medium text-neutral-700">
-                Custom weight
+                {t("customWeight")}
               </p>
 
               <div className="flex items-center justify-between gap-2 rounded-lg border border-line bg-white px-2 py-1.5">
@@ -112,6 +127,11 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
         )}
 
+        {outOfStock && (
+          <span className="mt-3 w-fit rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700">
+            {isArabic ? "نفد المخزون" : "Out of stock"}
+          </span>
+        )}
         {/* Price and Add to Cart */}
         <div className="mt-4 flex items-center justify-between gap-2 border-t border-line pt-3">
           <div>
@@ -129,8 +149,9 @@ export function ProductCard({ product }: { product: Product }) {
           <button
             type="button"
             onClick={handleAddToCart}
-            aria-label={`Add ${product.name} to cart`}
-            className="flex items-center gap-1 rounded-lg bg-brand px-2.5 py-2 text-xs font-semibold text-white transition hover:bg-brand-light sm:px-3"
+            disabled={outOfStock}
+            aria-label={`Add ${displayName} to cart`}
+            className="flex items-center gap-1 rounded-lg bg-brand px-2.5 py-2 text-xs font-semibold text-white transition hover:bg-brand-light disabled:cursor-not-allowed disabled:bg-neutral-400 sm:px-3"
           >
             <Plus size={15} />
             {t("addToCart")}

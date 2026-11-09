@@ -7,7 +7,9 @@ import { deleteImage, uploadImage } from "../../lib/storage.js";
 const toDto = (c) => ({
   id: c.id,
   name: c.name,
+  nameAr: c.nameAr,
   description: c.description,
+  descriptionAr: c.descriptionAr,
   icon: c.icon,
   color: c.color,
   tint: c.tint,
@@ -30,6 +32,7 @@ export async function getCategory(id) {
 }
 
 export async function createCategory(data, file) {
+  data = { ...data, nameAr: data.nameAr ?? "", descriptionAr: data.descriptionAr ?? "" };
   const id = slugify(data.name) || `category-${Date.now()}`;
   if (await prisma.category.findUnique({ where: { id } })) {
     throw httpError(409, "A category with this name already exists.");

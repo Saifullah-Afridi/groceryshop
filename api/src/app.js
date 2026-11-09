@@ -9,6 +9,7 @@ import citiesRoutes from "./modules/cities/cities.routes.js";
 import customersRoutes from "./modules/customers/customers.routes.js";
 import ordersRoutes from "./modules/orders/orders.routes.js";
 import productsRoutes from "./modules/products/products.routes.js";
+import dashboardRoutes from "./modules/dashboard/dashboard.routes.js";
 
 export const app = express();
 
@@ -25,6 +26,7 @@ app.use("/api/cities", citiesRoutes);
 app.use("/api/customers", customersRoutes);
 app.use("/api/orders", ordersRoutes);
 app.use("/api/products", productsRoutes);
+app.use("/api/admin/dashboard", dashboardRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

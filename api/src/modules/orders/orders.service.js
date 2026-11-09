@@ -57,8 +57,15 @@ export async function createOrder(customerId, input) {
 
   const lines = products.map((product) => {
     const quantity = Math.round(wanted.get(product.id) * 100) / 100;
-    const unitCents = toCents(product.price);
-    const lineCents = unitCents * priceUnits(product, quantity);
+    const units = priceUnits(product, quantity);
+    const key = String(quantity);
+    const configuredPrice = product.unit === "kg" ? product.unitPrices?.[key] : undefined;
+    const baseCents = configuredPrice != null
+      ? toCents(configuredPrice)
+      : toCents(product.price) * units;
+    const discountPercent = Number(product.unitDiscounts?.[key] ?? 0);
+    const lineCents = Math.round(baseCents * (1 - discountPercent / 100));
+    const unitCents = units ? Math.round(lineCents / units) : lineCents;
     return {
       productId: product.id,
       productName: product.name,

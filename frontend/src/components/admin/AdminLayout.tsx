@@ -2,6 +2,7 @@ import { ClipboardList, LayoutDashboard, LogOut, Package, Store, Tags, Truck, Us
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { STORE } from "../../config";
 import { useAuth } from "../../context/AuthContext";
+import { useLanguage } from "../../context/LanguageContext";
 
 const LINKS = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -22,9 +23,11 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
 // Wraps every admin page: green sidebar on desktop, top menu on mobile.
 export function AdminLayout() {
   const { user, logout } = useAuth();
+  const { language, toggleLanguage, isArabic } = useLanguage();
+  const labels = isArabic ? ["لوحة التحكم","الطلبات","المنتجات","الفئات","المستخدمون","التوصيل"] : LINKS.map(x => x.label);
   return (
-    <div className="min-h-screen bg-card lg:pl-64">
-      <aside className="fixed inset-y-0 left-0 hidden w-64 flex-col bg-brand p-5 text-white lg:flex">
+    <div dir={language === "ar" ? "rtl" : "ltr"} className={`min-h-screen bg-card ${language === "ar" ? "lg:pr-64" : "lg:pl-64"}`}>
+      <aside className={`fixed inset-y-0 ${language === "ar" ? "right-0" : "left-0"} hidden w-64 flex-col bg-brand p-5 text-white lg:flex`}>
         <Link
           to="/admin"
           className="mb-8 flex items-center gap-2 text-xl font-extrabold"
@@ -36,13 +39,16 @@ export function AdminLayout() {
           <span className="text-xs font-semibold text-accent">Admin</span>
         </Link>
         <nav className="flex flex-col gap-1" aria-label="Admin navigation">
-          {LINKS.map(({ to, label, icon: Icon, end }) => (
+          {LINKS.map(({ to, label, icon: Icon, end }, index) => (
             <NavLink key={to} to={to} end={end} className={linkClass}>
               <Icon size={18} /> {label}
             </NavLink>
           ))}
         </nav>
         <div className="mt-auto space-y-1">
+          <button onClick={toggleLanguage} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-green-100/80 hover:bg-white/10">
+            {language === "ar" ? "English" : "العربية"}
+          </button>
           <Link
             to="/"
             className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-green-100/80 hover:bg-white/10 hover:text-white"
@@ -65,12 +71,12 @@ export function AdminLayout() {
         className="flex items-center gap-1 overflow-x-auto bg-brand px-3 py-2 lg:hidden"
         aria-label="Admin navigation"
       >
-        {LINKS.map(({ to, label, end }) => (
+        {LINKS.map(({ to, label, end }, index) => (
           <NavLink key={to} to={to} end={end} className={linkClass}>
             {label}
           </NavLink>
         ))}
-        <Link to="/" className="ml-auto px-3 text-sm text-green-100/80">
+        <button onClick={toggleLanguage} className="px-3 text-sm text-green-100/80">{language === "ar" ? "English" : "العربية"}</button>\n        <Link to="/" className="ml-auto px-3 text-sm text-green-100/80">
           Store
         </Link>
         <button onClick={logout} className="px-3 text-sm text-green-100/80">

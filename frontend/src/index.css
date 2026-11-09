@@ -76,3 +76,13 @@ html[dir="rtl"] input[type="number"] {
 html[lang="ar"] {
   font-family: "Tahoma", "Arial", sans-serif;
 }
+
+
+/* Language changes should flip direction instantly, without sliding/fading content. */
+html.language-switch-no-motion *,
+html.language-switch-no-motion *::before,
+html.language-switch-no-motion *::after {
+  transition: none !important;
+  animation: none !important;
+  scroll-behavior: auto !important;
+}
