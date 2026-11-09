@@ -1,4 +1,5 @@
-import { Globe, Search, ShoppingCart } from "lucide-react";
+import { useState } from "react";
+import { Globe, Search, ShoppingCart, Menu, X } from "lucide-react";
 import type { FormEvent } from "react";
 import { Link, NavLink, useNavigate, useSearchParams } from "react-router-dom";
 
@@ -15,6 +16,7 @@ export function Navbar() {
 
   const navigate = useNavigate();
   const [params] = useSearchParams();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const onSearch = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -22,37 +24,38 @@ export function Navbar() {
     const q = String(new FormData(e.currentTarget).get("q") ?? "").trim();
 
     navigate(q ? `/shop?q=${encodeURIComponent(q)}` : "/shop");
+    setMobileMenuOpen(false);
   };
 
   const navClass = ({ isActive }: { isActive: boolean }) =>
-    `relative whitespace-nowrap px-3 py-2 text-sm font-semibold transition-colors ${
+    `relative whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
       isActive
-        ? "text-brand after:absolute after:bottom-0 after:left-3 after:right-3 after:h-[3px] after:rounded-full after:bg-brand"
-        : "text-neutral-700 hover:text-brand"
+        ? "bg-green-50 text-brand"
+        : "text-neutral-700 hover:bg-green-50 hover:text-brand"
     }`;
 
   return (
-    <header className="relative z-50 -mb-[120px] pt-3 sm:pt-5">
+    <header className="absolute inset-x-0 top-0 z-50 bg-transparent pt-3 sm:pt-5">
       <Container>
-        <div className="rounded-2xl border border-white/80 bg-white/95 px-3 py-3 shadow-lg shadow-black/5 backdrop-blur-xl sm:rounded-full sm:px-5 lg:px-8">
+        <div className="relative rounded-2xl border border-white/80 bg-white/95 p-3 shadow-lg shadow-black/10 backdrop-blur-xl sm:rounded-full sm:px-5 sm:py-3 lg:px-8">
           {/* Main navbar row */}
-          <div className="flex min-h-11 items-center gap-2 sm:gap-3 lg:gap-5">
+          <div className="flex min-h-10 items-center gap-2 sm:gap-3 lg:gap-5">
             {/* Logo */}
             <Link
               to="/"
+              onClick={() => setMobileMenuOpen(false)}
               className="flex shrink-0 items-center gap-2 text-base font-extrabold tracking-tight text-brand sm:text-xl"
             >
               <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand text-base font-bold text-white sm:h-10 sm:w-10">
                 R
               </span>
-
               <span>{STORE.name}</span>
             </Link>
 
-            {/* Navigation */}
+            {/* Desktop navigation */}
             <nav
               aria-label="Main navigation"
-              className="ml-1 flex shrink-0 items-center gap-0.5 sm:ml-2 sm:gap-2"
+              className="ml-3 hidden shrink-0 items-center gap-1 sm:flex"
             >
               <NavLink to="/" end className={navClass}>
                 {t("home")}
@@ -67,12 +70,12 @@ export function Navbar() {
             <form
               onSubmit={onSearch}
               role="search"
-              className="ml-auto hidden h-11 min-w-0 max-w-[560px] flex-1 items-center gap-3 rounded-full border border-neutral-200/80 bg-neutral-50/80 px-4 transition focus-within:border-brand focus-within:bg-white focus-within:ring-2 focus-within:ring-brand/10 sm:flex"
+              className="ml-auto hidden h-11 min-w-0 max-w-[560px] flex-1 items-center gap-3 rounded-full border border-neutral-200 bg-neutral-50/80 px-4 transition focus-within:border-brand focus-within:bg-white focus-within:ring-2 focus-within:ring-brand/10 sm:flex"
             >
               <Search size={19} className="shrink-0 text-neutral-500" />
 
               <input
-                key={`${language}-${params.get("q") ?? ""}`}
+                key={`desktop-${language}-${params.get("q") ?? ""}`}
                 name="q"
                 defaultValue={params.get("q") ?? ""}
                 placeholder={t("search")}
@@ -113,13 +116,24 @@ export function Navbar() {
                 </span>
               )}
             </button>
+
+            {/* Mobile hamburger */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileMenuOpen}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-700 transition hover:border-brand hover:bg-green-50 hover:text-brand sm:hidden"
+            >
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
           </div>
 
           {/* Mobile search */}
           <form
             onSubmit={onSearch}
             role="search"
-            className="mt-3 flex h-10 w-full items-center gap-2 rounded-full border border-neutral-200/80 bg-neutral-50/80 px-4 transition focus-within:border-brand focus-within:bg-white focus-within:ring-2 focus-within:ring-brand/10 sm:hidden"
+            className="mt-3 flex h-10 w-full items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50/80 px-4 transition focus-within:border-brand focus-within:bg-white focus-within:ring-2 focus-within:ring-brand/10 sm:hidden"
           >
             <Search size={17} className="shrink-0 text-neutral-500" />
 
@@ -131,6 +145,57 @@ export function Navbar() {
               className="w-full min-w-0 bg-transparent text-sm text-neutral-900 outline-none placeholder:text-neutral-400"
             />
           </form>
+
+          {/* Floating mobile menu - does not change navbar height */}
+          {mobileMenuOpen && (
+            <div className="absolute left-0 right-0 top-full z-50 mt-2 rounded-2xl border border-neutral-200 bg-white p-3 shadow-xl shadow-black/10 sm:hidden">
+              <nav
+                aria-label="Mobile navigation"
+                className="flex flex-col gap-1"
+              >
+                <NavLink
+                  to="/"
+                  end
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={({ isActive }) =>
+                    `rounded-xl px-4 py-3 text-sm font-semibold ${
+                      isActive
+                        ? "bg-green-50 text-brand"
+                        : "text-neutral-700 hover:bg-green-50 hover:text-brand"
+                    }`
+                  }
+                >
+                  {t("home")}
+                </NavLink>
+
+                <NavLink
+                  to="/shop"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={({ isActive }) =>
+                    `rounded-xl px-4 py-3 text-sm font-semibold ${
+                      isActive
+                        ? "bg-green-50 text-brand"
+                        : "text-neutral-700 hover:bg-green-50 hover:text-brand"
+                    }`
+                  }
+                >
+                  {t("shop")}
+                </NavLink>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    toggleLanguage();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-semibold text-neutral-700 hover:bg-green-50 hover:text-brand"
+                >
+                  <Globe size={18} />
+                  {language === "ar" ? "English" : "العربية"}
+                </button>
+              </nav>
+            </div>
+          )}
         </div>
       </Container>
     </header>
