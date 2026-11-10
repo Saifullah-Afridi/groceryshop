@@ -1,17 +1,25 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
+
 import { CartDrawer } from "./CartDrawer";
 import { Footer } from "./Footer";
 import { Navbar } from "./Navbar";
 
-// Wraps every page: top bar, navbar, page content, footer, cart drawer.
 export function Layout() {
+  const location = useLocation();
+
+  // Use dark footer on the Shop page
+  const isShopPage = location.pathname === "/shop";
+
   return (
     <>
       <Navbar />
+
       <main>
         <Outlet />
       </main>
-      <Footer />
+
+      <Footer variant={isShopPage ? "dark" : "light"} />
+
       <CartDrawer />
     </>
   );
