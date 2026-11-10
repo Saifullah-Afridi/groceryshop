@@ -3,7 +3,7 @@ import { ProductCardSkeleton } from "./Skeleton";
 import type { Product } from "../types";
 
 export const gridClass =
-  "grid grid-cols-2 gap-4 sm:gap-x-5 sm:gap-y-12 md:grid-cols-3 lg:grid-cols-4";
+  "grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6 lg:grid-cols-4";
 
 export function ProductGrid({ products }: { products: Product[] }) {
   return (

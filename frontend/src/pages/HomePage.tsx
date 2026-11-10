@@ -8,6 +8,7 @@ export function HomePage() {
     <>
       <HeroBanner />
       <CategoryGrid />
+
       <FeaturedProducts />
     </>
   );
