@@ -39,8 +39,8 @@ export const env = {
   smtp: {
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT ?? 587),
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    user: process.env.SMTP_USER?.trim(),
+    pass: process.env.SMTP_PASS?.replace(/\s+/g, ""),
   },
   mailFrom: process.env.MAIL_FROM ?? "Rakan <no-reply@rakan.local>",
 };

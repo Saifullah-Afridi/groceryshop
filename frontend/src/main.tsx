@@ -6,9 +6,10 @@ import { ToastContainer } from "react-toastify";
 
 import "react-toastify/dist/ReactToastify.css";
 
+import "./i18n"; // must load before anything that shows text
+
 import App from "./App";
 import { AuthModal } from "./components/auth/AuthModal";
-import { GlobalLoader } from "./components/GlobalLoader";
 
 import { CartProvider } from "./context/CartContext";
 import { CustomerAuthProvider } from "./context/CustomerAuthContext";
@@ -26,11 +27,14 @@ const queryClient = new QueryClient({
   },
 });
 
+// Loading states are handled where the data is used (skeletons) and by route-level code splitting
+// (see App.tsx). There is no full-screen loader.
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
-        <BrowserRouter>
+        {/* v7_startTransition keeps the current page on screen until the next page has downloaded */}
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <CustomerAuthProvider>
             <CartProvider>
               <App />
@@ -38,8 +42,6 @@ createRoot(document.getElementById("root")!).render(
 
             <AuthModal />
           </CustomerAuthProvider>
-
-          <GlobalLoader />
         </BrowserRouter>
 
         <ToastContainer

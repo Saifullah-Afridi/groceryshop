@@ -1,5 +1,5 @@
-// These shapes will match the MongoDB models when we build the API.
-// kg is priced per 0.25 kg; all other units are priced per selected selling unit.
+// These shapes match the API. kg is priced per 0.25 kg; every other unit is priced per selling unit.
+// A product has ONE price and ONE percentage discount that applies to the whole price.
 export type Unit = "kg" | "item" | "pack" | "dozen" | "bunch" | "head" | "bottle";
 export type IconKey =
   | "Carrot"
@@ -25,22 +25,25 @@ export interface Product {
   id: number;
   categoryId: string;
   name: string;
+  nameAr?: string;
   description: string;
+  descriptionAr?: string;
   farm: string;
-  price: number;
+  price: number; // JOD per 0.25 kg (kg products) or per selling unit
+  discount: number; // percent, 0 to 100. One discount for the whole price.
   unit: Unit;
-  minQuantity: number;
+  minQuantity: number; // smallest amount a shopper can order. 0 means one step.
+  stockQuantity: number;
+  isOutOfStock?: boolean;
   image: string;
-
-  // Optional legacy fields, if existing components still use them
-  oldPrice?: number | null;
-  discount?: number;
-  tag?: string;
 }
 export interface CartItem {
   productId: number;
   name: string;
-  price: number;
+  nameAr?: string;
+  price: number; // before discount
+  discount: number; // percent
+  minQuantity: number; // smallest amount allowed for this line
   unit: Unit;
   amount: number;
   image: string;

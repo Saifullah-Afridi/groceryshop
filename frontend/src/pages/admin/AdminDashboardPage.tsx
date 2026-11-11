@@ -5,19 +5,21 @@ import { useLanguage } from "../../context/LanguageContext";
 import { formatPrice } from "../../utils/format";
 import { PageHeader } from "../../components/admin/PageHeader";
 import { TableSkeleton } from "../../components/Skeleton";
+import { statusKey } from "../../utils/orderStatus";
+import type { OrderStatus } from "../../types/order";
 
 function Stat({label,value,icon:Icon,href,tone="text-brand"}:{label:string;value:string|number;icon:any;href?:string;tone?:string}) {
- const body=<div className="rounded-2xl border border-line bg-white p-5"><div className="flex items-center justify-between"><p className="text-sm text-muted">{label}</p><Icon size={20} className={tone}/></div><p className="mt-2 text-2xl font-bold text-brand">{value}</p></div>;
+ const body=<div className="rounded-2xl border border-edge bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><p className="text-sm text-muted">{label}</p><Icon size={20} className={tone}/></div><p className="mt-2 text-2xl font-bold text-brand">{value}</p></div>;
  return href ? <Link to={href} className="block transition hover:-translate-y-0.5">{body}</Link> : body;
 }
 export function AdminDashboardPage() {
  const {data,isLoading,error}=useAdminDashboard();
- const {language,isArabic}=useLanguage();
+ const {isArabic,t}=useLanguage();
  const tr=(en:string,ar:string)=>isArabic?ar:en;
  if(isLoading) return <TableSkeleton/>;
  if(error || !data) return <p className="rounded-xl bg-red-50 p-4 text-red-700">{tr("Could not load dashboard data. Check the API and database migration.","تعذر تحميل بيانات لوحة التحكم. تحقق من واجهة API وترحيل قاعدة البيانات.")}</p>;
  const money=(n:number)=>`${formatPrice(n)} JOD`;
- return <div dir={language==="ar"?"rtl":"ltr"}>
+ return <div>
   <PageHeader title={tr("Owner dashboard","لوحة تحكم المالك")} text={tr("Your store performance, orders and inventory at a glance.","نظرة سريعة على أداء المتجر والطلبات والمخزون.")}/>
   <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
    <Stat label={tr("Today's revenue","مبيعات اليوم")} value={money(data.todayRevenue)} icon={Banknote}/>
@@ -42,11 +44,11 @@ export function AdminDashboardPage() {
    </Link>
   </div>
   <div className="mt-5 grid gap-4 lg:grid-cols-2">
-   <section className="rounded-2xl border border-line bg-white p-5"><h2 className="mb-3 font-bold">{tr("Best sellers this month","الأكثر مبيعاً هذا الشهر")}</h2>
+   <section className="rounded-2xl border border-edge bg-white p-5 shadow-sm"><h2 className="mb-3 font-bold">{tr("Best sellers this month","الأكثر مبيعاً هذا الشهر")}</h2>
     {data.bestSellers.length?data.bestSellers.map((p,i)=><div key={p.name} className="flex justify-between border-b border-line py-2 text-sm"><span>{i+1}. {p.name}</span><span className="font-semibold">{p.quantity} · {money(p.revenue)}</span></div>):<p className="text-sm text-muted">{tr("No sales yet this month.","لا توجد مبيعات هذا الشهر بعد.")}</p>}
    </section>
-   <section className="rounded-2xl border border-line bg-white p-5"><div className="mb-3 flex items-center justify-between"><h2 className="font-bold">{tr("Recent orders","أحدث الطلبات")}</h2><Link className="text-sm font-semibold text-brand" to="/admin/orders">{tr("View all","عرض الكل")}</Link></div>
-    {data.recentOrders.map(o=><div key={o.id} className="flex justify-between gap-3 border-b border-line py-2 text-sm"><span>#{o.id} · {o.name}<small className="block text-muted">{o.status.replaceAll("_"," ")}</small></span><b>{money(o.total)}</b></div>)}
+   <section className="rounded-2xl border border-edge bg-white p-5 shadow-sm"><div className="mb-3 flex items-center justify-between"><h2 className="font-bold">{tr("Recent orders","أحدث الطلبات")}</h2><Link className="text-sm font-semibold text-brand" to="/admin/orders">{tr("View all","عرض الكل")}</Link></div>
+    {data.recentOrders.map(o=><div key={o.id} className="flex justify-between gap-3 border-b border-line py-2 text-sm"><span>#{o.id} · {o.name}<small className="block text-muted">{t(statusKey(o.status as OrderStatus))}</small></span><b>{money(o.total)}</b></div>)}
    </section>
   </div>
  </div>;

@@ -348,6 +348,8 @@ export function CategoryGrid() {
         src="/images/category-bg.png"
         alt=""
         aria-hidden="true"
+        loading="lazy"
+        decoding="async"
         className="pointer-events-none absolute inset-0 -z-20 h-full w-full object-cover object-center"
       />
 

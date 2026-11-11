@@ -35,6 +35,7 @@ export function ShopPage() {
   const query: ProductQuery = {
     category: selectedCategory ?? undefined,
     q: searchQuery || undefined,
+    offersOnly: offersOnly || undefined,
   };
 
   const { data, isLoading, isError, refetch } = useProducts(query);

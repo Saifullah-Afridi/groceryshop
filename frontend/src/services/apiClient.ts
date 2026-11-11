@@ -1,4 +1,6 @@
 // One place that talks to the Rakan API. Services call api(); nothing else uses fetch directly.
+import i18n from "../i18n";
+
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000/api";
 
 // The admin and the shopper each have their own token and saved session.
@@ -40,7 +42,7 @@ export async function api<T>(path: string, { method = "GET", body, auth = "admin
   try {
     response = await fetch(`${BASE_URL}${path}`, { method, headers, body: payload });
   } catch {
-    throw new Error("Cannot reach the server. Check that the API is running.");
+    throw new Error(i18n.t("cannotReachServer"));
   }
 
   if (response.status === 204) return undefined as T;
@@ -58,7 +60,7 @@ export async function api<T>(path: string, { method = "GET", body, auth = "admin
         window.dispatchEvent(new Event(CUSTOMER_EXPIRED));
       }
     }
-    throw Object.assign(new Error(data?.message ?? "Something went wrong. Try again."), { code: data?.code });
+    throw Object.assign(new Error(data?.message ?? i18n.t("somethingWrong")), { code: data?.code });
   }
   return data as T;
 }

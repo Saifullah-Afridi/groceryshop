@@ -8,6 +8,7 @@ import { Modal } from "../../components/admin/Modal";
 import { PageHeader } from "../../components/admin/PageHeader";
 import { ProductForm } from "../../components/admin/ProductForm";
 import { Message } from "../../components/Message";
+import { useLanguage } from "../../context/LanguageContext";
 import {
   useAdminCategories,
   useAdminProducts,
@@ -16,7 +17,8 @@ import {
 } from "../../hooks/useAdmin";
 import type { Category, Product } from "../../types";
 import { CATEGORY_ICONS } from "../../utils/categoryIcons";
-import { formatPrice } from "../../utils/format";
+import { amountLabel, formatPrice, minAmountFor } from "../../utils/format";
+import { localizedDescription, localizedName } from "../../utils/localized";
 
 function ProductImage({
   product,
@@ -30,7 +32,9 @@ function ProductImage({
       <img
         src={product.image}
         alt={product.name}
-        className="h-12 w-12 rounded-lg bg-card object-cover"
+        loading="lazy"
+        decoding="async"
+        className="h-12 w-12 rounded-lg bg-surface object-cover"
       />
     );
   }
@@ -48,6 +52,7 @@ function ProductImage({
 }
 
 export function AdminProductsPage() {
+  const { t, language, unitName, money } = useLanguage();
   const { data: categories = [] } = useAdminCategories();
   const { data: products = [], isLoading } = useAdminProducts();
 
@@ -68,7 +73,7 @@ export function AdminProductsPage() {
       (product) =>
         (!categoryId || product.categoryId === categoryId) &&
         (!text ||
-          `${product.name} ${product.description}`
+          `${product.name} ${product.nameAr ?? ""} ${product.description}`
             .toLowerCase()
             .includes(text)),
     );
@@ -93,19 +98,19 @@ export function AdminProductsPage() {
   return (
     <>
       <PageHeader
-        title="Products"
-        text="Add, edit and remove what the store sells."
+        title={t("admin.products.title")}
+        text={t("admin.products.text")}
         action={
           <button
             onClick={() => openForm("new")}
             disabled={categories.length === 0}
             title={
-              categories.length === 0 ? "Create a category first" : undefined
+              categories.length === 0 ? t("admin.products.createCategoryFirst") : undefined
             }
-            className="flex h-10 items-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white hover:bg-brand-light disabled:opacity-50"
+            className="flex h-10 items-center gap-2 rounded-lg bg-brand px-4 text-sm font-bold text-white shadow-sm transition hover:bg-brand-dark disabled:opacity-50"
           >
             <Plus size={16} />
-            Add product
+            {t("admin.products.add")}
           </button>
         }
       />
@@ -114,13 +119,13 @@ export function AdminProductsPage() {
         <label className="relative min-w-[220px] flex-1 sm:max-w-sm">
           <Search
             size={16}
-            className="pointer-events-none absolute left-3 top-3 text-muted"
+            className="pointer-events-none absolute start-3 top-3 text-muted"
           />
           <input
             value={search}
             onChange={(event) => { setSearch(event.target.value); setPage(1); }}
-            placeholder="Search by name or description"
-            className={`${inputClass} pl-9`}
+            placeholder={t("admin.products.search")}
+            className={`${inputClass} ps-9`}
           />
         </label>
 
@@ -128,18 +133,18 @@ export function AdminProductsPage() {
           value={categoryId}
           onChange={(event) => { setCategoryId(event.target.value); setPage(1); }}
           className={`${inputClass} w-auto`}
-          aria-label="Filter by category"
+          aria-label={t("admin.products.filterCategory")}
         >
-          <option value="">All categories</option>
+          <option value="">{t("admin.products.allCategories")}</option>
           {categories.map((category) => (
             <option key={category.id} value={category.id}>
-              {category.name}
+              {localizedName(category, language)}
             </option>
           ))}
         </select>
 
         <span className="self-center text-sm text-muted">
-          {list.length} products
+          {t("admin.products.count", { count: list.length })}
         </span>
       </div>
 
@@ -147,75 +152,101 @@ export function AdminProductsPage() {
 
       {!isLoading && list.length === 0 && (
         <Message
-          title="No products found"
-          text="Change the search or filter, or add a new product."
+          title={t("admin.products.none")}
+          text={t("admin.products.noneText")}
         />
       )}
 
       {list.length > 0 && (
-        <div className="overflow-x-auto rounded-2xl border border-line bg-white">
-          <table className="w-full min-w-[1050px] text-left text-sm">
-            <thead className="bg-card text-xs text-muted">
+        <div className="overflow-x-auto rounded-2xl border border-edge bg-white shadow-sm">
+          <table className="w-full min-w-[1100px] text-start text-sm">
+            <thead className="bg-surface text-xs text-muted">
               <tr>
-                <th className="px-4 py-3">Image</th>
-                <th className="px-4 py-3">Product</th>
-                <th className="px-4 py-3">Description</th>
-                <th className="px-4 py-3">Category</th>
-                <th className="px-4 py-3">Price / unit</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3 text-start">{t("admin.products.colImage")}</th>
+                <th className="px-4 py-3 text-start">{t("admin.products.colProduct")}</th>
+                <th className="px-4 py-3 text-start">{t("admin.products.colDescription")}</th>
+                <th className="px-4 py-3 text-start">{t("admin.products.colCategory")}</th>
+                <th className="px-4 py-3 text-start">{t("admin.products.colPrice")}</th>
+                <th className="px-4 py-3 text-start">{t("admin.products.colDiscount")}</th>
+                <th className="px-4 py-3 text-start">{t("admin.products.colMin")}</th>
+                <th className="px-4 py-3 text-start">{t("admin.products.colStock")}</th>
+                <th className="px-4 py-3 text-end">{t("actions")}</th>
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-line">
-              {paginatedList.map((product) => (
-                <tr key={product.id}>
-                  <td className="px-4 py-3">
-                    <ProductImage
-                      product={product}
-                      category={categoryOf(product.categoryId)}
-                    />
-                  </td>
+            <tbody className="divide-y divide-edge">
+              {paginatedList.map((product) => {
+                const minAmount = minAmountFor(product);
+                const category = categoryOf(product.categoryId);
+                return (
+                  <tr key={product.id} className="transition hover:bg-surface/60">
+                    <td className="px-4 py-3">
+                      <ProductImage product={product} category={category} />
+                    </td>
 
-                  <td className="px-4 py-3 font-semibold">{product.name}</td>
+                    <td className="px-4 py-3 font-semibold">{localizedName(product, language)}</td>
 
-                  <td className="max-w-xs px-4 py-3 text-sm text-muted">
-                    <p className="line-clamp-2">
-                      {product.description || "No description"}
-                    </p>
-                  </td>
+                    <td className="max-w-xs px-4 py-3 text-sm text-muted">
+                      <p className="line-clamp-2">
+                        {localizedDescription(product, language) || t("admin.products.noDescription")}
+                      </p>
+                    </td>
 
-                  <td className="px-4 py-3">
-                    {categoryOf(product.categoryId)?.name ?? "Unknown"}
-                  </td>
+                    <td className="px-4 py-3">
+                      {category ? localizedName(category, language) : t("admin.products.unknown")}
+                    </td>
 
-                  <td className="whitespace-nowrap px-4 py-3 font-semibold">
-                    {formatPrice(product.price)} JOD
-                    <span className="ml-1 text-xs font-normal text-muted">
-                      / {product.unit === "kg" ? "0.25 kg" : product.unit}
-                    </span>
-                  </td>
+                    <td className="whitespace-nowrap px-4 py-3 font-semibold">
+                      {money(product.price)}
+                      <span className="ms-1 text-xs font-normal text-muted">
+                        / {product.unit === "kg" ? `0.25 ${unitName("kg")}` : unitName(product.unit)}
+                      </span>
+                    </td>
 
-                  <td className="px-4 py-3">
-                    <div className="flex justify-end gap-1">
-                      <button
-                        onClick={() => openForm(product)}
-                        aria-label={`Edit ${product.name}`}
-                        className="grid h-9 w-9 place-items-center rounded-lg hover:bg-card"
-                      >
-                        <Pencil size={16} />
-                      </button>
+                    <td className="px-4 py-3">
+                      {product.discount > 0 ? (
+                        <span className="rounded-full bg-[#EAF6EE] px-2.5 py-1 text-xs font-extrabold text-[#078A4B]">
+                          -{product.discount}%
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted">{t("admin.products.noDiscount")}</span>
+                      )}
+                    </td>
 
-                      <button
-                        onClick={() => openDelete(product)}
-                        aria-label={`Delete ${product.name}`}
-                        className="grid h-9 w-9 place-items-center rounded-lg text-sale hover:bg-red-50"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    <td className="whitespace-nowrap px-4 py-3">
+                      {product.minQuantity > 0
+                        ? amountLabel(minAmount, product.unit, unitName(product.unit))
+                        : <span className="text-xs text-muted">{t("admin.products.anyAmount")}</span>}
+                    </td>
+
+                    <td className="whitespace-nowrap px-4 py-3">
+                      <span className={product.stockQuantity <= 0 ? "font-bold text-sale" : ""}>
+                        {formatPrice(product.stockQuantity).replace(/\.00$/, "")} {unitName(product.unit)}
+                      </span>
+                    </td>
+
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end gap-1">
+                        <button
+                          onClick={() => openForm(product)}
+                          aria-label={t("admin.editLabel", { name: localizedName(product, language) })}
+                          className="grid h-9 w-9 place-items-center rounded-lg hover:bg-surface"
+                        >
+                          <Pencil size={16} />
+                        </button>
+
+                        <button
+                          onClick={() => openDelete(product)}
+                          aria-label={t("admin.deleteLabel", { name: localizedName(product, language) })}
+                          className="grid h-9 w-9 place-items-center rounded-lg text-sale hover:bg-red-50"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -223,19 +254,26 @@ export function AdminProductsPage() {
 
       {list.length > 0 && (
         <div className="mt-4 flex items-center justify-between gap-3 text-sm">
-          <span className="text-muted">Showing {Math.min((page - 1) * PAGE_SIZE + 1, list.length)}–{Math.min(page * PAGE_SIZE, list.length)} of {list.length} products</span>
+          <span className="text-muted">
+            {t("admin.showing", {
+              from: Math.min((page - 1) * PAGE_SIZE + 1, list.length),
+              to: Math.min(page * PAGE_SIZE, list.length),
+              total: list.length,
+            })}
+          </span>
           <div className="flex items-center gap-2">
-            <button type="button" disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="rounded-lg border border-line px-3 py-2 font-medium disabled:cursor-not-allowed disabled:opacity-40">Previous</button>
-            <span className="min-w-16 text-center text-muted">Page {page} of {pageCount}</span>
-            <button type="button" disabled={page >= pageCount} onClick={() => setPage((p) => Math.min(pageCount, p + 1))} className="rounded-lg border border-line px-3 py-2 font-medium disabled:cursor-not-allowed disabled:opacity-40">Next</button>
+            <button type="button" disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="rounded-lg border border-edge bg-white px-3 py-2 font-semibold disabled:cursor-not-allowed disabled:opacity-40">{t("admin.previous")}</button>
+            <span className="min-w-16 text-center text-muted">{t("admin.pageOf", { page, pages: pageCount })}</span>
+            <button type="button" disabled={page >= pageCount} onClick={() => setPage((p) => Math.min(pageCount, p + 1))} className="rounded-lg border border-edge bg-white px-3 py-2 font-semibold disabled:cursor-not-allowed disabled:opacity-40">{t("admin.next")}</button>
           </div>
         </div>
       )}
 
       {editing && (
         <Modal
-          title={editing === "new" ? "Add product" : "Edit product"}
+          title={editing === "new" ? t("admin.products.add") : t("admin.products.edit")}
           onClose={() => setEditing(null)}
+          size="lg"
         >
           <ProductForm
             initial={editing === "new" ? undefined : editing}
@@ -261,9 +299,9 @@ export function AdminProductsPage() {
 
       {deleting && (
         <ConfirmDialog
-          title="Delete product"
-          text={`Delete "${deleting.name}"? This cannot be undone.`}
-          confirmLabel="Delete"
+          title={t("admin.products.delete")}
+          text={t("admin.confirmDelete", { name: localizedName(deleting, language) })}
+          confirmLabel={t("delete")}
           busy={remove.isPending}
           error={remove.error?.message}
           onCancel={() => setDeleting(null)}

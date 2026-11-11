@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "react-toastify";
+import i18n from "../i18n";
 import { CUSTOMER_EXPIRED, clearCustomerToken } from "../services/apiClient";
 import type { Customer } from "../types/customer";
 
@@ -32,7 +33,7 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const onExpired = () => {
       setCustomer(null);
-      toast.error("Your session expired. Please sign in again.");
+      toast.error(i18n.t("auth.sessionExpired"));
     };
     window.addEventListener(CUSTOMER_EXPIRED, onExpired);
     return () => window.removeEventListener(CUSTOMER_EXPIRED, onExpired);
@@ -56,7 +57,7 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
     const next = afterSignIn.current;
     afterSignIn.current = null;
     if (next) next();
-    else toast.success(`Welcome, ${signedIn.name.split(" ")[0]}`);
+    else toast.success(i18n.t("auth.welcome", { name: signedIn.name.split(" ")[0] }));
   }, []);
 
   const logout = useCallback(() => {

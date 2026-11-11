@@ -1,91 +1,108 @@
-import { ClipboardList, LayoutDashboard, LogOut, Package, Store, Tags, Truck, Users } from "lucide-react";
+import { ClipboardList, Globe, LayoutDashboard, LogOut, Package, Store, Tags, Truck, Users } from "lucide-react";
+import { Suspense } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { STORE } from "../../config";
 import { useAuth } from "../../context/AuthContext";
-import { useLanguage } from "../../context/LanguageContext";
+import { useLanguage, type TranslationKey } from "../../context/LanguageContext";
+import { AdminFallback } from "../RouteFallbacks";
 
-const LINKS = [
-  { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/admin/orders", label: "Orders", icon: ClipboardList, end: false },
-  { to: "/admin/products", label: "Products", icon: Package, end: false },
-  { to: "/admin/categories", label: "Categories", icon: Tags, end: false },
-  { to: "/admin/users", label: "Users", icon: Users, end: false },
-  { to: "/admin/delivery", label: "Delivery", icon: Truck, end: false },
+const LINKS: { to: string; key: TranslationKey; icon: typeof Package; end: boolean }[] = [
+  { to: "/admin", key: "admin.nav.dashboard", icon: LayoutDashboard, end: true },
+  { to: "/admin/orders", key: "admin.nav.orders", icon: ClipboardList, end: false },
+  { to: "/admin/products", key: "admin.nav.products", icon: Package, end: false },
+  { to: "/admin/categories", key: "admin.nav.categories", icon: Tags, end: false },
+  { to: "/admin/users", key: "admin.nav.users", icon: Users, end: false },
+  { to: "/admin/delivery", key: "admin.nav.delivery", icon: Truck, end: false },
 ];
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
-  `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+  `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${
     isActive
-      ? "bg-white/10 text-accent"
-      : "text-green-100/80 hover:bg-white/10 hover:text-white"
+      ? "bg-emerald/15 text-emerald ring-1 ring-emerald/25"
+      : "text-white/70 hover:bg-white/10 hover:text-white"
   }`;
 
-// Wraps every admin page: green sidebar on desktop, top menu on mobile.
+const mobileLinkClass = ({ isActive }: { isActive: boolean }) =>
+  `whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition ${
+    isActive ? "bg-emerald/15 text-emerald" : "text-white/70 hover:bg-white/10 hover:text-white"
+  }`;
+
+const sideButton =
+  "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-white/70 transition hover:bg-white/10 hover:text-white";
+
+// Wraps every admin page. Dark green sidebar (same greens as the shop hero and footer) on desktop,
+// a top menu on mobile, and the soft mint page background of the storefront for the content.
 export function AdminLayout() {
   const { user, logout } = useAuth();
-  const { language, toggleLanguage, isArabic } = useLanguage();
-  const labels = isArabic ? ["لوحة التحكم","الطلبات","المنتجات","الفئات","المستخدمون","التوصيل"] : LINKS.map(x => x.label);
+  const { t, toggleLanguage } = useLanguage();
+
   return (
-    <div dir={language === "ar" ? "rtl" : "ltr"} className={`min-h-screen bg-card ${language === "ar" ? "lg:pr-64" : "lg:pl-64"}`}>
-      <aside className={`fixed inset-y-0 ${language === "ar" ? "right-0" : "left-0"} hidden w-64 flex-col bg-brand p-5 text-white lg:flex`}>
-        <Link
-          to="/admin"
-          className="mb-8 flex items-center gap-2 text-xl font-extrabold"
-        >
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-white text-base text-brand">
+    // The sidebar sits at the start of the page: left in English, right in Arabic (the <html dir> flips it).
+    <div className="min-h-screen bg-surface lg:ps-64">
+      <aside className="fixed inset-y-0 start-0 hidden w-64 flex-col overflow-hidden bg-gradient-to-b from-forest via-forest-2 to-forest-2 p-5 text-white lg:flex">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -start-16 -top-16 h-48 w-48 rounded-full bg-emerald/10 blur-3xl"
+        />
+
+        <Link to="/admin" className="relative mb-8 flex items-center gap-3">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand text-base font-extrabold text-white shadow-lg shadow-black/20">
             R
           </span>
-          {STORE.name}{" "}
-          <span className="text-xs font-semibold text-accent">Admin</span>
+          <span className="leading-tight">
+            <span className="block text-lg font-extrabold tracking-tight">{STORE.name}</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald">{t("admin.badge")}</span>
+          </span>
         </Link>
-        <nav className="flex flex-col gap-1" aria-label="Admin navigation">
-          {LINKS.map(({ to, label, icon: Icon, end }, index) => (
+
+        <nav className="relative flex flex-col gap-1" aria-label={t("admin.navLabel")}>
+          {LINKS.map(({ to, key, icon: Icon, end }) => (
             <NavLink key={to} to={to} end={end} className={linkClass}>
-              <Icon size={18} /> {label}
+              <Icon size={18} /> {t(key)}
             </NavLink>
           ))}
         </nav>
-        <div className="mt-auto space-y-1">
-          <button onClick={toggleLanguage} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-green-100/80 hover:bg-white/10">
-            {language === "ar" ? "English" : "العربية"}
+
+        <div className="relative mt-auto space-y-1 border-t border-white/10 pt-4">
+          <button onClick={toggleLanguage} className={sideButton}>
+            <Globe size={18} /> {t("admin.switchLang")}
           </button>
-          <Link
-            to="/"
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-green-100/80 hover:bg-white/10 hover:text-white"
-          >
-            <Store size={18} /> View store
+          <Link to="/" className={sideButton}>
+            <Store size={18} /> {t("admin.viewStore")}
           </Link>
-          <button
-            onClick={logout}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-green-100/80 hover:bg-white/10 hover:text-white"
-          >
-            <LogOut size={18} /> Sign out
+          <button onClick={logout} className={sideButton}>
+            <LogOut size={18} /> {t("signOut")}
           </button>
-          <p className="truncate px-3 pt-2 text-xs text-green-100/60">
+          <p className="truncate px-3 pt-2 text-xs text-white/45" dir="ltr">
             {user?.email}
           </p>
         </div>
       </aside>
 
       <nav
-        className="flex items-center gap-1 overflow-x-auto bg-brand px-3 py-2 lg:hidden"
-        aria-label="Admin navigation"
+        className="flex items-center gap-1 overflow-x-auto bg-gradient-to-r from-forest to-forest-2 px-3 py-2 lg:hidden"
+        aria-label={t("admin.navLabel")}
       >
-        {LINKS.map(({ to, label, end }, index) => (
-          <NavLink key={to} to={to} end={end} className={linkClass}>
-            {label}
+        {LINKS.map(({ to, key, end }) => (
+          <NavLink key={to} to={to} end={end} className={mobileLinkClass}>
+            {t(key)}
           </NavLink>
         ))}
-        <button onClick={toggleLanguage} className="px-3 text-sm text-green-100/80">{language === "ar" ? "English" : "العربية"}</button>\n        <Link to="/" className="ml-auto px-3 text-sm text-green-100/80">
-          Store
+        <button onClick={toggleLanguage} className="whitespace-nowrap px-3 text-sm font-semibold text-white/70 hover:text-white">
+          {t("admin.switchLang")}
+        </button>
+        <Link to="/" className="ms-auto whitespace-nowrap px-3 text-sm font-semibold text-white/70 hover:text-white">
+          {t("admin.store")}
         </Link>
-        <button onClick={logout} className="px-3 text-sm text-green-100/80">
-          Sign out
+        <button onClick={logout} className="whitespace-nowrap px-3 text-sm font-semibold text-white/70 hover:text-white">
+          {t("signOut")}
         </button>
       </nav>
 
-      <main className=" p-4 sm:p-6 lg:p-8">
-        <Outlet />
+      <main className="p-4 sm:p-6 lg:p-8">
+        <Suspense fallback={<AdminFallback />}>
+          <Outlet />
+        </Suspense>
       </main>
     </div>
   );

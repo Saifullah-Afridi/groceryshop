@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { env } from "../../config/env.js";
 import { httpError } from "../../lib/httpError.js";
+import { verificationEmail } from "../../lib/emailTemplates.js";
 import { sendMail } from "../../lib/mailer.js";
 import { generateOtp, hashOtp } from "../../lib/otp.js";
 import { prisma } from "../../lib/prisma.js";
@@ -25,12 +26,7 @@ const secondsUntilResend = (c) =>
 // Email a fresh code and save its hash. If the email fails, nothing is saved.
 async function sendOtp(customer) {
   const code = generateOtp();
-  await sendMail({
-    to: customer.email,
-    subject: `${code} is your Rakan verification code`,
-    text: `Your Rakan verification code is ${code}. It works for ${OTP_MINUTES} minutes.\nIf you did not create an account, you can ignore this email.`,
-    html: `<div style="font-family:Arial,sans-serif;max-width:420px"><h2 style="color:#138040">Verify your email</h2><p>Use this code to finish creating your Rakan account:</p><p style="font-size:32px;font-weight:bold;letter-spacing:6px">${code}</p><p style="color:#666">It works for ${OTP_MINUTES} minutes. If you did not create an account, ignore this email.</p></div>`,
-  });
+  await sendMail({ to: customer.email, ...verificationEmail({ code, minutes: OTP_MINUTES }) });
   await prisma.customer.update({
     where: { id: customer.id },
     data: {

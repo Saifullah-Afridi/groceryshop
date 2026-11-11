@@ -1,6 +1,10 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
-import type { Category, Product } from "../../types";
+import { useLanguage, type TranslationKey } from "../../context/LanguageContext";
+import type { Category, Product, Unit } from "../../types";
 import type { ProductInput } from "../../types/admin";
+import { MAX_ORDER_QUANTITY } from "../../config";
+import { QUARTER, clampDiscount, formatPrice, stepFor } from "../../utils/format";
+import { localizedName } from "../../utils/localized";
 import { FormButtons, FormField, inputClass } from "./FormField";
 
 interface Props {
@@ -12,6 +16,11 @@ interface Props {
   onCancel: () => void;
 }
 
+const UNITS: Unit[] = ["kg", "item", "pack", "dozen", "bunch", "head", "bottle"];
+
+// A number typed in the form is a multiple of the step (0.25 for kg, 1 for the rest)
+const isMultipleOf = (value: number, step: number) => Math.abs(value / step - Math.round(value / step)) < 1e-9;
+
 export function ProductForm({
   initial,
   categories,
@@ -20,17 +29,16 @@ export function ProductForm({
   onSubmit,
   onCancel,
 }: Props) {
+  const { t, language, unitName } = useLanguage();
   const [f, setF] = useState({
     name: initial?.name ?? "",
     description: initial?.description ?? "",
     categoryId: initial?.categoryId ?? categories[0]?.id ?? "",
     price: initial ? String(initial.price) : "",
-    unit: initial?.unit ?? "kg",
-    minQuantity:
-      initial?.minQuantity != null ? String(initial.minQuantity) : "",
+    discount: initial?.discount ? String(initial.discount) : "",
+    unit: (initial?.unit ?? "kg") as Unit,
+    minQuantity: initial?.minQuantity ? String(initial.minQuantity) : "",
     stockQuantity: initial?.stockQuantity != null ? String(initial.stockQuantity) : "0",
-    unitPrices: initial?.unitPrices ?? {},
-    unitDiscounts: initial?.unitDiscounts ?? {},
     image: initial?.image ?? "",
   });
 
@@ -66,25 +74,36 @@ export function ProductForm({
     }
   };
 
+  const isKg = f.unit === "kg";
+  const step = stepFor(f.unit);
+  const unitLabel = unitName(f.unit);
+
+  // A live preview of what the shopper will pay, so the discount is easy to check
+  const priceNumber = Number(f.price);
+  const discountNumber = clampDiscount(Number(f.discount));
+  const showPreview = priceNumber > 0 && discountNumber > 0;
+
   const submit = (e: FormEvent) => {
     e.preventDefault();
 
     const price = Number(f.price);
-    const minQuantity = Number(f.minQuantity);
+    const discount = f.discount.trim() ? Number(f.discount) : 0;
+    const minQuantity = f.minQuantity.trim() ? Number(f.minQuantity) : 0;
+    const stockQuantity = f.stockQuantity.trim() ? Number(f.stockQuantity) : 0;
     const found: Record<string, string> = {};
 
-    if (!f.name.trim()) found.name = "Enter a product name";
-    if (!f.description.trim()) {
-      found.description = "Enter a product description";
-    }
-    if (!f.categoryId) found.categoryId = "Choose a category";
-    if (!(price > 0)) {
-      found.price = "Price must be more than 0";
-    }
+    if (!f.name.trim()) found.name = t("admin.pf.errName");
+    if (!f.description.trim()) found.description = t("admin.pf.errDescription");
+    if (!f.categoryId) found.categoryId = t("admin.pf.errCategory");
+    if (!(price > 0)) found.price = t("admin.pf.errPrice");
+    if (!(discount >= 0 && discount <= 100)) found.discount = t("admin.pf.errDiscount");
 
-    if (f.minQuantity.trim() && !(minQuantity > 0)) {
-      found.minQuantity = "Minimum stock quantity must be more than 0";
+    // The minimum order goes up in the same steps the shopper buys in: 0.25 kg, or whole pieces.
+    if (f.minQuantity.trim() && !(minQuantity > 0 && isMultipleOf(minQuantity, step))) {
+      found.minQuantity = isKg ? t("admin.pf.errMinKg") : t("admin.pf.errMinUnit");
     }
+    if (minQuantity > MAX_ORDER_QUANTITY) found.minQuantity = t("admin.pf.errMinMax", { max: MAX_ORDER_QUANTITY });
+    if (!(stockQuantity >= 0)) found.stockQuantity = t("admin.pf.errStock");
 
     setErrors(found);
     if (Object.keys(found).length > 0) return;
@@ -95,11 +114,10 @@ export function ProductForm({
         description: f.description.trim(),
         categoryId: f.categoryId,
         price,
-        unit: f.unit as Product["unit"],
-        minQuantity: f.minQuantity.trim() ? minQuantity : 0,
-        stockQuantity: Math.max(0, Number(f.stockQuantity) || 0),
-        unitPrices: f.unitPrices,
-        unitDiscounts: f.unitDiscounts,
+        discount,
+        unit: f.unit,
+        minQuantity,
+        stockQuantity,
         image: f.image.trim(),
       },
       imageFile,
@@ -114,55 +132,57 @@ export function ProductForm({
         </p>
       )}
 
-      <FormField label="Product name" error={errors.name}>
+      <FormField label={t("admin.pf.name")} error={errors.name}>
         <input
           autoFocus
           value={f.name}
           onChange={set("name")}
           className={inputClass}
-          placeholder="Fresh Jordan Valley Tomatoes"
+          placeholder={t("admin.pf.namePlaceholder")}
         />
       </FormField>
 
-      <FormField label="Description" error={errors.description}>
+      <FormField label={t("admin.pf.description")} error={errors.description}>
         <textarea
           value={f.description}
           onChange={set("description")}
           className={`${inputClass} min-h-24 resize-y`}
-          placeholder="Describe the product..."
+          placeholder={t("admin.pf.descPlaceholder")}
           rows={3}
         />
       </FormField>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField label="Category" error={errors.categoryId}>
+        <FormField label={t("admin.pf.category")} error={errors.categoryId}>
           <select
             value={f.categoryId}
             onChange={set("categoryId")}
             className={inputClass}
           >
-            <option value="">Choose a category</option>
+            <option value="">{t("admin.pf.chooseCategory")}</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
-                {category.name}
+                {localizedName(category, language)}
               </option>
             ))}
           </select>
         </FormField>
 
-        <FormField label="Selling unit">
+        <FormField label={t("admin.pf.unit")}>
           <select value={f.unit} onChange={set("unit")} className={inputClass}>
-            <option value="kg">Kilogram (kg)</option>
-            <option value="item">Item / Piece</option>
-            <option value="pack">Pack</option>
-            <option value="dozen">Dozen (12 items)</option>
-            <option value="bunch">Bunch</option>
-            <option value="head">Head</option>
-            <option value="bottle">Bottle</option>
+            {UNITS.map((unit) => (
+              <option key={unit} value={unit}>
+                {t(`unit.option.${unit}` as TranslationKey)}
+              </option>
+            ))}
           </select>
         </FormField>
 
-        <FormField label={f.unit === "kg" ? "Price per 0.25 kg (JOD)" : `Price per ${f.unit} (JOD)`} error={errors.price}>
+        {/* ONE price. For kg it is the price of a quarter kilo; every other weight is worked out from it. */}
+        <FormField
+          label={isKg ? t("admin.pf.priceQuarter") : t("admin.pf.priceUnit", { unit: unitLabel })}
+          error={errors.price}
+        >
           <input
             type="number"
             step="0.01"
@@ -170,76 +190,90 @@ export function ProductForm({
             value={f.price}
             onChange={set("price")}
             className={inputClass}
-            placeholder="e.g. 0.50"
+            placeholder={t("admin.pf.pricePlaceholder")}
           />
         </FormField>
 
+        {/* ONE discount, in percent, taken off the whole price */}
         <FormField
-          label={`Minimum stock quantity (${f.unit})`}
-          error={errors.minQuantity}
+          label={t("admin.pf.discount")}
+          error={errors.discount}
+          hint={t("admin.pf.discountHint")}
         >
           <input
             type="number"
-            step={f.unit === "kg" ? "0.25" : "1"}
+            step="1"
             min="0"
-            value={f.minQuantity}
-            onChange={set("minQuantity")}
+            max="100"
+            value={f.discount}
+            onChange={set("discount")}
             className={inputClass}
-            placeholder="e.g. 5"
+            placeholder="0"
           />
         </FormField>
       </div>
 
+      {showPreview && (
+        <p className="rounded-lg bg-[#EAF6EE] px-3 py-2 text-sm font-semibold text-[#078A4B]">
+          {t("admin.pf.preview", {
+            final: formatPrice(priceNumber * (1 - discountNumber / 100)),
+            old: formatPrice(priceNumber),
+            per: isKg ? t("admin.pf.previewQuarter") : t("admin.pf.previewUnit", { unit: unitLabel }),
+          })}
+        </p>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField label={`Available stock (${f.unit})`}>
-          <input type="number" min="0" step={f.unit === "kg" ? "0.25" : "1"} value={f.stockQuantity}
-            onChange={set("stockQuantity")} className={inputClass} />
+        {/* The least a shopper can order. In steps of 0.25 kg, so 2.25 kg is fine and 2.1 kg is not. */}
+        <FormField
+          label={t("admin.pf.minOrder", { unit: unitLabel })}
+          error={errors.minQuantity}
+          hint={isKg ? t("admin.pf.minHintKg") : t("admin.pf.minHintUnit")}
+        >
+          <input
+            type="number"
+            step={step}
+            min="0"
+            max={MAX_ORDER_QUANTITY}
+            value={f.minQuantity}
+            onChange={set("minQuantity")}
+            className={inputClass}
+            placeholder={isKg ? String(QUARTER) : "1"}
+          />
         </FormField>
-        {f.unit === "kg" && (
-          <div className="rounded-xl border border-line p-3 sm:col-span-2">
-            <p className="mb-3 text-sm font-semibold">Weight-specific prices and discounts (JOD / %)</p>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {[0.25, 0.5, 0.75, 1, 2, 3].map((weight) => {
-                const key = String(weight);
-                return <div key={key} className="space-y-1">
-                  <label className="text-xs text-muted">{weight} kg price</label>
-                  <input type="number" min="0" step="0.01" placeholder="Auto"
-                    value={f.unitPrices[key] ?? ""}
-                    onChange={(e) => setF(v => ({...v, unitPrices:{...v.unitPrices, [key]: Number(e.target.value)}}))}
-                    className={inputClass} />
-                  <label className="text-xs text-muted">Discount %</label>
-                  <input type="number" min="0" max="100" step="1" placeholder="0"
-                    value={f.unitDiscounts[key] ?? ""}
-                    onChange={(e) => setF(v => ({...v, unitDiscounts:{...v.unitDiscounts, [key]: Number(e.target.value)}}))}
-                    className={inputClass} />
-                </div>;
-              })}
-            </div>
-            <p className="mt-2 text-xs text-muted">Leave a price blank to calculate it from the base quarter-kilogram price.</p>
-          </div>
-        )}
+
+        <FormField label={t("admin.pf.stock", { unit: unitLabel })} error={errors.stockQuantity}>
+          <input
+            type="number"
+            min="0"
+            step={step}
+            value={f.stockQuantity}
+            onChange={set("stockQuantity")}
+            className={inputClass}
+          />
+        </FormField>
       </div>
 
-      <FormField label="Product image">
+      <FormField label={t("admin.pf.image")}>
         <label
           htmlFor="product-image-upload"
-          className="relative block h-36 w-full cursor-pointer overflow-hidden rounded-xl border-2 border-dashed border-neutral-300 bg-neutral-50 hover:border-brand"
+          className="relative block h-36 w-full cursor-pointer overflow-hidden rounded-xl border-2 border-dashed border-edge bg-surface hover:border-brand"
         >
           {imagePreview ? (
             <img
               src={imagePreview}
-              alt="Product preview"
+              alt={t("admin.pf.preview.alt")}
               className="h-full w-full object-cover"
             />
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-muted">
-              Click to upload image
+              {t("admin.pf.upload")}
             </div>
           )}
 
           {imagePreview && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/25 text-sm font-medium text-white">
-              Click to change image
+              {t("admin.pf.change")}
             </div>
           )}
 

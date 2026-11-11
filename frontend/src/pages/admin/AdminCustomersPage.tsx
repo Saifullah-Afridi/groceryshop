@@ -6,11 +6,12 @@ import { CustomerForm } from "../../components/admin/CustomerForm";
 import { Modal } from "../../components/admin/Modal";
 import { PageHeader } from "../../components/admin/PageHeader";
 import { Message } from "../../components/Message";
+import { useLanguage } from "../../context/LanguageContext";
 import { useAdminCustomers, useDeleteCustomer, useSaveCustomer } from "../../hooks/useAdmin";
 import type { AdminCustomer } from "../../types/customer";
-import { formatDate } from "../../utils/format";
 
 export function AdminCustomersPage() {
+  const { t, date } = useLanguage();
   const { data: customers = [], isLoading } = useAdminCustomers();
   const save = useSaveCustomer();
   const remove = useDeleteCustomer();
@@ -23,39 +24,39 @@ export function AdminCustomersPage() {
   return (
     <>
       <PageHeader
-        title="Users"
-        text="Shopper accounts. Deleting a user keeps their past orders."
+        title={t("admin.users.title")}
+        text={t("admin.users.text")}
         action={
-          <button onClick={() => openForm("new")} className="flex h-10 items-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white hover:bg-brand-dark">
-            <Plus size={16} /> Add user
+          <button onClick={() => openForm("new")} className="flex h-10 items-center gap-2 rounded-lg bg-brand px-4 text-sm font-bold text-white shadow-sm transition hover:bg-brand-dark">
+            <Plus size={16} /> {t("admin.users.add")}
           </button>
         }
       />
 
       {isLoading && <TableSkeleton />}
-      {!isLoading && customers.length === 0 && <Message title="No users yet" text="Accounts created on the website appear here." />}
+      {!isLoading && customers.length === 0 && <Message title={t("admin.users.none")} text={t("admin.users.noneText")} />}
       {customers.length > 0 && (
-        <div className="overflow-x-auto rounded-2xl border border-line bg-white">
-          <table className="w-full min-w-[760px] text-left text-sm">
-            <thead className="bg-card text-xs text-muted">
-              <tr><th className="px-4 py-3">User</th><th className="px-4 py-3">Phone</th><th className="px-4 py-3">Address</th><th className="px-4 py-3">Email</th><th className="px-4 py-3 text-right">Actions</th></tr>
+        <div className="overflow-x-auto rounded-2xl border border-edge bg-white shadow-sm">
+          <table className="w-full min-w-[760px] text-start text-sm">
+            <thead className="bg-surface text-xs text-muted">
+              <tr><th className="px-4 py-3 text-start">{t("admin.users.colUser")}</th><th className="px-4 py-3 text-start">{t("admin.users.colPhone")}</th><th className="px-4 py-3 text-start">{t("admin.users.colAddress")}</th><th className="px-4 py-3 text-start">{t("admin.users.colEmail")}</th><th className="px-4 py-3 text-end">{t("actions")}</th></tr>
             </thead>
-            <tbody className="divide-y divide-line">
+            <tbody className="divide-y divide-edge">
               {customers.map((c) => (
                 <tr key={c.id}>
                   <td className="px-4 py-3"><p className="font-semibold">{c.name}</p><p className="text-xs text-muted">{c.email}</p></td>
-                  <td className="px-4 py-3">{c.phone || <span className="text-muted">Not set</span>}</td>
+                  <td className="px-4 py-3">{c.phone || <span className="text-muted">{t("admin.users.notSet")}</span>}</td>
                   <td className="px-4 py-3"><p className="line-clamp-2 max-w-xs">{c.address}</p></td>
                   <td className="px-4 py-3">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${c.emailVerified ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-700"}`}>
-                      {c.emailVerified ? "Verified" : "Not verified"}
+                      {c.emailVerified ? t("admin.users.verified") : t("admin.users.notVerified")}
                     </span>
-                    <p className="mt-1 text-xs text-muted">Joined {formatDate(c.createdAt)}</p>
+                    <p className="mt-1 text-xs text-muted">{t("admin.users.joined", { date: date(c.createdAt) })}</p>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
-                      <button onClick={() => openForm(c)} aria-label={`Edit ${c.name}`} className="grid h-9 w-9 place-items-center rounded-lg hover:bg-card"><Pencil size={16} /></button>
-                      <button onClick={() => openDelete(c)} aria-label={`Delete ${c.name}`} className="grid h-9 w-9 place-items-center rounded-lg text-sale hover:bg-red-50"><Trash2 size={16} /></button>
+                      <button onClick={() => openForm(c)} aria-label={t("admin.editLabel", { name: c.name })} className="grid h-9 w-9 place-items-center rounded-lg hover:bg-surface"><Pencil size={16} /></button>
+                      <button onClick={() => openDelete(c)} aria-label={t("admin.deleteLabel", { name: c.name })} className="grid h-9 w-9 place-items-center rounded-lg text-sale hover:bg-red-50"><Trash2 size={16} /></button>
                     </div>
                   </td>
                 </tr>
@@ -66,7 +67,7 @@ export function AdminCustomersPage() {
       )}
 
       {editing && (
-        <Modal title={editing === "new" ? "Add user" : "Edit user"} onClose={() => setEditing(null)}>
+        <Modal title={editing === "new" ? t("admin.users.add") : t("admin.users.edit")} onClose={() => setEditing(null)}>
           <CustomerForm
             initial={editing === "new" ? undefined : editing}
             saving={save.isPending}
@@ -78,9 +79,9 @@ export function AdminCustomersPage() {
       )}
       {deleting && (
         <ConfirmDialog
-          title="Delete user"
-          text={`Delete ${deleting.name} (${deleting.email})? They will no longer be able to sign in. Their past orders stay.`}
-          confirmLabel="Delete"
+          title={t("admin.users.delete")}
+          text={t("admin.users.deleteText", { name: deleting.name, email: deleting.email })}
+          confirmLabel={t("delete")}
           busy={remove.isPending}
           error={remove.error?.message}
           onCancel={() => setDeleting(null)}

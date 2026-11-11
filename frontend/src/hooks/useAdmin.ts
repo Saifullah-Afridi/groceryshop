@@ -29,7 +29,8 @@ import {
 import type { CategoryInput, ProductInput } from "../types/admin";
 import type { CustomerInput } from "../types/customer";
 import type { CityInput, OrderStatus } from "../types/order";
-import { STATUS_LABEL } from "../utils/orderStatus";
+import i18n from "../i18n";
+import { statusKey } from "../utils/orderStatus";
 
 export const useAdminCategories = () =>
   useQuery({ queryKey: ["admin", "categories"], queryFn: getAdminCategories });
@@ -46,6 +47,11 @@ function useChange<V>(
     mutationFn: run,
     onSuccess: (_data, variables) => {
       client.invalidateQueries({ queryKey: ["admin"] });
+      // the shop reads its own copies of this data, so refresh those as well
+      client.invalidateQueries({ queryKey: ["products"] });
+      client.invalidateQueries({ queryKey: ["product"] });
+      client.invalidateQueries({ queryKey: ["categories"] });
+      client.invalidateQueries({ queryKey: ["cities"] });
       toast.success(successMessage(variables));
     },
     onError: (error) => toast.error(error.message),
@@ -67,13 +73,13 @@ export const useSaveCategory = () =>
       id
         ? updateCategory(id, input, imageFile)
         : createCategory(input, imageFile),
-    ({ id }) => (id ? "Category updated" : "Category created"),
+    ({ id }) => i18n.t(id ? "admin.categories.updated" : "admin.categories.created"),
   );
 
 export const useDeleteCategory = () =>
   useChange(
     (id: string) => deleteCategory(id),
-    () => "Category deleted",
+    () => i18n.t("admin.categories.deleted"),
   );
 
 export const useSaveProduct = () =>
@@ -90,13 +96,13 @@ export const useSaveProduct = () =>
       id
         ? updateProduct(id, input, imageFile)
         : createProduct(input, imageFile),
-    ({ id }) => (id ? "Product updated" : "Product created"),
+    ({ id }) => i18n.t(id ? "admin.products.updated" : "admin.products.created"),
   );
 
 export const useDeleteProduct = () =>
   useChange(
     (id: number) => deleteProduct(id),
-    () => "Product deleted",
+    () => i18n.t("admin.products.deleted"),
   );
 
 // ---------- delivery cities ----------
@@ -106,12 +112,12 @@ export const useSaveCity = () =>
   useChange(
     ({ id, input }: { id?: number; input: CityInput }) =>
       id ? updateCity(id, input) : createCity(input),
-    ({ id }) => (id ? "City updated" : "City added"),
+    ({ id }) => i18n.t(id ? "admin.cities.updated" : "admin.cities.added"),
   );
 export const useDeleteCity = () =>
   useChange(
     (id: number) => deleteCity(id),
-    () => "City deleted",
+    () => i18n.t("admin.cities.deleted"),
   );
 
 // ---------- customers ----------
@@ -121,12 +127,12 @@ export const useSaveCustomer = () =>
   useChange(
     ({ id, input }: { id?: number; input: CustomerInput }) =>
       id ? updateCustomer(id, input) : createCustomer(input),
-    ({ id }) => (id ? "User updated" : "User created"),
+    ({ id }) => i18n.t(id ? "admin.users.updated" : "admin.users.created"),
   );
 export const useDeleteCustomer = () =>
   useChange(
     (id: number) => deleteCustomer(id),
-    () => "User deleted",
+    () => i18n.t("admin.users.deleted"),
   );
 
 // ---------- orders ----------
@@ -135,14 +141,13 @@ export const useAdminOrders = (query: { status?: OrderStatus; q?: string }) =>
     queryKey: ["admin", "orders", query],
     queryFn: () => getAdminOrders(query),
     placeholderData: keepPreviousData,
-    meta: { silent: true }, // typing in the search box must not trigger the full-page spinner
     refetchInterval: 30_000, // new orders show up without a refresh
   });
 export const useSetOrderStatus = () =>
   useChange(
     ({ id, status }: { id: number; status: OrderStatus }) =>
       updateOrderStatus(id, status),
-    ({ id, status }) => `Order #${id}: ${STATUS_LABEL[status]}`,
+    ({ id, status }) => i18n.t("admin.orders.statusChanged", { id, status: i18n.t(statusKey(status)) }),
   );
 
 export const useAdminDashboard = () =>

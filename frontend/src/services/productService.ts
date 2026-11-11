@@ -7,6 +7,7 @@ export function getProducts(query: ProductQuery = {}) {
   if (query.category) params.set("category", query.category);
   if (query.q) params.set("q", query.q);
   if (query.sort) params.set("sort", query.sort);
+  if (query.offersOnly) params.set("offers", "1"); // only products that have a discount
   return api<Product[]>(`/products?${params}`, { auth: "none" });
 }
 

@@ -11,7 +11,6 @@ export type ProductInput = Pick<
   | "unit"
   | "minQuantity"
   | "stockQuantity"
-  | "unitPrices"
-  | "unitDiscounts"
+  | "discount"
   | "image"
 >;

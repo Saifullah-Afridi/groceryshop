@@ -1,5 +1,8 @@
 import { prisma } from "../../lib/prisma.js";
 
+// A product is "low on stock" at or below this amount (kg for weighed products, pieces otherwise).
+const LOW_STOCK_AT = 5;
+
 export async function getDashboard() {
   const now = new Date();
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -13,7 +16,7 @@ export async function getDashboard() {
     prisma.order.findMany({ take: 8, orderBy: { createdAt: "desc" }, include: { items: true } }),
     prisma.customer.count({ where: { createdAt: { gte: start } } }),
   ]);
-  const lowStock = products.filter(p => Number(p.stockQuantity) > 0 && Number(p.minQuantity) > 0 && Number(p.stockQuantity) <= Number(p.minQuantity));
+  const lowStock = products.filter(p => Number(p.stockQuantity) > 0 && Number(p.stockQuantity) <= LOW_STOCK_AT);
   const outOfStock = products.filter(p => Number(p.stockQuantity) <= 0);
   const sold = new Map();
   for (const order of monthOrders) {

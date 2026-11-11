@@ -1,7 +1,12 @@
-import type { Category, Product } from "../types";
-export function localizedProductName(product: Product, language: string) {
-  return language === "ar" ? product.nameAr || product.name : product.name;
-}
-export function localizedCategoryName(category: Category, language: string) {
-  return language === "ar" ? category.nameAr || category.name : category.name;
-}
+// The database translation comes later. Until then nameAr / descriptionAr are empty and these fall back to English.
+type Named = { name: string; nameAr?: string; description?: string; descriptionAr?: string };
+
+export const localizedName = (item: Named, language: string) =>
+  language === "ar" ? item.nameAr || item.name : item.name;
+
+export const localizedDescription = (item: Named, language: string) =>
+  language === "ar" ? item.descriptionAr || item.description || "" : item.description || "";
+
+// Old names kept so existing imports keep working
+export const localizedProductName = localizedName;
+export const localizedCategoryName = localizedName;

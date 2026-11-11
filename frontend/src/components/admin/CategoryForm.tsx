@@ -5,6 +5,7 @@ import {
   type DragEvent,
   type FormEvent,
 } from "react";
+import { useLanguage } from "../../context/LanguageContext";
 import type { Category, IconKey } from "../../types";
 import type { CategoryInput } from "../../types/admin";
 import { CATEGORY_ICONS, ICON_KEYS } from "../../utils/categoryIcons";
@@ -25,6 +26,7 @@ export function CategoryForm({
   onSubmit,
   onCancel,
 }: Props) {
+  const { t } = useLanguage();
   const [name, setName] = useState(initial?.name ?? "");
   const [icon, setIcon] = useState<IconKey>(initial?.icon ?? "Carrot");
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -62,7 +64,7 @@ export function CategoryForm({
     const trimmedName = name.trim();
 
     if (!trimmedName) {
-      setNameError("Enter a category name");
+      setNameError(t("admin.cf.errName"));
       return;
     }
 
@@ -91,17 +93,17 @@ export function CategoryForm({
         </p>
       )}
 
-      <FormField label="Name" error={nameError}>
+      <FormField label={t("admin.cf.name")} error={nameError}>
         <input
           autoFocus
           value={name}
           onChange={(event) => setName(event.target.value)}
           className={inputClass}
-          placeholder="Vegetables"
+          placeholder={t("admin.cf.namePlaceholder")}
         />
       </FormField>
 
-      <FormField label="Category icon">
+      <FormField label={t("admin.cf.icon")}>
         <select
           value={icon}
           onChange={(event) => setIcon(event.target.value as IconKey)}
@@ -116,15 +118,15 @@ export function CategoryForm({
 
         <div className="mt-2 flex items-center gap-2 text-sm text-muted">
           <SelectedIcon size={20} />
-          <span>Selected icon: {icon}</span>
+          <span>{t("admin.cf.selectedIcon", { icon })}</span>
         </div>
       </FormField>
 
-      <FormField label="Category image">
+      <FormField label={t("admin.cf.image")}>
         <label
           onDragOver={(event) => event.preventDefault()}
           onDrop={handleDrop}
-          className="group relative flex min-h-44 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border bg-card transition hover:border-primary"
+          className="group relative flex min-h-44 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-edge bg-surface transition hover:border-brand"
         >
           <input
             type="file"
@@ -137,20 +139,20 @@ export function CategoryForm({
             <>
               <img
                 src={previewUrl}
-                alt={name || "Category preview"}
+                alt={name || t("admin.cf.previewAlt")}
                 className="absolute inset-0 h-full w-full object-cover"
               />
               <span className="absolute inset-0 grid place-items-center bg-black/40 text-sm font-medium text-white opacity-0 transition group-hover:opacity-100">
-                Click to change image
+                {t("admin.cf.change")}
               </span>
             </>
           ) : (
             <div className="flex flex-col items-center gap-2 px-4 py-6 text-center">
               <SelectedIcon size={32} />
               <span className="text-sm font-medium">
-                Click to upload or drag an image here
+                {t("admin.cf.uploadOrDrag")}
               </span>
-              <span className="text-xs text-muted">PNG, JPG, or WebP</span>
+              <span className="text-xs text-muted">{t("admin.cf.formats")}</span>
             </div>
           )}
         </label>

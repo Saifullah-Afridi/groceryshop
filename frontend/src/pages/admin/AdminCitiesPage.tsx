@@ -6,11 +6,12 @@ import { ConfirmDialog } from "../../components/admin/ConfirmDialog";
 import { Modal } from "../../components/admin/Modal";
 import { PageHeader } from "../../components/admin/PageHeader";
 import { Message } from "../../components/Message";
+import { useLanguage } from "../../context/LanguageContext";
 import { useAdminCities, useDeleteCity, useSaveCity } from "../../hooks/useAdmin";
 import type { City } from "../../types/order";
-import { formatPrice } from "../../utils/format";
 
 export function AdminCitiesPage() {
+  const { t, money } = useLanguage();
   const { data: cities = [], isLoading } = useAdminCities();
   const save = useSaveCity();
   const remove = useDeleteCity();
@@ -23,32 +24,32 @@ export function AdminCitiesPage() {
   return (
     <>
       <PageHeader
-        title="Delivery Fees"
-        text="Manage delivery areas and the fee charged for each city."
+        title={t("admin.cities.title")}
+        text={t("admin.cities.text")}
         action={
-          <button onClick={() => openForm("new")} className="flex h-10 items-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white hover:bg-brand-dark">
-            <Plus size={16} /> Add city
+          <button onClick={() => openForm("new")} className="flex h-10 items-center gap-2 rounded-lg bg-brand px-4 text-sm font-bold text-white shadow-sm transition hover:bg-brand-dark">
+            <Plus size={16} /> {t("admin.cities.add")}
           </button>
         }
       />
 
       {isLoading && <TableSkeleton />}
-      {!isLoading && cities.length === 0 && <Message title="No delivery cities yet" text="Shoppers cannot check out until you add at least one city." />}
+      {!isLoading && cities.length === 0 && <Message title={t("admin.cities.none")} text={t("admin.cities.noneText")} />}
       {cities.length > 0 && (
-        <div className="overflow-x-auto rounded-2xl border border-line bg-white">
-          <table className="w-full min-w-[520px] text-left text-sm">
-            <thead className="bg-card text-xs text-muted">
-              <tr><th className="px-4 py-3">City</th><th className="px-4 py-3">Delivery fee</th><th className="px-4 py-3 text-right">Actions</th></tr>
+        <div className="overflow-x-auto rounded-2xl border border-edge bg-white shadow-sm">
+          <table className="w-full min-w-[520px] text-start text-sm">
+            <thead className="bg-surface text-xs text-muted">
+              <tr><th className="px-4 py-3 text-start">{t("admin.cities.colCity")}</th><th className="px-4 py-3 text-start">{t("admin.cities.colFee")}</th><th className="px-4 py-3 text-end">{t("actions")}</th></tr>
             </thead>
-            <tbody className="divide-y divide-line">
+            <tbody className="divide-y divide-edge">
               {cities.map((c) => (
                 <tr key={c.id}>
                   <td className="px-4 py-3 font-semibold">{c.name}</td>
-                  <td className="px-4 py-3">{formatPrice(c.fee)} JOD</td>
+                  <td className="px-4 py-3">{money(c.fee)}</td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
-                      <button onClick={() => openForm(c)} aria-label={`Edit ${c.name}`} className="grid h-9 w-9 place-items-center rounded-lg hover:bg-card"><Pencil size={16} /></button>
-                      <button onClick={() => openDelete(c)} aria-label={`Delete ${c.name}`} className="grid h-9 w-9 place-items-center rounded-lg text-sale hover:bg-red-50"><Trash2 size={16} /></button>
+                      <button onClick={() => openForm(c)} aria-label={t("admin.editLabel", { name: c.name })} className="grid h-9 w-9 place-items-center rounded-lg hover:bg-surface"><Pencil size={16} /></button>
+                      <button onClick={() => openDelete(c)} aria-label={t("admin.deleteLabel", { name: c.name })} className="grid h-9 w-9 place-items-center rounded-lg text-sale hover:bg-red-50"><Trash2 size={16} /></button>
                     </div>
                   </td>
                 </tr>
@@ -59,7 +60,7 @@ export function AdminCitiesPage() {
       )}
 
       {editing && (
-        <Modal title={editing === "new" ? "Add city" : "Edit city"} onClose={() => setEditing(null)}>
+        <Modal title={editing === "new" ? t("admin.cities.add") : t("admin.cities.edit")} onClose={() => setEditing(null)}>
           <CityForm
             initial={editing === "new" ? undefined : editing}
             saving={save.isPending}
@@ -71,9 +72,9 @@ export function AdminCitiesPage() {
       )}
       {deleting && (
         <ConfirmDialog
-          title="Delete city"
-          text={`Delete ${deleting.name}? Old orders keep the fee they were placed with. To stop deliveries for a while, edit the city and turn delivery off instead.`}
-          confirmLabel="Delete"
+          title={t("admin.cities.delete")}
+          text={t("admin.cities.deleteText", { name: deleting.name })}
+          confirmLabel={t("delete")}
           busy={remove.isPending}
           error={remove.error?.message}
           onCancel={() => setDeleting(null)}

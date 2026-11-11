@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "react-toastify";
 import { useCustomerAuth } from "../../context/CustomerAuthContext";
+import { useLanguage } from "../../context/LanguageContext";
 import { resendCustomerCode, verifyCustomerEmail } from "../../services/customerService";
 import { FormField, inputClass } from "../admin/FormField";
 
@@ -14,6 +15,7 @@ interface Props {
 
 export function VerifyOtpForm({ email, notice, onBack }: Props) {
   const { signIn } = useCustomerAuth();
+  const { t } = useLanguage();
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -27,7 +29,7 @@ export function VerifyOtpForm({ email, notice, onBack }: Props) {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!/^\d{6}$/.test(code)) return setError("Enter the 6-digit code");
+    if (!/^\d{6}$/.test(code)) return setError(t("auth.errCode"));
     setError("");
     setBusy(true);
     try {
@@ -43,7 +45,7 @@ export function VerifyOtpForm({ email, notice, onBack }: Props) {
     try {
       await resendCustomerCode(email);
       setSeconds(RESEND_SECONDS);
-      toast.info("A new code is on its way");
+      toast.info(t("auth.newCodeSent"));
     } catch (err) {
       setError((err as Error).message);
     }
@@ -52,11 +54,11 @@ export function VerifyOtpForm({ email, notice, onBack }: Props) {
   return (
     <form onSubmit={submit} className="space-y-4">
       <p className="text-sm text-muted">
-        {notice || "We sent a 6-digit code to"} <b className="text-ink">{email}</b>. It works for 10 minutes.
+        {notice || t("auth.sentCode")} <b className="text-ink" dir="ltr">{email}</b>. {t("auth.codeValid")}
       </p>
       {error && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-sale">{error}</p>}
 
-      <FormField label="Verification code">
+      <FormField label={t("auth.codeLabel")}>
         <input
           autoFocus
           inputMode="numeric"
@@ -74,11 +76,11 @@ export function VerifyOtpForm({ email, notice, onBack }: Props) {
         disabled={busy}
         className="h-11 w-full rounded-lg bg-brand font-semibold text-white transition hover:bg-brand-dark disabled:opacity-50"
       >
-        {busy ? "Checking..." : "Verify and continue"}
+        {busy ? t("auth.checking") : t("auth.verifyBtn")}
       </button>
       <div className="flex items-center justify-between text-sm">
         <button type="button" onClick={onBack} className="text-muted hover:text-ink">
-          Use a different email
+          {t("auth.differentEmail")}
         </button>
         <button
           type="button"
@@ -86,7 +88,7 @@ export function VerifyOtpForm({ email, notice, onBack }: Props) {
           disabled={seconds > 0}
           className="font-semibold text-brand hover:underline disabled:text-muted disabled:no-underline"
         >
-          {seconds > 0 ? `Resend code in ${seconds}s` : "Resend code"}
+          {seconds > 0 ? t("auth.resendIn", { seconds }) : t("auth.resend")}
         </button>
       </div>
     </form>

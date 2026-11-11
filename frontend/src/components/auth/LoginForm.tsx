@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useCustomerAuth } from "../../context/CustomerAuthContext";
+import { useLanguage } from "../../context/LanguageContext";
 import type { ApiError } from "../../services/apiClient";
 import { loginCustomer } from "../../services/customerService";
 import { FormField, inputClass } from "../admin/FormField";
@@ -12,6 +13,7 @@ interface Props {
 
 export function LoginForm({ onRegister, onNeedsVerify }: Props) {
   const { signIn } = useCustomerAuth();
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -26,7 +28,7 @@ export function LoginForm({ onRegister, onNeedsVerify }: Props) {
     } catch (err) {
       const apiError = err as ApiError;
       if (apiError.code === "EMAIL_NOT_VERIFIED") {
-        onNeedsVerify(email.trim().toLowerCase(), "Your email is not verified yet. We sent you a new code.");
+        onNeedsVerify(email.trim().toLowerCase(), t("auth.notVerified"));
         return;
       }
       setError(apiError.message);
@@ -36,10 +38,10 @@ export function LoginForm({ onRegister, onNeedsVerify }: Props) {
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      <p className="text-sm text-muted">Sign in to add items to your cart and place orders.</p>
+      <p className="text-sm text-muted">{t("auth.loginHint")}</p>
       {error && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-sale">{error}</p>}
 
-      <FormField label="Email">
+      <FormField label={t("email")}>
         <input
           type="email"
           required
@@ -57,12 +59,12 @@ export function LoginForm({ onRegister, onNeedsVerify }: Props) {
         disabled={busy}
         className="h-11 w-full rounded-lg bg-brand font-semibold text-white transition hover:bg-brand-dark disabled:opacity-50"
       >
-        {busy ? "Signing in..." : "Sign in"}
+        {busy ? t("auth.signingIn") : t("auth.signInBtn")}
       </button>
       <p className="text-center text-sm text-muted">
-        New to Rakan?{" "}
+        {t("auth.newTo")}{" "}
         <button type="button" onClick={onRegister} className="font-semibold text-brand hover:underline">
-          Create an account
+          {t("auth.createAccountLink")}
         </button>
       </p>
     </form>

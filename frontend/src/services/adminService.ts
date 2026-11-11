@@ -25,6 +25,8 @@ function productForm(input: ProductInput, imageFile?: File | null) {
   form.append("price", String(input.price));
   form.append("unit", input.unit);
   form.append("minQuantity", String(input.minQuantity));
+  form.append("stockQuantity", String(input.stockQuantity));
+  form.append("discount", String(input.discount));
   if (imageFile) form.append("image", imageFile);
   return form;
 }

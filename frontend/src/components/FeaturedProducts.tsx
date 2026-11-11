@@ -145,6 +145,8 @@ export function FeaturedProducts() {
         <img
           src="/images/featured-top-bg.png"
           alt=""
+          loading="lazy"
+          decoding="async"
           className="h-full w-full object-cover object-center"
         />
 
@@ -159,6 +161,8 @@ export function FeaturedProducts() {
         <img
           src="/images/featured-bottom-bg.png"
           alt=""
+          loading="lazy"
+          decoding="async"
           className="h-full w-full object-cover object-right"
         />
         {/* Top Fade */}

@@ -41,9 +41,9 @@ export function ProductCardSkeleton() {
 }
 
 // Table loading placeholder
-export function TableSkeleton() {
+export function TableSkeleton({ rows = 5 }: { rows?: number }) {
   return (
-    <div className="w-full space-y-3" role="status" aria-label="Loading table">
+    <div className="w-full space-y-3" role="status" aria-busy="true">
       {/* Table Header */}
       <div className="flex gap-4 border-b border-gray-200 pb-3">
         <Skeleton className="h-4 w-1/4" />
@@ -53,7 +53,7 @@ export function TableSkeleton() {
       </div>
 
       {/* Table Rows */}
-      {Array.from({ length: 5 }, (_, i) => (
+      {Array.from({ length: rows }, (_, i) => (
         <div key={i} className="flex gap-4 py-2">
           <Skeleton className="h-8 w-1/4" />
           <Skeleton className="h-8 w-1/4" />

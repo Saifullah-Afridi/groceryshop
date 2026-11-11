@@ -32,10 +32,9 @@ model Product {
   farm        String   @default("")
   price       Decimal  @db.Decimal(10, 2) // JOD per 0.25 kg, as set in the admin form
   unit        String   @default("kg")
-  minQuantity Float    @default(0) // low-stock threshold in selling units
+  minQuantity Float    @default(0) // smallest amount a shopper can order (kg or pieces). 0 = one step (0.25 kg / 1 piece)
   stockQuantity Float  @default(0) // available inventory; kg for kg products
-  unitPrices  Json?    // optional per-weight price overrides in JOD: {"0.25":0.5,"0.5":0.9,...}
-  unitDiscounts Json?  // optional percentage discounts keyed by weight/unit quantity
+  discount    Float    @default(0) // one percentage discount (0-100) applied to the whole price
   image       String?
   categoryId  String
   category    Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)

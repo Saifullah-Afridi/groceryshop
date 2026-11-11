@@ -70,7 +70,7 @@ export function AccountMenu() {
             onClick={() => setOpen(false)}
             className="flex items-center gap-3 px-4 py-3 text-sm text-ink hover:bg-card"
           >
-            <ClipboardList size={17} /> My orders
+            <ClipboardList size={17} /> {t("myOrders")}
           </Link>
           <button
             role="menuitem"
@@ -78,9 +78,7 @@ export function AccountMenu() {
             onClick={() => {
               setOpen(false);
               logout();
-              toast.info(
-                isArabic ? "تم تسجيل الخروج" : "You have been signed out",
-              );
+              toast.info(t("auth.signedOut"));
             }}
             className="flex w-full items-center gap-3 border-t border-line px-4 py-3 text-left text-sm text-sale hover:bg-red-50"
           >

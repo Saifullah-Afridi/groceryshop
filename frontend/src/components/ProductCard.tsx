@@ -13,13 +13,20 @@ import {
   AlertCircle,
 } from "lucide-react";
 
+import { MAX_ORDER_QUANTITY } from "../config";
 import { useCart } from "../context/CartContext";
 import { useLanguage } from "../context/LanguageContext";
 import { useCategories } from "../hooks/useShopData";
-import { formatPrice, amountLabel } from "../utils/format";
+import { amountLabel, clampDiscount, formatPrice, minAmountFor, roundAmount } from "../utils/format";
+import { localizedDescription, localizedName } from "../utils/localized";
 import type { Product } from "../types";
 
-const WEIGHT_OPTIONS = [0.25, 0.5, 0.75, 1];
+// The quick weight buttons. When the admin sets a bigger minimum (for example 2.25 kg),
+// the buttons start from that minimum so a shopper can never pick less than it.
+const weightOptionsFor = (min: number) =>
+  min <= 0.25
+    ? [0.25, 0.5, 0.75, 1]
+    : [min, min + 0.25, min + 0.5, min + 1].map(roundAmount);
 
 const CATEGORY_ICONS = {
   Carrot,
@@ -32,32 +39,31 @@ const CATEGORY_ICONS = {
 
 export function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart();
-  const { t, isArabic } = useLanguage();
+  const { t, isArabic, language, unitName } = useLanguage();
   const { data: categories } = useCategories();
 
-  const [selectedWeight, setSelectedWeight] = useState(0.25);
-
   const isWeightBased = product.unit === "kg";
+
+  // The smallest amount the admin allows (0.25 kg / 1 piece unless a bigger minimum is set)
+  const minAmount = minAmountFor(product);
+  const hasCustomMinimum = minAmount > (isWeightBased ? 0.25 : 1);
+
+  const [chosenWeight, setSelectedWeight] = useState(minAmount);
+  const selectedWeight = Math.max(chosenWeight, minAmount);
+
   const outOfStock = product.stockQuantity <= 0;
   const lowStock = !outOfStock && product.stockQuantity <= 5;
 
-  // Price calculation
-  const weightKey = String(selectedWeight);
-
-  const basePrice = isWeightBased
-    ? (product.unitPrices?.[weightKey] ??
-      product.price * (selectedWeight / 0.25))
-    : product.price;
-
-  const discount = product.unitDiscounts?.[weightKey] ?? 0;
-  const displayPrice = basePrice * (1 - discount / 100);
+  // Price calculation: one price (per 0.25 kg or per unit) and one percentage discount
+  const discount = clampDiscount(product.discount);
+  const grossPrice = isWeightBased
+    ? product.price * (selectedWeight / 0.25)
+    : product.price * minAmount;
+  const displayPrice = grossPrice * (1 - discount / 100);
 
   // Language
-  const displayName = isArabic ? product.nameAr || product.name : product.name;
-
-  const displayDescription = isArabic
-    ? product.descriptionAr || product.description
-    : product.description;
+  const displayName = localizedName(product, language);
+  const displayDescription = localizedDescription(product, language);
 
   // Category image fallback
   const category = categories?.find((item) => item.id === product.categoryId);
@@ -69,8 +75,8 @@ export function ProductCard({ product }: { product: Product }) {
 
   // Weight controls
   const changeWeight = (amount: number) => {
-    setSelectedWeight((weight) =>
-      Math.max(0.25, Math.round((weight + amount) * 100) / 100),
+    setSelectedWeight(() =>
+      Math.min(MAX_ORDER_QUANTITY, Math.max(minAmount, roundAmount(selectedWeight + amount))),
     );
   };
 
@@ -78,7 +84,7 @@ export function ProductCard({ product }: { product: Product }) {
   const handleAddToCart = () => {
     if (outOfStock) return;
 
-    addItem(product, isWeightBased ? selectedWeight : 1);
+    addItem(product, isWeightBased ? selectedWeight : minAmount);
   };
 
   return (
@@ -93,6 +99,7 @@ export function ProductCard({ product }: { product: Product }) {
             src={product.image}
             alt={product.name}
             loading="lazy"
+            decoding="async"
             className="h-full w-full object-contain p-1 transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
@@ -108,19 +115,22 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
         )}
 
-        {/* Discount Badge */}
-        {discount > 0 && (
-          <span className="absolute left-3 top-3 rounded-full bg-[#078A4B] px-2.5 py-1 text-[10px] font-extrabold text-white shadow-sm sm:text-xs">
-            -{discount}%
-          </span>
-        )}
+        {/* Top-left labels: out of stock first, then the green discount label under it */}
+        {(outOfStock || discount > 0) && (
+          <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
+            {outOfStock && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-red-600 shadow-md sm:text-xs">
+                <AlertCircle size={12} />
+                {isArabic ? "نفد المخزون" : "Out of stock"}
+              </span>
+            )}
 
-        {/* Out of Stock Badge */}
-        {outOfStock && (
-          <span className="absolute bottom-2 left-3 inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-red-600 shadow-md sm:text-xs">
-            <AlertCircle size={12} />
-            {isArabic ? "نفد المخزون" : "Out of stock"}
-          </span>
+            {discount > 0 && (
+              <span className="rounded-full bg-[#078A4B] px-2.5 py-1 text-[10px] font-extrabold text-white shadow-sm sm:text-xs">
+                {t("cart.discountOff", { percent: discount })}
+              </span>
+            )}
+          </div>
         )}
 
         {/* Low Stock Badge */}
@@ -142,10 +152,8 @@ export function ProductCard({ product }: { product: Product }) {
         <p className="mt-1.5 line-clamp-2 min-h-[30px] text-[11px] leading-[15px] text-[#718078] sm:text-xs">
           {displayDescription ||
             (isWeightBased
-              ? isArabic
-                ? "السعر لكل 0.25 كغ"
-                : t("pricePerQuarter")
-              : `${t("pricePer")} ${product.unit}`)}
+              ? t("pricePerQuarter")
+              : `${t("pricePer")} ${unitName(product.unit)}`)}
         </p>
 
         {/* ================= WEIGHT SELECTION ================= */}
@@ -157,7 +165,7 @@ export function ProductCard({ product }: { product: Product }) {
 
             {/* Weight Options */}
             <div className="grid grid-cols-4 gap-1.5">
-              {WEIGHT_OPTIONS.map((weight) => {
+              {weightOptionsFor(minAmount).map((weight) => {
                 const selected = selectedWeight === weight;
 
                 return (
@@ -172,7 +180,7 @@ export function ProductCard({ product }: { product: Product }) {
                         : "border-[#DCE6DF] bg-white text-[#52675A] hover:border-[#078A4B] hover:bg-[#F0F8F2]"
                     } disabled:cursor-not-allowed disabled:opacity-50`}
                   >
-                    {amountLabel(weight, "kg")}
+                    {amountLabel(weight, "kg", unitName("kg"))}
                   </button>
                 );
               })}
@@ -188,7 +196,7 @@ export function ProductCard({ product }: { product: Product }) {
                 <button
                   type="button"
                   aria-label="Decrease weight"
-                  disabled={selectedWeight <= 0.25 || outOfStock}
+                  disabled={selectedWeight <= minAmount || outOfStock}
                   onClick={() => changeWeight(-0.25)}
                   className="grid h-7 w-7 place-items-center rounded-lg border border-[#E0EAE2] bg-white text-[#078A4B] transition hover:bg-[#EAF6EE] disabled:cursor-not-allowed disabled:opacity-30"
                 >
@@ -196,13 +204,13 @@ export function ProductCard({ product }: { product: Product }) {
                 </button>
 
                 <span className="text-xs font-extrabold text-[#123B2A] sm:text-sm">
-                  {amountLabel(selectedWeight, "kg")}
+                  {amountLabel(selectedWeight, "kg", unitName("kg"))}
                 </span>
 
                 <button
                   type="button"
                   aria-label="Increase weight"
-                  disabled={outOfStock}
+                  disabled={outOfStock || selectedWeight >= MAX_ORDER_QUANTITY}
                   onClick={() => changeWeight(0.25)}
                   className="grid h-7 w-7 place-items-center rounded-lg border border-[#E0EAE2] bg-white text-[#078A4B] transition hover:bg-[#EAF6EE] disabled:cursor-not-allowed disabled:opacity-30"
                 >
@@ -217,15 +225,22 @@ export function ProductCard({ product }: { product: Product }) {
         <div className="mt-auto flex items-center justify-between gap-2 border-t border-[#E8EEE9] pt-2.5 mt-2.5">
           {/* Price */}
           <div className="min-w-0">
-            <p className="text-base font-extrabold leading-tight text-[#123B2A] sm:text-lg">
-              {formatPrice(displayPrice)} JOD
+            <p className="flex flex-wrap items-baseline gap-x-1.5 text-base font-extrabold leading-tight text-[#123B2A] sm:text-lg">
+              <span>
+                {formatPrice(displayPrice)} {t("currency")}
+              </span>
+              {discount > 0 && (
+                <s className="text-[11px] font-semibold text-[#87958D] sm:text-xs">
+                  {formatPrice(grossPrice)}
+                </s>
+              )}
             </p>
 
-            {isWeightBased && (
+            {isWeightBased ? (
               <p className="mt-0.5 text-[10px] text-[#87958D] sm:text-xs">
-                {amountLabel(selectedWeight, "kg")}
+                {amountLabel(selectedWeight, "kg", unitName("kg"))}
               </p>
-            )}
+            ) : null}
           </div>
 
           {/* Add to Cart */}

@@ -5,6 +5,7 @@ import { Link, NavLink, useNavigate, useSearchParams } from "react-router-dom";
 
 import { STORE } from "../config";
 import { useCart } from "../context/CartContext";
+import { PRELOAD } from "../routes";
 import { useLanguage } from "../context/LanguageContext";
 
 import { AccountMenu } from "./AccountMenu";
@@ -62,7 +63,12 @@ export function Navbar() {
                 {t("home")}
               </NavLink>
 
-              <NavLink to="/shop" className={navClass}>
+              <NavLink
+                to="/shop"
+                className={navClass}
+                onMouseEnter={PRELOAD["/shop"]}
+                onFocus={PRELOAD["/shop"]}
+              >
                 {t("shop")}
               </NavLink>
             </nav>
@@ -88,7 +94,7 @@ export function Navbar() {
             <button
               type="button"
               onClick={toggleLanguage}
-              aria-label="Change language"
+              aria-label={t("language")}
               className="ml-auto flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-2.5 text-xs font-semibold text-neutral-800 transition hover:border-brand hover:bg-green-50 sm:ml-0 sm:h-11 sm:gap-2 sm:px-4 sm:text-sm"
             >
               <Globe size={17} />

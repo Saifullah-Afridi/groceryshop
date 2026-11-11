@@ -107,6 +107,8 @@ export function HeroBanner() {
       <img
         src="/images/hero-groceries.png"
         alt="Fresh vegetables, fruits and groceries"
+        decoding="async"
+        fetchPriority="high"
         className="absolute inset-0 h-full w-full object-cover object-center"
       />
 

@@ -1,20 +1,22 @@
 import { useState } from "react";
 import { useCustomerAuth } from "../../context/CustomerAuthContext";
+import { useLanguage, type TranslationKey } from "../../context/LanguageContext";
 import { Modal } from "../admin/Modal";
 import { LoginForm } from "./LoginForm";
 import { RegisterForm } from "./RegisterForm";
 import { VerifyOtpForm } from "./VerifyOtpForm";
 
 type Step = "login" | "register" | "verify";
-const TITLES: Record<Step, string> = {
-  login: "Sign in to continue",
-  register: "Create your account",
-  verify: "Verify your email",
+const TITLES: Record<Step, TranslationKey> = {
+  login: "auth.titleLogin",
+  register: "auth.titleRegister",
+  verify: "auth.titleVerify",
 };
 
 // The window that asks a shopper to sign in or create an account. Opened by openAuth().
 function AuthDialog() {
   const { closeAuth } = useCustomerAuth();
+  const { t } = useLanguage();
   const [step, setStep] = useState<Step>("login");
   const [email, setEmail] = useState("");
   const [notice, setNotice] = useState("");
@@ -26,7 +28,7 @@ function AuthDialog() {
   };
 
   return (
-    <Modal title={TITLES[step]} onClose={closeAuth} size={step === "register" ? "lg" : "md"}>
+    <Modal title={t(TITLES[step])} onClose={closeAuth} size={step === "register" ? "lg" : "md"}>
       {step === "login" && <LoginForm onRegister={() => setStep("register")} onNeedsVerify={goVerify} />}
       {step === "register" && <RegisterForm onLogin={() => setStep("login")} onRegistered={(e) => goVerify(e)} />}
       {step === "verify" && <VerifyOtpForm email={email} notice={notice} onBack={() => setStep("register")} />}

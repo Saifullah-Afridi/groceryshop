@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
+import i18n from "../i18n";
 import { cancelMyOrder, createOrder, getMyOrders } from "../services/orderService";
 import type { Order, OrderInput } from "../types/order";
 
@@ -21,7 +22,7 @@ export function useCancelMyOrder() {
     mutationFn: cancelMyOrder,
     onSuccess: (order) => {
       client.invalidateQueries({ queryKey: ["orders"] });
-      toast.success(`Order #${order.id} was cancelled`);
+      toast.success(i18n.t("orders.cancelled", { id: order.id }));
     },
   });
 }

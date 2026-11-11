@@ -12,6 +12,13 @@
   --color-muted: #5b6f61;
   --color-ink: #14281c;
   --color-sale: #e03131;
+
+  /* Admin panel: the same palette as the shop hero, footer and cards */
+  --color-forest: #031d1a; /* sidebar top, hero background */
+  --color-forest-2: #073b2b; /* sidebar bottom, footer */
+  --color-emerald: #00c98d; /* active link, highlights on dark green */
+  --color-surface: #f5faf7; /* main area background */
+  --color-edge: #dceae1; /* card and table borders */
 }
 html {
   scroll-behavior: smooth;
@@ -61,7 +68,7 @@ html[dir="rtl"] {
 html[dir="rtl"] body {
   direction: rtl;
   text-align: right;
-  font-family: "Tahoma", "Arial", sans-serif;
+  font-family: "Noto Sans Arabic", "Plus Jakarta Sans", Tahoma, Arial, sans-serif;
 }
 
 /* Keep icons and certain controls in their natural direction */
@@ -74,7 +81,7 @@ html[dir="rtl"] input[type="number"] {
 
 /* Arabic font rendering */
 html[lang="ar"] {
-  font-family: "Tahoma", "Arial", sans-serif;
+  font-family: "Noto Sans Arabic", "Plus Jakarta Sans", Tahoma, Arial, sans-serif;
 }
 
 /* Language changes should flip direction instantly, without sliding/fading content. */

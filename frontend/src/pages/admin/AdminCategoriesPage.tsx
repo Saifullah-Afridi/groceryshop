@@ -2,6 +2,8 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { TableSkeleton } from "../../components/Skeleton";
 import { useState } from "react";
 import { Message } from "../../components/Message";
+import { useLanguage } from "../../context/LanguageContext";
+import { localizedName } from "../../utils/localized";
 import {
   useAdminCategories,
   useAdminProducts,
@@ -16,6 +18,7 @@ import { CategoryForm } from "../../components/admin/CategoryForm";
 import { Modal } from "../../components/admin/Modal";
 
 export function AdminCategoriesPage() {
+  const { t, language } = useLanguage();
   const { data: categories = [], isLoading } = useAdminCategories();
   const { data: products = [] } = useAdminProducts();
   const save = useSaveCategory();
@@ -37,15 +40,15 @@ export function AdminCategoriesPage() {
   return (
     <>
       <PageHeader
-        title="Categories"
-        text="Create, update, and manage product categories."
+        title={t("admin.categories.title")}
+        text={t("admin.categories.text")}
         action={
           <button
             onClick={() => openForm("new")}
-            className="flex h-10 items-center gap-2 rounded-lg bg-brand px-4 text-sm font-semibold text-white hover:bg-brand-light"
+            className="flex h-10 items-center gap-2 rounded-lg bg-brand px-4 text-sm font-bold text-white shadow-sm transition hover:bg-brand-dark"
           >
             <Plus size={16} />
-            Add category
+            {t("admin.categories.add")}
           </button>
         }
       />
@@ -54,25 +57,25 @@ export function AdminCategoriesPage() {
 
       {!isLoading && categories.length === 0 && (
         <Message
-          title="No categories yet"
-          text="Add your first category to start adding products."
+          title={t("admin.categories.none")}
+          text={t("admin.categories.noneText")}
         />
       )}
 
       {categories.length > 0 && (
-        <div className="overflow-x-auto rounded-2xl border border-line bg-white">
-          <table className="w-full min-w-[760px] text-left text-sm">
-            <thead className="bg-card text-xs text-muted">
+        <div className="overflow-x-auto rounded-2xl border border-edge bg-white shadow-sm">
+          <table className="w-full min-w-[760px] text-start text-sm">
+            <thead className="bg-surface text-xs text-muted">
               <tr>
-                <th className="px-4 py-3">Category</th>
-                <th className="px-4 py-3">Image</th>
-                <th className="px-4 py-3">Icon</th>
-                <th className="px-4 py-3">Products</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3 text-start">{t("admin.categories.colCategory")}</th>
+                <th className="px-4 py-3 text-start">{t("admin.categories.colImage")}</th>
+                <th className="px-4 py-3 text-start">{t("admin.categories.colIcon")}</th>
+                <th className="px-4 py-3 text-start">{t("admin.categories.colProducts")}</th>
+                <th className="px-4 py-3 text-end">{t("actions")}</th>
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-line">
+            <tbody className="divide-y divide-edge">
               {categories.map((category) => {
                 const Icon = CATEGORY_ICONS[category.icon];
 
@@ -82,22 +85,24 @@ export function AdminCategoriesPage() {
 
                 return (
                   <tr key={category.id}>
-                    <td className="px-4 py-3 font-semibold">{category.name}</td>
+                    <td className="px-4 py-3 font-semibold">{localizedName(category, language)}</td>
 
                     <td className="px-4 py-3">
                       {category.image ? (
                         <img
                           src={category.image}
-                          alt={`${category.name} category`}
+                          alt={t("admin.categories.imageAlt", { name: localizedName(category, language) })}
+                          loading="lazy"
+                          decoding="async"
                           className="h-12 w-12 rounded-lg object-cover"
                         />
                       ) : (
-                        <span className="text-xs text-muted">No image</span>
+                        <span className="text-xs text-muted">{t("admin.categories.noImage")}</span>
                       )}
                     </td>
 
                     <td className="px-4 py-3">
-                      <div className="grid h-10 w-10 place-items-center rounded-lg bg-card text-brand">
+                      <div className="grid h-10 w-10 place-items-center rounded-lg bg-surface text-brand">
                         <Icon size={20} />
                       </div>
                     </td>
@@ -108,15 +113,15 @@ export function AdminCategoriesPage() {
                       <div className="flex justify-end gap-1">
                         <button
                           onClick={() => openForm(category)}
-                          aria-label={`Edit ${category.name}`}
-                          className="grid h-9 w-9 place-items-center rounded-lg hover:bg-card"
+                          aria-label={t("admin.editLabel", { name: localizedName(category, language) })}
+                          className="grid h-9 w-9 place-items-center rounded-lg hover:bg-surface"
                         >
                           <Pencil size={16} />
                         </button>
 
                         <button
                           onClick={() => openDelete(category)}
-                          aria-label={`Delete ${category.name}`}
+                          aria-label={t("admin.deleteLabel", { name: localizedName(category, language) })}
                           className="grid h-9 w-9 place-items-center rounded-lg text-sale hover:bg-red-50"
                         >
                           <Trash2 size={16} />
@@ -133,7 +138,7 @@ export function AdminCategoriesPage() {
 
       {editing && (
         <Modal
-          title={editing === "new" ? "Add category" : "Edit category"}
+          title={editing === "new" ? t("admin.categories.add") : t("admin.categories.edit")}
           onClose={() => setEditing(null)}
         >
           <CategoryForm
@@ -159,9 +164,9 @@ export function AdminCategoriesPage() {
 
       {deleting && (
         <ConfirmDialog
-          title="Delete category"
-          text={`Delete "${deleting.name}"? This cannot be undone.`}
-          confirmLabel="Delete"
+          title={t("admin.categories.delete")}
+          text={t("admin.confirmDelete", { name: localizedName(deleting, language) })}
+          confirmLabel={t("delete")}
           busy={remove.isPending}
           error={remove.error?.message}
           onCancel={() => setDeleting(null)}

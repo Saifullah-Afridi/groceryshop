@@ -36,6 +36,10 @@ function priceUnits(product, quantity) {
   if (quantity <= 0 || Math.abs(units - Math.round(units)) > 1e-9) {
     throw httpError(400, `${product.name}: the quantity must go up in steps of ${step}${product.unit === "kg" ? " kg" : ""}.`);
   }
+  // The minimum order set by the admin (0 means no extra minimum beyond one step).
+  if (product.minQuantity > 0 && quantity < product.minQuantity - 1e-9) {
+    throw httpError(400, `${product.name}: the minimum order is ${product.minQuantity}${product.unit === "kg" ? " kg" : ` ${product.unit}`}.`);
+  }
   if (quantity > MAX_QUANTITY) throw httpError(400, `${product.name}: the most you can order is ${MAX_QUANTITY}.`);
   return Math.round(units);
 }
@@ -58,12 +62,9 @@ export async function createOrder(customerId, input) {
   const lines = products.map((product) => {
     const quantity = Math.round(wanted.get(product.id) * 100) / 100;
     const units = priceUnits(product, quantity);
-    const key = String(quantity);
-    const configuredPrice = product.unit === "kg" ? product.unitPrices?.[key] : undefined;
-    const baseCents = configuredPrice != null
-      ? toCents(configuredPrice)
-      : toCents(product.price) * units;
-    const discountPercent = Number(product.unitDiscounts?.[key] ?? 0);
+    // One price per 0.25 kg (or per piece) and one percentage discount on the whole line.
+    const baseCents = toCents(product.price) * units;
+    const discountPercent = Number(product.discount ?? 0);
     const lineCents = Math.round(baseCents * (1 - discountPercent / 100));
     const unitCents = units ? Math.round(lineCents / units) : lineCents;
     return {
