@@ -45,17 +45,11 @@ createRoot(document.getElementById("root")!).render(
         </BrowserRouter>
 
         <ToastContainer
-          position="top-center"
-          autoClose={2600}
-          limit={2}
+          position="top-right"
+          autoClose={2500}
+          limit={3}
           closeOnClick
           pauseOnHover
-          newestOnTop
-          closeButton={false}
-          hideProgressBar
-          theme="light"
-          toastClassName="rakan-toast"
-          bodyClassName="rakan-toast-body"
         />
       </LanguageProvider>
     </QueryClientProvider>

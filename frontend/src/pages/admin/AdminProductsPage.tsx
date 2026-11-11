@@ -280,13 +280,12 @@ export function AdminProductsPage() {
             saving={save.isPending}
             error={save.error?.message}
             onCancel={() => setEditing(null)}
-            onSubmit={(input, imageFile, removeImage) =>
+            onSubmit={(input, imageFile) =>
               save.mutate(
                 {
                   id: editing === "new" ? undefined : editing.id,
                   input,
                   imageFile,
-                  removeImage,
                 },
                 {
                   onSuccess: () => setEditing(null),

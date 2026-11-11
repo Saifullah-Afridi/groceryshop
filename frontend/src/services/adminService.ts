@@ -6,7 +6,7 @@ import { api } from "./apiClient";
 
 // Every function here is one API call. Images are sent as multipart form data.
 
-function categoryForm(input: CategoryInput, imageFile?: File | null, removeImage = false) {
+function categoryForm(input: CategoryInput, imageFile?: File | null) {
   const form = new FormData();
   form.append("name", input.name);
   form.append("description", input.description ?? "");
@@ -14,11 +14,10 @@ function categoryForm(input: CategoryInput, imageFile?: File | null, removeImage
   form.append("color", input.color);
   form.append("tint", input.tint);
   if (imageFile) form.append("image", imageFile);
-  if (removeImage) form.append("removeImage", "true");
   return form;
 }
 
-function productForm(input: ProductInput, imageFile?: File | null, removeImage = false) {
+function productForm(input: ProductInput, imageFile?: File | null) {
   const form = new FormData();
   form.append("name", input.name);
   form.append("description", input.description);
@@ -29,7 +28,6 @@ function productForm(input: ProductInput, imageFile?: File | null, removeImage =
   form.append("stockQuantity", String(input.stockQuantity));
   form.append("discount", String(input.discount));
   if (imageFile) form.append("image", imageFile);
-  if (removeImage) form.append("removeImage", "true");
   return form;
 }
 
@@ -39,8 +37,8 @@ export const getAdminCategories = () => api<Category[]>("/categories");
 export const createCategory = (input: CategoryInput, imageFile?: File | null) =>
   api<Category>("/categories", { method: "POST", body: categoryForm(input, imageFile) });
 
-export const updateCategory = (id: string, input: CategoryInput, imageFile?: File | null, removeImage = false) =>
-  api<Category>(`/categories/${encodeURIComponent(id)}`, { method: "PUT", body: categoryForm(input, imageFile, removeImage) });
+export const updateCategory = (id: string, input: CategoryInput, imageFile?: File | null) =>
+  api<Category>(`/categories/${encodeURIComponent(id)}`, { method: "PUT", body: categoryForm(input, imageFile) });
 
 export const deleteCategory = (id: string) => api<void>(`/categories/${encodeURIComponent(id)}`, { method: "DELETE" });
 
@@ -50,8 +48,8 @@ export const getAdminProducts = () => api<Product[]>("/products");
 export const createProduct = (input: ProductInput, imageFile?: File | null) =>
   api<Product>("/products", { method: "POST", body: productForm(input, imageFile) });
 
-export const updateProduct = (id: number, input: ProductInput, imageFile?: File | null, removeImage = false) =>
-  api<Product>(`/products/${id}`, { method: "PUT", body: productForm(input, imageFile, removeImage) });
+export const updateProduct = (id: number, input: ProductInput, imageFile?: File | null) =>
+  api<Product>(`/products/${id}`, { method: "PUT", body: productForm(input, imageFile) });
 
 export const deleteProduct = (id: number) => api<void>(`/products/${id}`, { method: "DELETE" });
 
@@ -63,7 +61,6 @@ export const deleteCity = (id: number) => api<void>(`/cities/${id}`, { method: "
 
 // ---------- customers ----------
 export const getAdminCustomers = () => api<AdminCustomer[]>("/customers");
-export const getAdminCustomerHistory = (id: number) => api<{ customer: AdminCustomer; orders: Order[] }>(`/customers/${id}/history`);
 export const createCustomer = (input: CustomerInput) => api<AdminCustomer>("/customers", { method: "POST", body: input });
 export const updateCustomer = (id: number, input: CustomerInput) =>
   api<AdminCustomer>(`/customers/${id}`, { method: "PUT", body: { ...input, password: input.password || undefined } });

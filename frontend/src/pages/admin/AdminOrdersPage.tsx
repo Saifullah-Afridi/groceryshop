@@ -51,19 +51,15 @@ export function AdminOrdersPage() {
                   <td className="px-4 py-3">{o.city}</td>
                   <td className="px-4 py-3 font-semibold">{money(o.total)}</td>
                   <td className="px-4 py-3">
-                    {o.status === "CANCELLED" ? (
-                      <span className={`inline-flex rounded-full px-3 py-1.5 text-xs font-semibold ${STATUS_STYLE[o.status]}`}>{t(statusKey(o.status))}</span>
-                    ) : (
-                      <select
-                        value={o.status}
-                        disabled={setOrderStatus.isPending}
-                        onChange={(e) => setOrderStatus.mutate({ id: o.id, status: e.target.value as OrderStatus })}
-                        aria-label={t("admin.orders.statusOf", { id: o.id })}
-                        className={`cursor-pointer rounded-full border-0 px-3 py-1.5 text-xs font-semibold ${STATUS_STYLE[o.status]}`}
-                      >
-                        {ORDER_STATUSES.map((s) => <option key={s} value={s}>{t(statusKey(s))}</option>)}
-                      </select>
-                    )}
+                    <select
+                      value={o.status}
+                      disabled={setOrderStatus.isPending}
+                      onChange={(e) => setOrderStatus.mutate({ id: o.id, status: e.target.value as OrderStatus })}
+                      aria-label={t("admin.orders.statusOf", { id: o.id })}
+                      className={`cursor-pointer rounded-full border-0 px-3 py-1.5 text-xs font-semibold ${STATUS_STYLE[o.status]}`}
+                    >
+                      {ORDER_STATUSES.map((s) => <option key={s} value={s}>{t(statusKey(s))}</option>)}
+                    </select>
                   </td>
                   <td className="px-4 py-3 text-end">
                     <button onClick={() => setViewing(o)} aria-label={t("admin.orders.viewOrder", { id: o.id })} className="grid h-9 w-9 place-items-center rounded-lg hover:bg-surface"><Eye size={16} /></button>

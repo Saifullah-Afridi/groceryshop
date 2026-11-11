@@ -16,24 +16,19 @@ const fields = z.object({
   minQuantity: z.coerce.number().min(0, "Cannot be negative").max(MAX_QUANTITY, `Stock alert threshold cannot be more than ${MAX_QUANTITY}`).default(0),
   stockQuantity: z.coerce.number().min(0).default(0),
   discount: z.coerce.number().min(0, "Discount cannot be negative").max(100, "Discount cannot be more than 100%").default(0),
-  removeImage: z.preprocess((v) => v === "true" || v === true, z.boolean()).optional().default(false),
 });
 
 const checkStockThreshold = (data, ctx) => {
+  if (data.minQuantity === undefined || data.minQuantity === 0) return;
   const step = (data.unit ?? "kg") === "kg" ? 0.25 : 1;
-  const validateStep = (value, path, label) => {
-    if (value === undefined || value === 0) return;
-    const steps = value / step;
-    if (Math.abs(steps - Math.round(steps)) > 1e-9) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: [path],
-        message: step === 0.25 ? `${label} must use 0.25 kg steps.` : `${label} must be a whole number.`,
-      });
-    }
-  };
-  validateStep(data.minQuantity, "minQuantity", "Stock alert threshold");
-  validateStep(data.stockQuantity, "stockQuantity", "Available stock");
+  const steps = data.minQuantity / step;
+  if (Math.abs(steps - Math.round(steps)) > 1e-9) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["minQuantity"],
+      message: step === 0.25 ? "Stock alert threshold must use 0.25 kg steps." : "Stock alert threshold must be a whole number.",
+    });
+  }
 };
 
 export const createProductSchema = fields.superRefine(checkStockThreshold);

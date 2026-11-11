@@ -102,8 +102,6 @@ model Order {
 
   @@index([customerId])
   @@index([status])
-  @@index([createdAt])
-  @@index([customerId, createdAt])
 }
 
 model OrderItem {

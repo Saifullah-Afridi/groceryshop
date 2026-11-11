@@ -50,11 +50,18 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const setLanguage = useCallback(
     (next: Language) => {
       if (next === language) return;
-      // Switching should flip direction instantly, without content sliding around.
+      // Save synchronously before changing language so a fast refresh cannot
+      // race the React effect and restore the previous locale.
+      try {
+        localStorage.setItem(LANGUAGE_KEY, next);
+      } catch {
+        // Storage may be unavailable.
+      }
       const root = document.documentElement;
       root.classList.add("language-switch-no-motion");
-      void i18n.changeLanguage(next);
-      window.setTimeout(() => root.classList.remove("language-switch-no-motion"), 0);
+      void i18n.changeLanguage(next).finally(() => {
+        window.setTimeout(() => root.classList.remove("language-switch-no-motion"), 0);
+      });
     },
     [language],
   );

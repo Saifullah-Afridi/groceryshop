@@ -17,7 +17,6 @@ import {
   getAdminCategories,
   getAdminCities,
   getAdminCustomers,
-  getAdminCustomerHistory,
   getAdminOrders,
   getAdminProducts,
   getDashboard,
@@ -66,15 +65,13 @@ export const useSaveCategory = () =>
       id,
       input,
       imageFile,
-      removeImage,
     }: {
       id?: string;
       input: CategoryInput;
       imageFile?: File | null;
-      removeImage?: boolean;
     }) =>
       id
-        ? updateCategory(id, input, imageFile, removeImage)
+        ? updateCategory(id, input, imageFile)
         : createCategory(input, imageFile),
     ({ id }) => i18n.t(id ? "admin.categories.updated" : "admin.categories.created"),
   );
@@ -91,15 +88,13 @@ export const useSaveProduct = () =>
       id,
       input,
       imageFile,
-      removeImage,
     }: {
       id?: number;
       input: ProductInput;
       imageFile?: File | null;
-      removeImage?: boolean;
     }) =>
       id
-        ? updateProduct(id, input, imageFile, removeImage)
+        ? updateProduct(id, input, imageFile)
         : createProduct(input, imageFile),
     ({ id }) => i18n.t(id ? "admin.products.updated" : "admin.products.created"),
   );
@@ -128,7 +123,6 @@ export const useDeleteCity = () =>
 // ---------- customers ----------
 export const useAdminCustomers = () =>
   useQuery({ queryKey: ["admin", "customers"], queryFn: getAdminCustomers });
-export const useAdminCustomerHistory = (id: number | null) => useQuery({ queryKey: ["admin", "customer-history", id], queryFn: () => getAdminCustomerHistory(id!), enabled: id != null });
 export const useSaveCustomer = () =>
   useChange(
     ({ id, input }: { id?: number; input: CustomerInput }) =>

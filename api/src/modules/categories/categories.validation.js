@@ -11,7 +11,6 @@ const fields = z.object({
   icon: z.enum(ICONS).default("Carrot"),
   color: hexColor.default("#138040"),
   tint: hexColor.default("#dff3e0"),
-  removeImage: z.preprocess((v) => v === "true" || v === true, z.boolean()).optional().default(false),
 });
 
 export const createCategorySchema = fields;

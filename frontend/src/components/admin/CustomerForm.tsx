@@ -53,7 +53,7 @@ export function CustomerForm({ initial, saving, error, onSubmit, onCancel }: Pro
         </FormField>
       </div>
       <FormField label={t("email")} error={errors.email}>
-        <input type="email" required pattern="^[^\s@]+@[^\s@]+\.[^\s@]{2,}$" value={f.email} onChange={(e) => set("email")(e.target.value)} className={inputClass} />
+        <input type="email" value={f.email} onChange={(e) => set("email")(e.target.value)} className={inputClass} />
       </FormField>
       <FormField label={t("address")} error={errors.address}>
         <textarea rows={2} value={f.address} onChange={(e) => set("address")(e.target.value)} className={`${inputClass} h-auto py-2`} />

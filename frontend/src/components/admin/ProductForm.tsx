@@ -1,5 +1,4 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
-import { Trash2 } from "lucide-react";
 import { useLanguage, type TranslationKey } from "../../context/LanguageContext";
 import type { Category, Product, Unit } from "../../types";
 import type { ProductInput } from "../../types/admin";
@@ -13,7 +12,7 @@ interface Props {
   categories: Category[];
   saving: boolean;
   error?: string;
-  onSubmit: (input: ProductInput, imageFile: File | null, removeImage: boolean) => void;
+  onSubmit: (input: ProductInput, imageFile: File | null) => void;
   onCancel: () => void;
 }
 
@@ -41,7 +40,6 @@ export function ProductForm({
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [removeImage, setRemoveImage] = useState(false);
   const [imagePreview, setImagePreview] = useState(initial?.image ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -67,7 +65,6 @@ export function ProductForm({
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     setImageFile(file);
-    if (file) setRemoveImage(false);
 
     if (!file) {
       setImagePreview(f.image);
@@ -104,10 +101,7 @@ export function ProductForm({
       found.minQuantity = isKg ? t("admin.pf.errStockThresholdKg") : t("admin.pf.errStockThresholdUnit");
     }
     if (minQuantity > MAX_ORDER_QUANTITY) found.minQuantity = t("admin.pf.errStockThresholdMax", { max: MAX_ORDER_QUANTITY });
-    const stockSteps = stockQuantity / step;
-    if (!(stockQuantity >= 0) || !Number.isFinite(stockQuantity) || Math.abs(stockSteps - Math.round(stockSteps)) > 1e-9) {
-      found.stockQuantity = isKg ? t("admin.pf.errStockThresholdKg") : t("admin.pf.errStockThresholdUnit");
-    }
+    if (!(stockQuantity >= 0)) found.stockQuantity = t("admin.pf.errStock");
 
     setErrors(found);
     if (Object.keys(found).length > 0) return;
@@ -125,7 +119,6 @@ export function ProductForm({
         image: f.image.trim(),
       },
       imageFile,
-      removeImage,
     );
   };
 
@@ -260,7 +253,6 @@ export function ProductForm({
       </div>
 
       <FormField label={t("admin.pf.image")}>
-        <div className="space-y-2">
         <label
           htmlFor="product-image-upload"
           className="relative block h-36 w-full cursor-pointer overflow-hidden rounded-xl border-2 border-dashed border-edge bg-surface hover:border-brand"
@@ -291,12 +283,6 @@ export function ProductForm({
             className="hidden"
           />
         </label>
-        {(imagePreview || (initial?.image && !removeImage)) && (
-          <button type="button" onClick={() => { setImageFile(null); setImagePreview(""); setRemoveImage(true); }} className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50">
-            <Trash2 size={14} /> {t("admin.pf.removeImage")}
-          </button>
-        )}
-        </div>
       </FormField>
 
       <FormButtons saving={saving} onCancel={onCancel} />

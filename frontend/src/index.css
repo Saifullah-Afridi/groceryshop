@@ -101,7 +101,3 @@ html.language-switch-no-motion *::after {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
-
-/* Compact, centered notifications */
-.rakan-toast { border: 1px solid #e3ebe5 !important; border-radius: 14px !important; box-shadow: 0 12px 32px rgba(18, 59, 42, .14) !important; min-height: 48px !important; padding: 10px 16px !important; width: min(420px, calc(100vw - 32px)) !important; font-size: 13px !important; font-weight: 600 !important; }
-.rakan-toast-body { padding: 0 !important; margin: 0 !important; }

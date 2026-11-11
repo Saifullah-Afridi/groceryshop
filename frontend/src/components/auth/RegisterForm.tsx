@@ -75,7 +75,7 @@ export function RegisterForm({ onLogin, onRegistered }: Props) {
           />
         </FormField>
         <FormField label={t("email")} error={errors.email}>
-          <input type="email" required pattern="^[^\s@]+@[^\s@]+\.[^\s@]{2,}$" autoComplete="username" value={f.email} onChange={(e) => set("email")(e.target.value)} className={inputClass} />
+          <input type="email" autoComplete="username" value={f.email} onChange={(e) => set("email")(e.target.value)} className={inputClass} />
         </FormField>
         <PasswordField
           value={f.password}
