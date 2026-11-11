@@ -146,12 +146,13 @@ export function AdminCategoriesPage() {
             saving={save.isPending}
             error={save.error?.message}
             onCancel={() => setEditing(null)}
-            onSubmit={(input, imageFile) =>
+            onSubmit={(input, imageFile, removeImage) =>
               save.mutate(
                 {
                   id: editing === "new" ? undefined : editing.id,
                   input,
                   imageFile,
+                  removeImage,
                 },
                 {
                   onSuccess: () => setEditing(null),

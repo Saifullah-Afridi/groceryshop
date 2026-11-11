@@ -44,6 +44,7 @@ export function ProductCard({ product }: { product: Product }) {
   const [selectedWeight, setSelectedWeight] = useState(minimumStep);
 
   const outOfStock = product.stockQuantity <= 0;
+  const maxAvailable = Math.min(MAX_ORDER_QUANTITY, Math.max(0, product.stockQuantity));
   const lowStock = !outOfStock && product.minQuantity > 0 && product.stockQuantity <= product.minQuantity;
 
   // Price calculation: one price (per 0.25 kg or per unit) and one percentage discount
@@ -93,7 +94,7 @@ export function ProductCard({ product }: { product: Product }) {
             alt={product.name}
             loading="lazy"
             decoding="async"
-            className="h-full w-full object-contain p-1 transition-transform duration-500 group-hover:scale-105"
+            className="block h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
           <div className="grid h-full w-full place-items-center bg-gradient-to-br from-[#F5F9F3] to-[#EAF3E9]">
@@ -165,7 +166,7 @@ export function ProductCard({ product }: { product: Product }) {
                   <button
                     key={weight}
                     type="button"
-                    disabled={outOfStock}
+                    disabled={outOfStock || weight > maxAvailable}
                     onClick={() => setSelectedWeight(weight)}
                     className={`rounded-lg border px-1 py-1.5 text-[9px] font-bold transition-all sm:text-[10px] ${
                       selected
@@ -203,7 +204,7 @@ export function ProductCard({ product }: { product: Product }) {
                 <button
                   type="button"
                   aria-label={t("product.increaseWeight")}
-                  disabled={outOfStock || selectedWeight >= MAX_ORDER_QUANTITY}
+                  disabled={outOfStock || selectedWeight >= maxAvailable}
                   onClick={() => changeWeight(0.25)}
                   className="grid h-7 w-7 place-items-center rounded-lg border border-[#E0EAE2] bg-white text-[#078A4B] transition hover:bg-[#EAF6EE] disabled:cursor-not-allowed disabled:opacity-30"
                 >
@@ -240,7 +241,7 @@ export function ProductCard({ product }: { product: Product }) {
           <button
             type="button"
             onClick={handleAddToCart}
-            disabled={outOfStock}
+            disabled={outOfStock || (isWeightBased && selectedWeight > maxAvailable)}
             aria-label={`Add ${displayName} to cart`}
             className="flex h-9 shrink-0 items-center justify-center gap-1 rounded-xl bg-[#078A4B] px-2.5 text-[10px] font-bold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#056B3A] hover:shadow-md disabled:cursor-not-allowed disabled:bg-[#C8CBC9] disabled:text-white disabled:shadow-none disabled:hover:translate-y-0 sm:px-3 sm:text-xs"
           >

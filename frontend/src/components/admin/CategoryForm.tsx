@@ -1,3 +1,4 @@
+import { Trash2 } from "lucide-react";
 import {
   useEffect,
   useState,
@@ -15,7 +16,7 @@ interface Props {
   initial?: Category;
   saving: boolean;
   error?: string;
-  onSubmit: (input: CategoryInput, imageFile: File | null) => void;
+  onSubmit: (input: CategoryInput, imageFile: File | null, removeImage: boolean) => void;
   onCancel: () => void;
 }
 
@@ -30,12 +31,13 @@ export function CategoryForm({
   const [name, setName] = useState(initial?.name ?? "");
   const [icon, setIcon] = useState<IconKey>(initial?.icon ?? "Carrot");
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [removeImage, setRemoveImage] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(initial?.image ?? "");
   const [nameError, setNameError] = useState("");
 
   useEffect(() => {
     if (!imageFile) {
-      setPreviewUrl(initial?.image ?? "");
+      if (!removeImage) setPreviewUrl(initial?.image ?? "");
       return;
     }
 
@@ -43,10 +45,12 @@ export function CategoryForm({
     setPreviewUrl(objectUrl);
 
     return () => URL.revokeObjectURL(objectUrl);
-  }, [imageFile, initial?.image]);
+  }, [imageFile, initial?.image, removeImage]);
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setImageFile(event.target.files?.[0] ?? null);
+    const file = event.target.files?.[0] ?? null;
+    setImageFile(file);
+    if (file) setRemoveImage(false);
   };
 
   const handleDrop = (event: DragEvent<HTMLLabelElement>) => {
@@ -55,6 +59,7 @@ export function CategoryForm({
     const file = event.dataTransfer.files?.[0];
     if (file?.type.startsWith("image/")) {
       setImageFile(file);
+      setRemoveImage(false);
     }
   };
 
@@ -80,6 +85,7 @@ export function CategoryForm({
         image: initial?.image ?? "",
       },
       imageFile,
+      removeImage,
     );
   };
 
@@ -156,6 +162,11 @@ export function CategoryForm({
             </div>
           )}
         </label>
+        {(previewUrl || (initial?.image && !removeImage)) && (
+          <button type="button" onClick={() => { setImageFile(null); setPreviewUrl(""); setRemoveImage(true); }} className="mt-2 inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50">
+            <Trash2 size={14} /> {t("admin.cf.removeImage")}
+          </button>
+        )}
       </FormField>
 
       <FormButtons saving={saving} onCancel={onCancel} />

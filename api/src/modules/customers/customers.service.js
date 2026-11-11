@@ -119,8 +119,26 @@ async function assertEmailFree(email, exceptId) {
 }
 
 export async function listCustomers() {
-  const rows = await prisma.customer.findMany({ orderBy: { id: "desc" } });
+  const rows = await prisma.customer.findMany({ orderBy: { id: "desc" }, select: { id: true, name: true, email: true, phone: true, address: true, emailVerified: true, createdAt: true } });
   return rows.map(adminDto);
+}
+
+export async function getCustomerHistory(id) {
+  const customer = await findOrFail(id);
+  const orders = await prisma.order.findMany({
+    where: { customerId: id },
+    orderBy: { createdAt: "desc" },
+    include: { items: true },
+  });
+  return {
+    customer: adminDto(customer),
+    orders: orders.map((o) => ({
+      id: o.id, status: o.status, name: o.name, phone: o.phone, address: o.address,
+      city: o.city, note: o.note, subtotal: Number(o.subtotal), deliveryFee: Number(o.deliveryFee),
+      total: Number(o.total), createdAt: o.createdAt.toISOString(),
+      items: o.items.map((item) => ({ id: item.id, productId: item.productId, productName: item.productName, unit: item.unit, unitPrice: Number(item.unitPrice), quantity: item.quantity, lineTotal: Number(item.lineTotal) })),
+    })),
+  };
 }
 
 // An account made by the admin is already verified.

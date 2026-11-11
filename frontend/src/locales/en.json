@@ -396,5 +396,15 @@
   "product.outOfStock": "Out of stock",
   "product.lowStock": "Low stock",
   "product.decreaseWeight": "Decrease weight",
-  "product.increaseWeight": "Increase weight"
+  "product.increaseWeight": "Increase weight",
+  "admin.users.historyTitle": "{name} — Order history",
+  "admin.users.historyLoading": "Loading order history…",
+  "admin.users.historyError": "Could not load this customer’s order history.",
+  "admin.users.historyEmpty": "This customer has not placed any orders yet.",
+  "admin.users.historyEmail": "Email",
+  "admin.users.historyPhone": "Phone",
+  "admin.users.historyOrders": "Orders",
+  "admin.users.historyButton": "View order history",
+  "admin.pf.removeImage": "Remove image",
+  "admin.cf.removeImage": "Remove image"
 }

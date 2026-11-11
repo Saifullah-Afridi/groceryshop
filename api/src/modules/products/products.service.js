@@ -42,6 +42,7 @@ export async function listProducts({ category, q, sort, offers }) {
       ...(q && { OR: [{ name: { contains: q, mode: "insensitive" } }, { description: { contains: q, mode: "insensitive" } }] }),
     },
     orderBy: ORDER[sort] ?? { id: "asc" },
+    take: 200,
   });
   return rows.map(toDto);
 }
@@ -51,10 +52,11 @@ export async function getProduct(id) {
 }
 
 export async function createProduct(data, file) {
-  await assertCategoryExists(data.categoryId);
+  const { removeImage: _removeImage, ...fields } = data;
+  await assertCategoryExists(fields.categoryId);
   const image = file ? await uploadImage(file, "products") : null;
   try {
-    return toDto(await prisma.product.create({ data: { ...data, image } }));
+    return toDto(await prisma.product.create({ data: { ...fields, image } }));
   } catch (error) {
     await deleteImage(image);
     throw error;
@@ -63,11 +65,12 @@ export async function createProduct(data, file) {
 
 export async function updateProduct(id, data, file) {
   const current = await findOrFail(id);
+  const { removeImage = false, ...fields } = data;
   if (data.categoryId) await assertCategoryExists(data.categoryId);
   const image = file ? await uploadImage(file, "products") : undefined;
   try {
-    const row = await prisma.product.update({ where: { id }, data: { ...data, ...(image && { image }) } });
-    if (image) await deleteImage(current.image);
+    const row = await prisma.product.update({ where: { id }, data: { ...fields, ...(image ? { image } : removeImage ? { image: null } : {}) } });
+    if (image || removeImage) await deleteImage(current.image);
     return toDto(row);
   } catch (error) {
     await deleteImage(image);

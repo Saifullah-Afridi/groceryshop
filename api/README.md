@@ -52,3 +52,15 @@ Shared code: `src/lib` (database, storage, email, helpers), `src/middlewares`, `
 The order request only contains product ids, quantities, the city id and the delivery details. It never contains a price, a delivery fee or a total. The server reads every price and the city fee from the database, checks that each quantity goes up in steps of 0.25 kg (and is at most 50), and works out the totals itself. Changing numbers in the browser cannot change what an order costs.
 
 Admin and customer tokens are different: a customer token cannot use admin routes.
+
+## Inventory and order status behavior
+- Product `stockQuantity` is the actual available stock. Placing an order reserves/deducts its quantity in the same database transaction that creates the order. If any product is short, the complete order is rejected and no stock is deducted.
+- A customer can cancel an order while it is `PENDING`; the reserved quantities are returned to stock. Once the order is on the way, it cannot be cancelled from the customer account.
+- The shopper-facing order flow is `PENDING` (Order placed) → `OUT_FOR_DELIVERY` (On the way) → `DELIVERED`.
+- After updating the Prisma schema, run `npm run db:push` from `api/` to create the new order indexes. Existing legacy `CONFIRMED` / `PREPARING` orders can be normalized once in Supabase SQL Editor:
+  ```sql
+  UPDATE "Order" SET status = 'PENDING' WHERE status IN ('CONFIRMED', 'PREPARING');
+  ```
+
+## Database connection pool
+For the persistent Express API using the Supabase Session Pooler (port 5432), the sample URL uses `connection_limit=5&pool_timeout=20`. Adjust the connection limit only after checking your Supabase project's connection capacity and the number of API instances.

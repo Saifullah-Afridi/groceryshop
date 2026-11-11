@@ -32,7 +32,8 @@ export async function getCategory(id) {
 }
 
 export async function createCategory(data, file) {
-  data = { ...data, nameAr: data.nameAr ?? "", descriptionAr: data.descriptionAr ?? "" };
+  const { removeImage: _removeImage, ...fields } = data;
+  data = { ...fields, nameAr: fields.nameAr ?? "", descriptionAr: fields.descriptionAr ?? "" };
   const id = slugify(data.name) || `category-${Date.now()}`;
   if (await prisma.category.findUnique({ where: { id } })) {
     throw httpError(409, "A category with this name already exists.");
@@ -48,10 +49,11 @@ export async function createCategory(data, file) {
 
 export async function updateCategory(id, data, file) {
   const current = await findOrFail(id);
+  const { removeImage = false, ...fields } = data;
   const image = file ? await uploadImage(file, "categories") : undefined;
   try {
-    const row = await prisma.category.update({ where: { id }, data: { ...data, ...(image && { image }) } });
-    if (image) await deleteImage(current.image); // the old photo is replaced
+    const row = await prisma.category.update({ where: { id }, data: { ...fields, ...(image ? { image } : removeImage ? { image: null } : {}) } });
+    if (image || removeImage) await deleteImage(current.image); // the old photo is replaced
     return toDto(row);
   } catch (error) {
     await deleteImage(image);

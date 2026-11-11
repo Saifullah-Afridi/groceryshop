@@ -1,9 +1,9 @@
 import type { TranslationKey } from "../context/LanguageContext";
 import type { OrderStatus } from "../types/order";
 
-export const ORDER_STATUSES: OrderStatus[] = ["PENDING", "CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"];
+export const ORDER_STATUSES: OrderStatus[] = ["PENDING", "OUT_FOR_DELIVERY", "DELIVERED"];
 // The steps a normal order goes through (a cancelled order is shown separately)
-export const TRACKER_STEPS: OrderStatus[] = ["PENDING", "CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY", "DELIVERED"];
+export const TRACKER_STEPS: OrderStatus[] = ["PENDING", "OUT_FOR_DELIVERY", "DELIVERED"];
 
 // The words for each status live in the locale files (status.PENDING ...), so they follow the language.
 export const statusKey = (status: OrderStatus) => `status.${status}` as TranslationKey;

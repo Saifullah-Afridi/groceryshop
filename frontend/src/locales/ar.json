@@ -408,5 +408,15 @@
   "product.outOfStock": "نفد المخزون",
   "product.lowStock": "مخزون منخفض",
   "product.decreaseWeight": "تقليل الوزن",
-  "product.increaseWeight": "زيادة الوزن"
+  "product.increaseWeight": "زيادة الوزن",
+  "admin.users.historyTitle": "سجل طلبات {name}",
+  "admin.users.historyLoading": "جارٍ تحميل سجل الطلبات…",
+  "admin.users.historyError": "تعذر تحميل سجل طلبات هذا العميل.",
+  "admin.users.historyEmpty": "لم يقم هذا العميل بأي طلب حتى الآن.",
+  "admin.users.historyEmail": "البريد الإلكتروني",
+  "admin.users.historyPhone": "الهاتف",
+  "admin.users.historyOrders": "الطلبات",
+  "admin.users.historyButton": "عرض سجل الطلبات",
+  "admin.pf.removeImage": "إزالة الصورة",
+  "admin.cf.removeImage": "إزالة الصورة"
 }

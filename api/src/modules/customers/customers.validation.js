@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { phone, suggestEmailFix } from "../../lib/validators.js";
 
-const email = z.string().trim().toLowerCase().email("Enter a valid email address");
+const email = z.string().trim().toLowerCase().email("Enter a valid email address").max(254, "Email address is too long");
 // Used when an account is created: refuses a mistyped domain and says what was probably meant.
 const newEmail = email.superRefine((value, ctx) => {
   const fix = suggestEmailFix(value);

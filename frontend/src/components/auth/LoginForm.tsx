@@ -45,6 +45,7 @@ export function LoginForm({ onRegister, onNeedsVerify }: Props) {
         <input
           type="email"
           required
+          pattern="^[^\s@]+@[^\s@]+\.[^\s@]{2,}$"
           autoFocus
           autoComplete="username"
           value={email}

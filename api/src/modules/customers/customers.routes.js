@@ -1,7 +1,7 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { requireAdmin, requireCustomer } from "../../middlewares/auth.js";
-import { adminCreate, adminUpdate, list, login, me, register, remove, resend, verify } from "./customers.controller.js";
+import { adminCreate, adminUpdate, history, list, login, me, register, remove, resend, verify } from "./customers.controller.js";
 
 // Slows down guessing of passwords and codes.
 const limiter = rateLimit({
@@ -23,6 +23,7 @@ router.get("/me", requireCustomer, me);
 
 // Admin
 router.get("/", requireAdmin, list);
+router.get("/:id/history", requireAdmin, history);
 router.post("/", requireAdmin, adminCreate);
 router.put("/:id", requireAdmin, adminUpdate);
 router.delete("/:id", requireAdmin, remove);

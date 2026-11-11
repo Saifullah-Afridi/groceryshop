@@ -5,10 +5,10 @@ export async function getDashboard() {
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const [products, categories, todaysOrders, monthOrders, pendingOrders, recentOrders, customers] = await Promise.all([
-    prisma.product.findMany({ orderBy: { name: "asc" } }),
+    prisma.product.findMany({ select: { id: true, name: true, nameAr: true, stockQuantity: true, minQuantity: true, unit: true } }),
     prisma.category.count(),
     prisma.order.findMany({ where: { createdAt: { gte: start }, status: { not: "CANCELLED" } }, include: { items: true } }),
-    prisma.order.findMany({ where: { createdAt: { gte: monthStart }, status: { not: "CANCELLED" } } }),
+    prisma.order.findMany({ where: { createdAt: { gte: monthStart }, status: { not: "CANCELLED" } }, include: { items: { select: { productName: true, quantity: true, lineTotal: true } } } }),
     prisma.order.count({ where: { status: "PENDING" } }),
     prisma.order.findMany({ take: 8, orderBy: { createdAt: "desc" }, include: { items: true } }),
     prisma.customer.count({ where: { createdAt: { gte: start } } }),
@@ -17,8 +17,7 @@ export async function getDashboard() {
   const outOfStock = products.filter(p => Number(p.stockQuantity) <= 0);
   const sold = new Map();
   for (const order of monthOrders) {
-    const items = await prisma.orderItem.findMany({ where: { orderId: order.id } });
-    for (const item of items) {
+    for (const item of order.items) {
       const key = item.productName;
       const current = sold.get(key) || { name: key, quantity: 0, revenue: 0 };
       current.quantity += Number(item.quantity);
