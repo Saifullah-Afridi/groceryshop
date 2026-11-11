@@ -8,11 +8,11 @@ import { AdminFallback } from "../RouteFallbacks";
 
 const LINKS: { to: string; key: TranslationKey; icon: typeof Package; end: boolean }[] = [
   { to: "/admin", key: "admin.nav.dashboard", icon: LayoutDashboard, end: true },
-  { to: "/admin/orders", key: "admin.nav.orders", icon: ClipboardList, end: false },
-  { to: "/admin/products", key: "admin.nav.products", icon: Package, end: false },
   { to: "/admin/categories", key: "admin.nav.categories", icon: Tags, end: false },
-  { to: "/admin/users", key: "admin.nav.users", icon: Users, end: false },
+  { to: "/admin/products", key: "admin.nav.products", icon: Package, end: false },
   { to: "/admin/delivery", key: "admin.nav.delivery", icon: Truck, end: false },
+  { to: "/admin/users", key: "admin.nav.users", icon: Users, end: false },
+  { to: "/admin/orders", key: "admin.nav.orders", icon: ClipboardList, end: false },
 ];
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>

@@ -16,7 +16,7 @@ const toDto = (p) => ({
   farm: p.farm,
   price: Number(p.price),
   unit: p.unit,
-  minQuantity: p.minQuantity,
+  minQuantity: Number(p.minQuantity ?? 0),
   image: p.image ?? "",
 });
 
@@ -31,16 +31,6 @@ async function findOrFail(id) {
 async function assertCategoryExists(categoryId) {
   if (!(await prisma.category.findUnique({ where: { id: categoryId } }))) {
     throw httpError(400, "categoryId: that category does not exist.");
-  }
-}
-
-// The same rule as the validation, checked against the stored unit when an update does not send one.
-function assertMinimumFits(unit, minQuantity) {
-  if (!minQuantity) return;
-  const step = unit === "kg" ? 0.25 : 1;
-  const steps = minQuantity / step;
-  if (Math.abs(steps - Math.round(steps)) > 1e-9) {
-    throw httpError(400, step === 0.25 ? "minQuantity: must go up in steps of 0.25 kg." : "minQuantity: must be a whole number.");
   }
 }
 
@@ -74,7 +64,6 @@ export async function createProduct(data, file) {
 export async function updateProduct(id, data, file) {
   const current = await findOrFail(id);
   if (data.categoryId) await assertCategoryExists(data.categoryId);
-  assertMinimumFits(data.unit ?? current.unit, data.minQuantity ?? current.minQuantity);
   const image = file ? await uploadImage(file, "products") : undefined;
   try {
     const row = await prisma.product.update({ where: { id }, data: { ...data, ...(image && { image }) } });

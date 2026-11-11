@@ -30,8 +30,8 @@ interface ContextValue {
 const LanguageContext = createContext<ContextValue | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const { t: translate, i18n: instance } = useTranslation();
-  const language: Language = instance.resolvedLanguage === "en" ? "en" : "ar";
+  const { i18n: instance } = useTranslation();
+  const language: Language = instance.language?.toLowerCase().startsWith("en") ? "en" : "ar";
 
   // Keep <html lang>, direction, the page title and the saved choice in step with the language.
   useEffect(() => {
@@ -60,7 +60,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<ContextValue>(() => {
-    const t = (key: TranslationKey, vars?: TranslateVars) => String((translate as unknown as (k: string, v?: TranslateVars) => string)(key, vars));
+    const t = (key: TranslationKey, vars?: TranslateVars) =>
+      String(i18n.t(key, { ...vars, lng: language }));
     return {
       language,
       isArabic: language === "ar",
@@ -71,8 +72,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       unitName: (unit) => t(`unit.${unit}` as TranslationKey),
       date: (iso) => formatDate(iso, language === "ar" ? "ar-u-nu-latn" : "en-GB"),
     };
-    // translate changes identity whenever the language changes
-  }, [language, translate, setLanguage]);
+  }, [language, setLanguage]);
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }

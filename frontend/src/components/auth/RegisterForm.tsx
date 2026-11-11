@@ -56,7 +56,7 @@ export function RegisterForm({ onLogin, onRegistered }: Props) {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-5">
+    <form onSubmit={submit} className="space-y-6">
       <p className="text-sm text-muted">{t("auth.registerHint")}</p>
       {serverError && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-sale">{serverError}</p>}
 

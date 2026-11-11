@@ -17,7 +17,7 @@ import {
 } from "../../hooks/useAdmin";
 import type { Category, Product } from "../../types";
 import { CATEGORY_ICONS } from "../../utils/categoryIcons";
-import { amountLabel, formatPrice, minAmountFor } from "../../utils/format";
+import { formatPrice } from "../../utils/format";
 import { localizedDescription, localizedName } from "../../utils/localized";
 
 function ProductImage({
@@ -168,7 +168,7 @@ export function AdminProductsPage() {
                 <th className="px-4 py-3 text-start">{t("admin.products.colCategory")}</th>
                 <th className="px-4 py-3 text-start">{t("admin.products.colPrice")}</th>
                 <th className="px-4 py-3 text-start">{t("admin.products.colDiscount")}</th>
-                <th className="px-4 py-3 text-start">{t("admin.products.colMin")}</th>
+                <th className="px-4 py-3 text-start">{t("admin.products.colStockAlert")}</th>
                 <th className="px-4 py-3 text-start">{t("admin.products.colStock")}</th>
                 <th className="px-4 py-3 text-end">{t("actions")}</th>
               </tr>
@@ -176,7 +176,6 @@ export function AdminProductsPage() {
 
             <tbody className="divide-y divide-edge">
               {paginatedList.map((product) => {
-                const minAmount = minAmountFor(product);
                 const category = categoryOf(product.categoryId);
                 return (
                   <tr key={product.id} className="transition hover:bg-surface/60">
@@ -215,8 +214,8 @@ export function AdminProductsPage() {
 
                     <td className="whitespace-nowrap px-4 py-3">
                       {product.minQuantity > 0
-                        ? amountLabel(minAmount, product.unit, unitName(product.unit))
-                        : <span className="text-xs text-muted">{t("admin.products.anyAmount")}</span>}
+                        ? `${formatPrice(product.minQuantity).replace(/\.00$/, "")} ${unitName(product.unit)}`
+                        : <span className="text-xs text-muted">{t("admin.products.noStockAlert")}</span>}
                     </td>
 
                     <td className="whitespace-nowrap px-4 py-3">

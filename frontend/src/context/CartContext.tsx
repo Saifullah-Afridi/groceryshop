@@ -45,7 +45,7 @@ interface CartValue {
 const CartContext = createContext<CartValue | null>(null);
 const KEY = "rakan-cart";
 
-// Carts saved by an older version of the site have no discount or minimum. Fill the gaps.
+// Carts saved by older versions are normalised to the current discount and quarter-step rules.
 function readSavedCart(): CartItem[] {
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) ?? "[]");
@@ -72,7 +72,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items]);
 
   const commitAdd = (product: Product, requested: number) => {
-    // Never put less than the product's minimum order in the cart.
+    // Every product starts at one selectable step; admin stock alerts never affect order quantity.
     const min = minAmountFor(product);
     const amount = roundAmount(Math.max(requested, min));
 
@@ -136,7 +136,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         ? list.filter((item) => item.productId !== productId)
         : list.map((item) => {
             if (item.productId !== productId) return item;
-            // Going below the minimum is not allowed; stay on the minimum and say why.
+            // Keep the quantity at one quarter kilo / one selling unit minimum.
             const min = minAmountFor(item);
             if (amount < min - 1e-9) {
               toast.info(

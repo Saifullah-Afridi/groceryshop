@@ -20,7 +20,7 @@ import { localizedName } from "../utils/localized";
 import { CheckoutPanel } from "./CheckoutPanel";
 
 // Plus and minus move the weight one step at a time: 0.25 kg, 0.5, 0.75, 1, 1.25 ... (pieces move by 1).
-// The number in the middle can also be typed. It snaps to the nearest step and never goes under the minimum.
+// The number in the middle can also be typed. It snaps to the nearest valid step.
 function QuantityControl({
   item,
   name,

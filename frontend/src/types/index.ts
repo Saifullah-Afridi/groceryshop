@@ -32,7 +32,7 @@ export interface Product {
   price: number; // JOD per 0.25 kg (kg products) or per selling unit
   discount: number; // percent, 0 to 100. One discount for the whole price.
   unit: Unit;
-  minQuantity: number; // smallest amount a shopper can order. 0 means one step.
+  minQuantity: number; // inventory low-stock alert threshold; 0 disables the alert.
   stockQuantity: number;
   isOutOfStock?: boolean;
   image: string;
@@ -43,7 +43,7 @@ export interface CartItem {
   nameAr?: string;
   price: number; // before discount
   discount: number; // percent
-  minQuantity: number; // smallest amount allowed for this line
+  minQuantity: number; // minimum step for this cart line (0.25 kg / 1 unit); not admin stock threshold
   unit: Unit;
   amount: number;
   image: string;

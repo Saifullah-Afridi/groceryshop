@@ -28,10 +28,12 @@ function AuthDialog() {
   };
 
   return (
-    <Modal title={t(TITLES[step])} onClose={closeAuth} size={step === "register" ? "lg" : "md"}>
-      {step === "login" && <LoginForm onRegister={() => setStep("register")} onNeedsVerify={goVerify} />}
-      {step === "register" && <RegisterForm onLogin={() => setStep("login")} onRegistered={(e) => goVerify(e)} />}
-      {step === "verify" && <VerifyOtpForm email={email} notice={notice} onBack={() => setStep("register")} />}
+    <Modal title={t(TITLES[step])} onClose={closeAuth} size="lg">
+      <div className={`flex flex-col justify-center ${step === "register" ? "min-h-[520px]" : step === "verify" ? "min-h-[390px]" : "min-h-[410px]"}`}>
+        {step === "login" && <LoginForm onRegister={() => setStep("register")} onNeedsVerify={goVerify} />}
+        {step === "register" && <RegisterForm onLogin={() => setStep("login")} onRegistered={(e) => goVerify(e)} />}
+        {step === "verify" && <VerifyOtpForm email={email} notice={notice} onBack={() => setStep("register")} />}
+      </div>
     </Modal>
   );
 }

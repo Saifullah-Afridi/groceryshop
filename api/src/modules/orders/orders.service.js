@@ -36,10 +36,6 @@ function priceUnits(product, quantity) {
   if (quantity <= 0 || Math.abs(units - Math.round(units)) > 1e-9) {
     throw httpError(400, `${product.name}: the quantity must go up in steps of ${step}${product.unit === "kg" ? " kg" : ""}.`);
   }
-  // The minimum order set by the admin (0 means no extra minimum beyond one step).
-  if (product.minQuantity > 0 && quantity < product.minQuantity - 1e-9) {
-    throw httpError(400, `${product.name}: the minimum order is ${product.minQuantity}${product.unit === "kg" ? " kg" : ` ${product.unit}`}.`);
-  }
   if (quantity > MAX_QUANTITY) throw httpError(400, `${product.name}: the most you can order is ${MAX_QUANTITY}.`);
   return Math.round(units);
 }

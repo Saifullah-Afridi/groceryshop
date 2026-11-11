@@ -17,16 +17,12 @@ import { MAX_ORDER_QUANTITY } from "../config";
 import { useCart } from "../context/CartContext";
 import { useLanguage } from "../context/LanguageContext";
 import { useCategories } from "../hooks/useShopData";
-import { amountLabel, clampDiscount, formatPrice, minAmountFor, roundAmount } from "../utils/format";
+import { clampDiscount, formatPrice, roundAmount, stepFor } from "../utils/format";
 import { localizedDescription, localizedName } from "../utils/localized";
 import type { Product } from "../types";
 
-// The quick weight buttons. When the admin sets a bigger minimum (for example 2.25 kg),
-// the buttons start from that minimum so a shopper can never pick less than it.
-const weightOptionsFor = (min: number) =>
-  min <= 0.25
-    ? [0.25, 0.5, 0.75, 1]
-    : [min, min + 0.25, min + 0.5, min + 1].map(roundAmount);
+// Quick selections are always the quarter-kilo increments. Stock alerts never restrict customer quantities.
+const WEIGHT_OPTIONS = [0.25, 0.5, 0.75, 1];
 
 const CATEGORY_ICONS = {
   Carrot,
@@ -44,26 +40,23 @@ export function ProductCard({ product }: { product: Product }) {
 
   const isWeightBased = product.unit === "kg";
 
-  // The smallest amount the admin allows (0.25 kg / 1 piece unless a bigger minimum is set)
-  const minAmount = minAmountFor(product);
-  const hasCustomMinimum = minAmount > (isWeightBased ? 0.25 : 1);
-
-  const [chosenWeight, setSelectedWeight] = useState(minAmount);
-  const selectedWeight = Math.max(chosenWeight, minAmount);
+  const minimumStep = stepFor(product.unit);
+  const [selectedWeight, setSelectedWeight] = useState(minimumStep);
 
   const outOfStock = product.stockQuantity <= 0;
-  const lowStock = !outOfStock && product.stockQuantity <= 5;
+  const lowStock = !outOfStock && product.minQuantity > 0 && product.stockQuantity <= product.minQuantity;
 
   // Price calculation: one price (per 0.25 kg or per unit) and one percentage discount
   const discount = clampDiscount(product.discount);
   const grossPrice = isWeightBased
     ? product.price * (selectedWeight / 0.25)
-    : product.price * minAmount;
+    : product.price;
   const displayPrice = grossPrice * (1 - discount / 100);
 
   // Language
   const displayName = localizedName(product, language);
   const displayDescription = localizedDescription(product, language);
+  const weightLabel = (weight: number) => `${String(Number(weight.toFixed(2)))} ${unitName("kg")}`;
 
   // Category image fallback
   const category = categories?.find((item) => item.id === product.categoryId);
@@ -76,7 +69,7 @@ export function ProductCard({ product }: { product: Product }) {
   // Weight controls
   const changeWeight = (amount: number) => {
     setSelectedWeight(() =>
-      Math.min(MAX_ORDER_QUANTITY, Math.max(minAmount, roundAmount(selectedWeight + amount))),
+      Math.min(MAX_ORDER_QUANTITY, Math.max(minimumStep, roundAmount(selectedWeight + amount))),
     );
   };
 
@@ -84,7 +77,7 @@ export function ProductCard({ product }: { product: Product }) {
   const handleAddToCart = () => {
     if (outOfStock) return;
 
-    addItem(product, isWeightBased ? selectedWeight : minAmount);
+    addItem(product, isWeightBased ? selectedWeight : minimumStep);
   };
 
   return (
@@ -121,7 +114,7 @@ export function ProductCard({ product }: { product: Product }) {
             {outOfStock && (
               <span className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-red-600 shadow-md sm:text-xs">
                 <AlertCircle size={12} />
-                {isArabic ? "نفد المخزون" : "Out of stock"}
+                {t("product.outOfStock")}
               </span>
             )}
 
@@ -136,7 +129,7 @@ export function ProductCard({ product }: { product: Product }) {
         {/* Low Stock Badge */}
         {!outOfStock && lowStock && (
           <span className="absolute bottom-2 left-3 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-amber-600 shadow-md sm:text-xs">
-            {isArabic ? "مخزون منخفض" : "Low stock"}
+            {t("product.lowStock")}
           </span>
         )}
       </div>
@@ -165,7 +158,7 @@ export function ProductCard({ product }: { product: Product }) {
 
             {/* Weight Options */}
             <div className="grid grid-cols-4 gap-1.5">
-              {weightOptionsFor(minAmount).map((weight) => {
+              {WEIGHT_OPTIONS.map((weight) => {
                 const selected = selectedWeight === weight;
 
                 return (
@@ -180,7 +173,7 @@ export function ProductCard({ product }: { product: Product }) {
                         : "border-[#DCE6DF] bg-white text-[#52675A] hover:border-[#078A4B] hover:bg-[#F0F8F2]"
                     } disabled:cursor-not-allowed disabled:opacity-50`}
                   >
-                    {amountLabel(weight, "kg", unitName("kg"))}
+                    {weightLabel(weight)}
                   </button>
                 );
               })}
@@ -195,8 +188,8 @@ export function ProductCard({ product }: { product: Product }) {
               <div className="flex h-9 items-center justify-between rounded-xl border border-[#DCE6DF] bg-[#FAFCFA] px-1.5">
                 <button
                   type="button"
-                  aria-label="Decrease weight"
-                  disabled={selectedWeight <= minAmount || outOfStock}
+                  aria-label={t("product.decreaseWeight")}
+                  disabled={selectedWeight <= minimumStep || outOfStock}
                   onClick={() => changeWeight(-0.25)}
                   className="grid h-7 w-7 place-items-center rounded-lg border border-[#E0EAE2] bg-white text-[#078A4B] transition hover:bg-[#EAF6EE] disabled:cursor-not-allowed disabled:opacity-30"
                 >
@@ -204,12 +197,12 @@ export function ProductCard({ product }: { product: Product }) {
                 </button>
 
                 <span className="text-xs font-extrabold text-[#123B2A] sm:text-sm">
-                  {amountLabel(selectedWeight, "kg", unitName("kg"))}
+                  {weightLabel(selectedWeight)}
                 </span>
 
                 <button
                   type="button"
-                  aria-label="Increase weight"
+                  aria-label={t("product.increaseWeight")}
                   disabled={outOfStock || selectedWeight >= MAX_ORDER_QUANTITY}
                   onClick={() => changeWeight(0.25)}
                   className="grid h-7 w-7 place-items-center rounded-lg border border-[#E0EAE2] bg-white text-[#078A4B] transition hover:bg-[#EAF6EE] disabled:cursor-not-allowed disabled:opacity-30"
@@ -238,7 +231,7 @@ export function ProductCard({ product }: { product: Product }) {
 
             {isWeightBased ? (
               <p className="mt-0.5 text-[10px] text-[#87958D] sm:text-xs">
-                {amountLabel(selectedWeight, "kg", unitName("kg"))}
+                {weightLabel(selectedWeight)}
               </p>
             ) : null}
           </div>

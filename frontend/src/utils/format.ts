@@ -10,15 +10,8 @@ export const stepFor = (unit: Unit) => (unit === "kg" ? QUARTER : 1);
 // Floating point safe: 0.25 * 3 is exactly 0.75 here.
 export const roundAmount = (n: number) => Math.round(n * 100) / 100;
 
-// The smallest amount a shopper can put in the cart. The admin sets minQuantity;
-// 0 (not set) means one step: 0.25 kg or 1 piece.
-export const minAmountFor = (product: { unit: Unit; minQuantity?: number }) => {
-  const step = stepFor(product.unit);
-  const min = product.minQuantity ?? 0;
-  if (min <= 0) return step;
-  // Snap to the step so an odd old value (for example 2.1) can never break the cart.
-  return roundAmount(Math.min(MAX_ORDER_QUANTITY, Math.max(step, Math.ceil(min / step - 1e-9) * step)));
-};
+// Minimum selectable amount is always one step. Admin stock alerts do not restrict orders.
+export const minAmountFor = (product: { unit: Unit; minQuantity?: number }) => stepFor(product.unit);
 
 export const amountLabel = (amount: number, unit: Unit, unitLabel?: string) =>
   unit === "kg"

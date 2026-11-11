@@ -3,7 +3,7 @@ import { useLanguage, type TranslationKey } from "../../context/LanguageContext"
 import type { Category, Product, Unit } from "../../types";
 import type { ProductInput } from "../../types/admin";
 import { MAX_ORDER_QUANTITY } from "../../config";
-import { QUARTER, clampDiscount, formatPrice, stepFor } from "../../utils/format";
+import { clampDiscount, formatPrice, stepFor } from "../../utils/format";
 import { localizedName } from "../../utils/localized";
 import { FormButtons, FormField, inputClass } from "./FormField";
 
@@ -17,9 +17,6 @@ interface Props {
 }
 
 const UNITS: Unit[] = ["kg", "item", "pack", "dozen", "bunch", "head", "bottle"];
-
-// A number typed in the form is a multiple of the step (0.25 for kg, 1 for the rest)
-const isMultipleOf = (value: number, step: number) => Math.abs(value / step - Math.round(value / step)) < 1e-9;
 
 export function ProductForm({
   initial,
@@ -98,11 +95,12 @@ export function ProductForm({
     if (!(price > 0)) found.price = t("admin.pf.errPrice");
     if (!(discount >= 0 && discount <= 100)) found.discount = t("admin.pf.errDiscount");
 
-    // The minimum order goes up in the same steps the shopper buys in: 0.25 kg, or whole pieces.
-    if (f.minQuantity.trim() && !(minQuantity > 0 && isMultipleOf(minQuantity, step))) {
-      found.minQuantity = isKg ? t("admin.pf.errMinKg") : t("admin.pf.errMinUnit");
+    // This is an inventory warning threshold, not a minimum customer order.
+    const thresholdSteps = minQuantity / step;
+    if (!(minQuantity >= 0) || !Number.isFinite(minQuantity) || (minQuantity > 0 && Math.abs(thresholdSteps - Math.round(thresholdSteps)) > 1e-9)) {
+      found.minQuantity = isKg ? t("admin.pf.errStockThresholdKg") : t("admin.pf.errStockThresholdUnit");
     }
-    if (minQuantity > MAX_ORDER_QUANTITY) found.minQuantity = t("admin.pf.errMinMax", { max: MAX_ORDER_QUANTITY });
+    if (minQuantity > MAX_ORDER_QUANTITY) found.minQuantity = t("admin.pf.errStockThresholdMax", { max: MAX_ORDER_QUANTITY });
     if (!(stockQuantity >= 0)) found.stockQuantity = t("admin.pf.errStock");
 
     setErrors(found);
@@ -224,11 +222,11 @@ export function ProductForm({
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {/* The least a shopper can order. In steps of 0.25 kg, so 2.25 kg is fine and 2.1 kg is not. */}
+        {/* Alert the admin when available stock reaches this level. This does not limit customer orders. */}
         <FormField
-          label={t("admin.pf.minOrder", { unit: unitLabel })}
+          label={t("admin.pf.stockAlert", { unit: unitLabel })}
           error={errors.minQuantity}
-          hint={isKg ? t("admin.pf.minHintKg") : t("admin.pf.minHintUnit")}
+          hint={t("admin.pf.stockAlertHint", { unit: unitLabel })}
         >
           <input
             type="number"
@@ -238,7 +236,7 @@ export function ProductForm({
             value={f.minQuantity}
             onChange={set("minQuantity")}
             className={inputClass}
-            placeholder={isKg ? String(QUARTER) : "1"}
+            placeholder="0"
           />
         </FormField>
 

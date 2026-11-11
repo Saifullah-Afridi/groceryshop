@@ -52,7 +52,7 @@ export function VerifyOtpForm({ email, notice, onBack }: Props) {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-4">
+    <form onSubmit={submit} className="space-y-6">
       <p className="text-sm text-muted">
         {notice || t("auth.sentCode")} <b className="text-ink" dir="ltr">{email}</b>. {t("auth.codeValid")}
       </p>

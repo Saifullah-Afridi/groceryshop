@@ -13,14 +13,12 @@ const fields = z.object({
   categoryId: z.string().trim().min(1, "Choose a category"),
   unit: z.enum(UNITS).default("kg"),
   price: z.coerce.number().positive("Price must be more than 0").max(10000),
-  minQuantity: z.coerce.number().min(0, "Cannot be negative").max(MAX_QUANTITY, `Minimum order cannot be more than ${MAX_QUANTITY}`).default(0),
+  minQuantity: z.coerce.number().min(0, "Cannot be negative").max(MAX_QUANTITY, `Stock alert threshold cannot be more than ${MAX_QUANTITY}`).default(0),
   stockQuantity: z.coerce.number().min(0).default(0),
   discount: z.coerce.number().min(0, "Discount cannot be negative").max(100, "Discount cannot be more than 100%").default(0),
 });
 
-// The minimum order must go up in the same steps the shopper buys in: 0.25 kg for weighed products, whole pieces otherwise.
-// (So 2.25 kg is fine, 2.1 kg is not.)
-const checkMinimum = (data, ctx) => {
+const checkStockThreshold = (data, ctx) => {
   if (data.minQuantity === undefined || data.minQuantity === 0) return;
   const step = (data.unit ?? "kg") === "kg" ? 0.25 : 1;
   const steps = data.minQuantity / step;
@@ -28,14 +26,14 @@ const checkMinimum = (data, ctx) => {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["minQuantity"],
-      message: step === 0.25 ? "Minimum quantity must go up in steps of 0.25 kg (for example 0.5 or 2.25)" : "Minimum quantity must be a whole number",
+      message: step === 0.25 ? "Stock alert threshold must use 0.25 kg steps." : "Stock alert threshold must be a whole number.",
     });
   }
 };
 
-export const createProductSchema = fields.superRefine(checkMinimum);
+export const createProductSchema = fields.superRefine(checkStockThreshold);
 // On update the unit may not be sent. In that case the service re-checks against the stored unit.
-export const updateProductSchema = fields.partial().superRefine((data, ctx) => (data.unit ? checkMinimum(data, ctx) : undefined));
+export const updateProductSchema = fields.partial().superRefine((data, ctx) => (data.unit ? checkStockThreshold(data, ctx) : undefined));
 
 export const listQuerySchema = z.object({
   category: z.string().trim().optional(),

@@ -37,7 +37,7 @@ export function LoginForm({ onRegister, onNeedsVerify }: Props) {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-4">
+    <form onSubmit={submit} className="space-y-6">
       <p className="text-sm text-muted">{t("auth.loginHint")}</p>
       {error && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-sale">{error}</p>}
 
