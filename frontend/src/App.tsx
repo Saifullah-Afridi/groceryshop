@@ -14,6 +14,7 @@ import {
   AdminLoginPage,
   AdminOrdersPage,
   AdminProductsPage,
+  ContactPage,
   HomePage,
   NotFoundPage,
   OrdersPage,
@@ -34,6 +35,7 @@ export default function App() {
             {/* Checkout now happens inside the cart drawer. Old links go to the shop. */}
             <Route path="/checkout" element={<Navigate to="/shop" replace />} />
             <Route path="/orders" element={<OrdersPage />} />
+            <Route path="/contact" element={<ContactPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
 

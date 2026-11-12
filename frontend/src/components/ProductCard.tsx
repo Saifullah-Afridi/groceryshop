@@ -17,11 +17,16 @@ import { MAX_ORDER_QUANTITY } from "../config";
 import { useCart } from "../context/CartContext";
 import { useLanguage } from "../context/LanguageContext";
 import { useCategories } from "../hooks/useShopData";
-import { clampDiscount, formatPrice, roundAmount, stepFor } from "../utils/format";
+import {
+  clampDiscount,
+  formatPrice,
+  roundAmount,
+  stepFor,
+} from "../utils/format";
 import { localizedDescription, localizedName } from "../utils/localized";
 import type { Product } from "../types";
 
-// Quick selections are always the quarter-kilo increments. Stock alerts never restrict customer quantities.
+// Quick selections are always the quarter-kilo increments.
 const WEIGHT_OPTIONS = [0.25, 0.5, 0.75, 1];
 
 const CATEGORY_ICONS = {
@@ -41,22 +46,31 @@ export function ProductCard({ product }: { product: Product }) {
   const isWeightBased = product.unit === "kg";
 
   const minimumStep = stepFor(product.unit);
+
   const [selectedWeight, setSelectedWeight] = useState(minimumStep);
 
   const outOfStock = product.stockQuantity <= 0;
-  const lowStock = !outOfStock && product.minQuantity > 0 && product.stockQuantity <= product.minQuantity;
 
-  // Price calculation: one price (per 0.25 kg or per unit) and one percentage discount
+  const lowStock =
+    !outOfStock &&
+    product.minQuantity > 0 &&
+    product.stockQuantity <= product.minQuantity;
+
+  // Price calculation: one price per 0.25 kg or per unit.
   const discount = clampDiscount(product.discount);
+
   const grossPrice = isWeightBased
     ? product.price * (selectedWeight / 0.25)
     : product.price;
+
   const displayPrice = grossPrice * (1 - discount / 100);
 
   // Language
   const displayName = localizedName(product, language);
   const displayDescription = localizedDescription(product, language);
-  const weightLabel = (weight: number) => `${String(Number(weight.toFixed(2)))} ${unitName("kg")}`;
+
+  const weightLabel = (weight: number) =>
+    `${String(Number(weight.toFixed(2)))} ${unitName("kg")}`;
 
   // Category image fallback
   const category = categories?.find((item) => item.id === product.categoryId);
@@ -69,7 +83,10 @@ export function ProductCard({ product }: { product: Product }) {
   // Weight controls
   const changeWeight = (amount: number) => {
     setSelectedWeight(() =>
-      Math.min(MAX_ORDER_QUANTITY, Math.max(minimumStep, roundAmount(selectedWeight + amount))),
+      Math.min(
+        MAX_ORDER_QUANTITY,
+        Math.max(minimumStep, roundAmount(selectedWeight + amount)),
+      ),
     );
   };
 
@@ -86,14 +103,15 @@ export function ProductCard({ product }: { product: Product }) {
       className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#E5EBE6] bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/10"
     >
       {/* ================= PRODUCT IMAGE ================= */}
-      <div className="relative h-32 overflow-hidden bg-[#F7F9F6] sm:h-36 lg:h-40">
+
+      <div className="relative h-32 w-full flex-shrink-0 overflow-hidden bg-[#F7F9F6] sm:h-36 lg:h-40">
         {product.image ? (
           <img
             src={product.image}
             alt={product.name}
             loading="lazy"
             decoding="async"
-            className="h-full w-full object-contain p-1 transition-transform duration-500 group-hover:scale-105"
+            className="block h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
           <div className="grid h-full w-full place-items-center bg-gradient-to-br from-[#F5F9F3] to-[#EAF3E9]">
@@ -108,7 +126,8 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
         )}
 
-        {/* Top-left labels: out of stock first, then the green discount label under it */}
+        {/* Top-left labels */}
+
         {(outOfStock || discount > 0) && (
           <div className="absolute left-3 top-3 flex flex-col items-start gap-1.5">
             {outOfStock && (
@@ -120,13 +139,16 @@ export function ProductCard({ product }: { product: Product }) {
 
             {discount > 0 && (
               <span className="rounded-full bg-[#078A4B] px-2.5 py-1 text-[10px] font-extrabold text-white shadow-sm sm:text-xs">
-                {t("cart.discountOff", { percent: discount })}
+                {t("cart.discountOff", {
+                  percent: discount,
+                })}
               </span>
             )}
           </div>
         )}
 
         {/* Low Stock Badge */}
+
         {!outOfStock && lowStock && (
           <span className="absolute bottom-2 left-3 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-amber-600 shadow-md sm:text-xs">
             {t("product.lowStock")}
@@ -135,13 +157,16 @@ export function ProductCard({ product }: { product: Product }) {
       </div>
 
       {/* ================= PRODUCT DETAILS ================= */}
+
       <div className="flex flex-1 flex-col p-3 sm:p-3.5">
         {/* Product Name */}
+
         <h3 className="line-clamp-2 text-sm font-extrabold leading-[1.35] text-[#123B2A] transition-colors group-hover:text-[#078A4B] sm:text-[15px]">
           {displayName}
         </h3>
 
         {/* Product Description */}
+
         <p className="mt-1.5 line-clamp-2 min-h-[30px] text-[11px] leading-[15px] text-[#718078] sm:text-xs">
           {displayDescription ||
             (isWeightBased
@@ -150,6 +175,7 @@ export function ProductCard({ product }: { product: Product }) {
         </p>
 
         {/* ================= WEIGHT SELECTION ================= */}
+
         {isWeightBased && (
           <div className="mt-2.5">
             <p className="mb-1.5 text-[11px] font-bold text-[#183D2D] sm:text-xs">
@@ -157,6 +183,7 @@ export function ProductCard({ product }: { product: Product }) {
             </p>
 
             {/* Weight Options */}
+
             <div className="grid grid-cols-4 gap-1.5">
               {WEIGHT_OPTIONS.map((weight) => {
                 const selected = selectedWeight === weight;
@@ -180,6 +207,7 @@ export function ProductCard({ product }: { product: Product }) {
             </div>
 
             {/* Custom Weight */}
+
             <div className="mt-2.5">
               <p className="mb-1.5 text-[11px] font-bold text-[#183D2D] sm:text-xs">
                 {t("customWeight")}
@@ -215,13 +243,16 @@ export function ProductCard({ product }: { product: Product }) {
         )}
 
         {/* ================= PRICE & CART ================= */}
-        <div className="mt-auto flex items-center justify-between gap-2 border-t border-[#E8EEE9] pt-2.5 mt-2.5">
+
+        <div className="mt-auto mt-2.5 flex items-center justify-between gap-2 border-t border-[#E8EEE9] pt-2.5">
           {/* Price */}
+
           <div className="min-w-0">
             <p className="flex flex-wrap items-baseline gap-x-1.5 text-base font-extrabold leading-tight text-[#123B2A] sm:text-lg">
               <span>
                 {formatPrice(displayPrice)} {t("currency")}
               </span>
+
               {discount > 0 && (
                 <s className="text-[11px] font-semibold text-[#87958D] sm:text-xs">
                   {formatPrice(grossPrice)}
@@ -229,14 +260,15 @@ export function ProductCard({ product }: { product: Product }) {
               )}
             </p>
 
-            {isWeightBased ? (
+            {isWeightBased && (
               <p className="mt-0.5 text-[10px] text-[#87958D] sm:text-xs">
                 {weightLabel(selectedWeight)}
               </p>
-            ) : null}
+            )}
           </div>
 
           {/* Add to Cart */}
+
           <button
             type="button"
             onClick={handleAddToCart}

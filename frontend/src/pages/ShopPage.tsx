@@ -4,7 +4,6 @@ import { useSearchParams } from "react-router-dom";
 import { Message } from "../components/Message";
 import { ProductGrid, ProductGridSkeleton } from "../components/ProductGrid";
 
-import { ShopHero } from "../components/ShopHero";
 import { ShopFilters } from "../components/ShopFilters";
 
 import { useProducts } from "../hooks/useProducts";
@@ -12,6 +11,7 @@ import { useCategories } from "../hooks/useShopData";
 import { useLanguage } from "../context/LanguageContext";
 
 import type { ProductQuery } from "../types";
+import { ShopHero } from "../components/ShopHero";
 
 export function ShopPage() {
   const [params, setParams] = useSearchParams();

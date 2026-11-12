@@ -71,6 +71,15 @@ export function Navbar() {
               >
                 {t("shop")}
               </NavLink>
+
+              <NavLink
+                to="/contact"
+                className={navClass}
+                onMouseEnter={PRELOAD["/contact"]}
+                onFocus={PRELOAD["/contact"]}
+              >
+                {t("contact")}
+              </NavLink>
             </nav>
 
             {/* Desktop search */}
@@ -187,6 +196,20 @@ export function Navbar() {
                   }
                 >
                   {t("shop")}
+                </NavLink>
+
+                <NavLink
+                  to="/contact"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={({ isActive }) =>
+                    `rounded-xl px-4 py-3 text-sm font-semibold ${
+                      isActive
+                        ? "bg-green-50 text-brand"
+                        : "text-neutral-700 hover:bg-green-50 hover:text-brand"
+                    }`
+                  }
+                >
+                  {t("contact")}
                 </NavLink>
 
                 <button

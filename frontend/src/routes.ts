@@ -5,6 +5,7 @@ import { lazyRoute, named } from "./utils/lazyRoute";
 export const HomePage = lazyRoute(named(() => import("./pages/HomePage"), "HomePage"));
 export const ShopPage = lazyRoute(named(() => import("./pages/ShopPage"), "ShopPage"));
 export const OrdersPage = lazyRoute(named(() => import("./pages/OrdersPage"), "OrdersPage"));
+export const ContactPage = lazyRoute(named(() => import("./pages/ContactPage"), "ContactPage"));
 export const NotFoundPage = lazyRoute(named(() => import("./pages/NotFoundPage"), "NotFoundPage"));
 
 export const AdminLoginPage = lazyRoute(named(() => import("./pages/admin/AdminLoginPage"), "AdminLoginPage"));
@@ -21,4 +22,5 @@ export const PRELOAD: Record<string, () => Promise<unknown>> = {
   "/": HomePage.preload,
   "/shop": ShopPage.preload,
   "/orders": OrdersPage.preload,
+  "/contact": ContactPage.preload,
 };
