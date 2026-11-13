@@ -2,7 +2,7 @@ import { z } from "zod";
 import { phone } from "../../lib/validators.js";
 
 export const MAX_QUANTITY = 50; // the most of one product in one order (kg, or pieces)
-export const ORDER_STATUSES = ["PENDING", "CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"];
+export const ORDER_STATUSES = ["PENDING", "ON_THE_WAY", "DELIVERED", "CANCELLED"];
 
 // Notice what is NOT here: no price, no delivery fee, no total. The server works those out itself.
 export const createOrderSchema = z.object({

@@ -76,7 +76,8 @@ enum OrderStatus {
   PENDING
   CONFIRMED
   PREPARING
-  OUT_FOR_DELIVERY
+  OUT_FOR_DELIVERY // legacy value; normalized to ON_THE_WAY by the API
+  ON_THE_WAY
   DELIVERED
   CANCELLED
 }

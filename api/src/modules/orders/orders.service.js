@@ -13,9 +13,12 @@ const itemDto = (i) => ({
   lineTotal: Number(i.lineTotal),
 });
 
+const normalizeOrderStatus = (status) =>
+  ["CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY"].includes(status) ? "ON_THE_WAY" : status;
+
 const toDto = (o) => ({
   id: o.id,
-  status: o.status,
+  status: normalizeOrderStatus(o.status),
   name: o.name,
   phone: o.phone,
   address: o.address,
@@ -111,7 +114,9 @@ export async function listOrders({ status, q }) {
   const asNumber = Number(q);
   const rows = await prisma.order.findMany({
     where: {
-      ...(status && { status }),
+      ...(status === "ON_THE_WAY"
+        ? { status: { in: ["ON_THE_WAY", "CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY"] } }
+        : status && { status }),
       ...(q && {
         OR: [
           { name: { contains: q, mode: "insensitive" } },
@@ -135,6 +140,9 @@ export async function getOrder(id) {
 }
 
 export async function setOrderStatus(id, status) {
+  if (!["PENDING", "ON_THE_WAY", "DELIVERED", "CANCELLED"].includes(status)) {
+    throw httpError(400, "Invalid order status.");
+  }
   await getOrder(id);
   return toDto(await prisma.order.update({ where: { id }, data: { status }, include: { items: true } }));
 }
