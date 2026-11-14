@@ -15,6 +15,7 @@ export const AdminOrdersPage = lazyRoute(named(() => import("./pages/admin/Admin
 export const AdminProductsPage = lazyRoute(named(() => import("./pages/admin/AdminProductsPage"), "AdminProductsPage"));
 export const AdminCategoriesPage = lazyRoute(named(() => import("./pages/admin/AdminCategoriesPage"), "AdminCategoriesPage"));
 export const AdminCustomersPage = lazyRoute(named(() => import("./pages/admin/AdminCustomersPage"), "AdminCustomersPage"));
+export const AdminCustomerPage = lazyRoute(named(() => import("./pages/admin/AdminCustomerPage"), "AdminCustomerPage"));
 export const AdminCitiesPage = lazyRoute(named(() => import("./pages/admin/AdminCitiesPage"), "AdminCitiesPage"));
 
 // Used by links: hover or focus a link and its page starts downloading.

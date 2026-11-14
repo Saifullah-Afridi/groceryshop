@@ -9,6 +9,7 @@ import {
   AdminCategoriesPage,
   AdminCitiesPage,
   AdminCustomersPage,
+  AdminCustomerPage,
   AdminDashboardPage,
   AdminLayout,
   AdminLoginPage,
@@ -48,6 +49,7 @@ export default function App() {
               <Route path="products" element={<AdminProductsPage />} />
               <Route path="categories" element={<AdminCategoriesPage />} />
               <Route path="users" element={<AdminCustomersPage />} />
+              <Route path="users/:id" element={<AdminCustomerPage />} />
               <Route path="delivery" element={<AdminCitiesPage />} />
             </Route>
           </Route>

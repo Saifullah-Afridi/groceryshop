@@ -1,7 +1,7 @@
 import { asyncHandler } from "../../lib/asyncHandler.js";
 import { readId } from "../../lib/readId.js";
 import {
-  createCustomer, deleteCustomer, getCustomer, listCustomers, loginCustomer,
+  createCustomer, deleteCustomer, getAdminCustomer, getCustomer, listCustomers, loginCustomer,
   registerCustomer, resendOtp, updateCustomer, verifyEmail,
 } from "./customers.service.js";
 import {
@@ -32,6 +32,10 @@ export const me = asyncHandler(async (req, res) => {
 // ---------- admin ----------
 export const list = asyncHandler(async (_req, res) => {
   res.json(await listCustomers());
+});
+
+export const adminGetOne = asyncHandler(async (req, res) => {
+  res.json(await getAdminCustomer(readId(req)));
 });
 
 export const adminCreate = asyncHandler(async (req, res) => {

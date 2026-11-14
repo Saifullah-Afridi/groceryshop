@@ -3,6 +3,7 @@ import type { CategoryInput, ProductInput } from "../types/admin";
 import type { AdminCustomer, CustomerInput } from "../types/customer";
 import type { City, CityInput, Order, OrderStatus } from "../types/order";
 import { api } from "./apiClient";
+import i18n from "../i18n";
 
 // Every function here is one API call. Images are sent as multipart form data.
 
@@ -10,6 +11,8 @@ function categoryForm(input: CategoryInput, imageFile?: File | null) {
   const form = new FormData();
   form.append("name", input.name);
   form.append("description", input.description ?? "");
+  form.append("language", input.language);
+  if (input.removeImage) form.append("removeImage", "true");
   form.append("icon", input.icon);
   form.append("color", input.color);
   form.append("tint", input.tint);
@@ -21,6 +24,8 @@ function productForm(input: ProductInput, imageFile?: File | null) {
   const form = new FormData();
   form.append("name", input.name);
   form.append("description", input.description);
+  form.append("language", input.language);
+  if (input.removeImage) form.append("removeImage", "true");
   form.append("categoryId", input.categoryId);
   form.append("price", String(input.price));
   form.append("unit", input.unit);
@@ -61,6 +66,21 @@ export const deleteCity = (id: number) => api<void>(`/cities/${id}`, { method: "
 
 // ---------- customers ----------
 export const getAdminCustomers = () => api<AdminCustomer[]>("/customers");
+
+export interface AdminCustomerDetails extends AdminCustomer {
+  stats: {
+    totalOrders: number;
+    totalSpent: number;
+    averageOrder: number;
+    lastOrderAt: string | null;
+    pending: number;
+    onTheWay: number;
+    delivered: number;
+    cancelled: number;
+  };
+  orders: Order[];
+}
+export const getAdminCustomer = (id: number) => api<AdminCustomerDetails>(`/customers/${id}`);
 export const createCustomer = (input: CustomerInput) => api<AdminCustomer>("/customers", { method: "POST", body: input });
 export const updateCustomer = (id: number, input: CustomerInput) =>
   api<AdminCustomer>(`/customers/${id}`, { method: "PUT", body: { ...input, password: input.password || undefined } });

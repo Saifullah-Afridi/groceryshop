@@ -5,6 +5,8 @@ const UNITS = ["kg", "item", "pack", "dozen", "bunch", "head", "bottle"];
 
 // Form data arrives as text, so numbers are converted with z.coerce.
 const fields = z.object({
+  language: z.enum(["en", "ar"]).default("en"),
+  removeImage: z.preprocess((value) => value === true || value === "true", z.boolean()).optional().default(false),
   name: z.string().trim().min(1, "Enter a product name").max(120),
   nameAr: z.string().trim().max(120).optional().default(""),
   description: z.string().trim().max(2000).default(""),
@@ -19,15 +21,26 @@ const fields = z.object({
 });
 
 const checkStockThreshold = (data, ctx) => {
-  if (data.minQuantity === undefined || data.minQuantity === 0) return;
   const step = (data.unit ?? "kg") === "kg" ? 0.25 : 1;
-  const steps = data.minQuantity / step;
-  if (Math.abs(steps - Math.round(steps)) > 1e-9) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["minQuantity"],
-      message: step === 0.25 ? "Stock alert threshold must use 0.25 kg steps." : "Stock alert threshold must be a whole number.",
-    });
+  if (data.minQuantity !== undefined && data.minQuantity !== 0) {
+    const steps = data.minQuantity / step;
+    if (Math.abs(steps - Math.round(steps)) > 1e-9) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["minQuantity"],
+        message: step === 0.25 ? "Stock alert threshold must use 0.25 kg steps." : "Stock alert threshold must be a whole number.",
+      });
+    }
+  }
+  if (data.stockQuantity !== undefined) {
+    const stockSteps = data.stockQuantity / step;
+    if (Math.abs(stockSteps - Math.round(stockSteps)) > 1e-9) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["stockQuantity"],
+        message: step === 0.25 ? "Stock quantity must use 0.25 kg steps." : "Stock quantity must be a whole number.",
+      });
+    }
   }
 };
 

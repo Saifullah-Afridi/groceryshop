@@ -4,6 +4,8 @@ const ICONS = ["Carrot", "Apple", "Beef", "Milk", "CupSoda", "Wheat"];
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "must be a color like #138040");
 
 const fields = z.object({
+  language: z.enum(["en", "ar"]).default("en"),
+  removeImage: z.preprocess((value) => value === true || value === "true", z.boolean()).optional().default(false),
   name: z.string().trim().min(1, "Enter a category name").max(80),
   nameAr: z.string().trim().max(80).optional().default(""),
   description: z.string().trim().max(500).default(""),

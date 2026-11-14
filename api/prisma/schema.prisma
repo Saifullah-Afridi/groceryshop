@@ -97,6 +97,7 @@ model Order {
   deliveryFee Decimal     @db.Decimal(10, 2)
   total       Decimal     @db.Decimal(10, 2)
   status      OrderStatus @default(PENDING)
+  stockReserved Boolean   @default(false) // true only for orders whose stock was deducted by the API
   items       OrderItem[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt

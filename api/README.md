@@ -52,3 +52,20 @@ Shared code: `src/lib` (database, storage, email, helpers), `src/middlewares`, `
 The order request only contains product ids, quantities, the city id and the delivery details. It never contains a price, a delivery fee or a total. The server reads every price and the city fee from the database, checks that each quantity goes up in steps of 0.25 kg (and is at most 50), and works out the totals itself. Changing numbers in the browser cannot change what an order costs.
 
 Admin and customer tokens are different: a customer token cannot use admin routes.
+
+## Environment setup
+
+Copy `.env.example` to `.env` and fill in the values from your Supabase, Azure Translator, and email provider dashboards. Keep `.env` private and never add it to Git.
+
+After changing `prisma/schema.prisma`, apply the schema to your development database and regenerate Prisma Client:
+
+```bash
+npm run db:push
+npm run prisma:generate
+```
+
+The `Order.stockReserved` field distinguishes orders created after stock reservation was introduced from older orders. This prevents cancelling an older order from incorrectly increasing inventory that was never deducted.
+
+## Image uploads
+
+Category and product image uploads accept JPEG, PNG, WebP, and GIF files up to 5 MB. The API checks both the declared MIME type and the file signature before uploading to Supabase Storage.

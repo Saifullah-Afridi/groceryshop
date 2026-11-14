@@ -2,6 +2,7 @@ import { httpError } from "../../lib/httpError.js";
 import { prisma } from "../../lib/prisma.js";
 import { slugify } from "../../lib/slug.js";
 import { deleteImage, uploadImage } from "../../lib/storage.js";
+import { buildBilingualContent } from "../../lib/translate.js";
 
 // The shape the React app expects.
 const toDto = (c) => ({
@@ -32,7 +33,9 @@ export async function getCategory(id) {
 }
 
 export async function createCategory(data, file) {
-  data = { ...data, nameAr: data.nameAr ?? "", descriptionAr: data.descriptionAr ?? "" };
+  const bilingual = await buildBilingualContent(data, data.language);
+  const { language, name, description, removeImage, ...rest } = data;
+  data = { ...rest, ...bilingual };
   const id = slugify(data.name) || `category-${Date.now()}`;
   if (await prisma.category.findUnique({ where: { id } })) {
     throw httpError(409, "A category with this name already exists.");
@@ -48,10 +51,18 @@ export async function createCategory(data, file) {
 
 export async function updateCategory(id, data, file) {
   const current = await findOrFail(id);
+  const bilingual = await buildBilingualContent(data, data.language ?? "en", current);
+  const { language, name, description, ...rest } = data;
+  data = { ...rest, ...bilingual };
   const image = file ? await uploadImage(file, "categories") : undefined;
+  const shouldRemoveImage = Boolean(data.removeImage) && !file;
+  delete data.removeImage;
   try {
-    const row = await prisma.category.update({ where: { id }, data: { ...data, ...(image && { image }) } });
-    if (image) await deleteImage(current.image); // the old photo is replaced
+    const row = await prisma.category.update({
+      where: { id },
+      data: { ...data, ...(image ? { image } : shouldRemoveImage ? { image: null } : {}) },
+    });
+    if (image || shouldRemoveImage) await deleteImage(current.image); // remove the old photo after the database update
     return toDto(row);
   } catch (error) {
     await deleteImage(image);

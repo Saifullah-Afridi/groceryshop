@@ -16,7 +16,7 @@ const authHeaders = () => ({
 
 // Upload an image to the Supabase bucket and return its public URL.
 export async function uploadImage(file, folder) {
-  const extension = path.extname(file.originalname).toLowerCase() || ".jpg";
+  const extension = file.detectedExtension || path.extname(file.originalname).toLowerCase() || ".jpg";
   const filePath = `${folder}/${randomUUID()}${extension}`;
 
   let response;

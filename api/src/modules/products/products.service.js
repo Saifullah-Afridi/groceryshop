@@ -1,6 +1,7 @@
 import { httpError } from "../../lib/httpError.js";
 import { prisma } from "../../lib/prisma.js";
 import { deleteImage, uploadImage } from "../../lib/storage.js";
+import { buildBilingualContent } from "../../lib/translate.js";
 
 // The shape the React app expects. Prisma returns price as a Decimal, so it is turned into a number.
 const toDto = (p) => ({
@@ -39,7 +40,7 @@ export async function listProducts({ category, q, sort, offers }) {
     where: {
       ...(category && { categoryId: category }),
       ...(offers && { discount: { gt: 0 } }),
-      ...(q && { OR: [{ name: { contains: q, mode: "insensitive" } }, { description: { contains: q, mode: "insensitive" } }] }),
+      ...(q && { OR: [{ name: { contains: q, mode: "insensitive" } }, { nameAr: { contains: q, mode: "insensitive" } }, { description: { contains: q, mode: "insensitive" } }, { descriptionAr: { contains: q, mode: "insensitive" } }] }),
     },
     orderBy: ORDER[sort] ?? { id: "asc" },
   });
@@ -52,9 +53,11 @@ export async function getProduct(id) {
 
 export async function createProduct(data, file) {
   await assertCategoryExists(data.categoryId);
+  const bilingual = await buildBilingualContent(data, data.language ?? "en");
+  const { language, name, description, removeImage, ...rest } = data;
   const image = file ? await uploadImage(file, "products") : null;
   try {
-    return toDto(await prisma.product.create({ data: { ...data, image } }));
+    return toDto(await prisma.product.create({ data: { ...rest, ...bilingual, image } }));
   } catch (error) {
     await deleteImage(image);
     throw error;
@@ -64,10 +67,17 @@ export async function createProduct(data, file) {
 export async function updateProduct(id, data, file) {
   const current = await findOrFail(id);
   if (data.categoryId) await assertCategoryExists(data.categoryId);
+  const language = data.language ?? "en";
+  const bilingual = await buildBilingualContent(data, language, current);
+  const { language: _language, name, description, removeImage, ...rest } = data;
   const image = file ? await uploadImage(file, "products") : undefined;
+  const shouldRemoveImage = Boolean(removeImage) && !file;
   try {
-    const row = await prisma.product.update({ where: { id }, data: { ...data, ...(image && { image }) } });
-    if (image) await deleteImage(current.image);
+    const row = await prisma.product.update({
+      where: { id },
+      data: { ...rest, ...bilingual, ...(image ? { image } : shouldRemoveImage ? { image: null } : {}) },
+    });
+    if (image || shouldRemoveImage) await deleteImage(current.image);
     return toDto(row);
   } catch (error) {
     await deleteImage(image);

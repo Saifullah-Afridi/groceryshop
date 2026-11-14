@@ -23,19 +23,43 @@ const signIn = (c) => ({
 const secondsUntilResend = (c) =>
   c.otpSentAt ? Math.max(0, Math.ceil((c.otpSentAt.getTime() + RESEND_SECONDS * 1000 - Date.now()) / 1000)) : 0;
 
-// Email a fresh code and save its hash. If the email fails, nothing is saved.
+// Reserve the resend window atomically before emailing. This prevents two
+// simultaneous resend requests from issuing different valid codes.
 async function sendOtp(customer) {
   const code = generateOtp();
-  await sendMail({ to: customer.email, ...verificationEmail({ code, minutes: OTP_MINUTES }) });
-  await prisma.customer.update({
-    where: { id: customer.id },
+  const otpHash = hashOtp(code, customer.id);
+  const now = new Date();
+  const resendCutoff = new Date(now.getTime() - RESEND_SECONDS * 1000);
+  const claimed = await prisma.customer.updateMany({
+    where: {
+      id: customer.id,
+      emailVerified: false,
+      OR: [{ otpSentAt: null }, { otpSentAt: { lte: resendCutoff } }],
+    },
     data: {
-      otpHash: hashOtp(code, customer.id),
-      otpExpiresAt: new Date(Date.now() + OTP_MINUTES * 60 * 1000),
+      otpHash,
+      otpExpiresAt: new Date(now.getTime() + OTP_MINUTES * 60 * 1000),
       otpAttempts: 0,
-      otpSentAt: new Date(),
+      otpSentAt: now,
     },
   });
+
+  if (claimed.count !== 1) {
+    const latest = await prisma.customer.findUnique({ where: { id: customer.id } });
+    const wait = latest ? secondsUntilResend(latest) : RESEND_SECONDS;
+    throw httpError(429, `Please wait ${Math.max(wait, 1)} seconds before asking for a new code.`);
+  }
+
+  try {
+    await sendMail({ to: customer.email, ...verificationEmail({ code, minutes: OTP_MINUTES }) });
+  } catch (error) {
+    // Clear only the code reserved by this request; never erase a newer code.
+    await prisma.customer.updateMany({
+      where: { id: customer.id, otpHash },
+      data: { otpHash: null, otpExpiresAt: null, otpAttempts: 0, otpSentAt: null },
+    });
+    throw error;
+  }
 }
 
 export async function registerCustomer({ name, email, phone, password, address }) {
@@ -57,18 +81,42 @@ export async function verifyEmail({ email, code }) {
   if (!customer || !customer.otpHash || !customer.otpExpiresAt) {
     throw httpError(400, "That code is not valid. Ask for a new one.");
   }
-  if (customer.otpExpiresAt < new Date()) throw httpError(400, "That code has expired. Ask for a new one.");
+  const now = new Date();
+  if (customer.otpExpiresAt < now) throw httpError(400, "That code has expired. Ask for a new one.");
   if (customer.otpAttempts >= OTP_MAX_ATTEMPTS) throw httpError(429, "Too many wrong tries. Ask for a new code.");
 
-  if (!safeEqual(hashOtp(code, customer.id), customer.otpHash)) {
-    await prisma.customer.update({ where: { id: customer.id }, data: { otpAttempts: { increment: 1 } } });
+  const submittedHash = hashOtp(code, customer.id);
+  if (!safeEqual(submittedHash, customer.otpHash)) {
+    const counted = await prisma.customer.updateMany({
+      where: {
+        id: customer.id,
+        emailVerified: false,
+        otpHash: customer.otpHash,
+        otpExpiresAt: { gt: now },
+        otpAttempts: { lt: OTP_MAX_ATTEMPTS },
+      },
+      data: { otpAttempts: { increment: 1 } },
+    });
+    if (counted.count !== 1) throw httpError(429, "That code is no longer valid. Ask for a new one.");
     throw httpError(400, "That code is not correct.");
   }
 
-  const verified = await prisma.customer.update({
-    where: { id: customer.id },
+  // A one-time conditional update prevents two concurrent requests from
+  // redeeming the same OTP successfully.
+  const verifiedCount = await prisma.customer.updateMany({
+    where: {
+      id: customer.id,
+      emailVerified: false,
+      otpHash: customer.otpHash,
+      otpExpiresAt: { gt: now },
+      otpAttempts: { lt: OTP_MAX_ATTEMPTS },
+    },
     data: { emailVerified: true, otpHash: null, otpExpiresAt: null, otpAttempts: 0 },
   });
+  if (verifiedCount.count !== 1) {
+    throw httpError(400, "That code is no longer valid. Ask for a new one.");
+  }
+  const verified = await prisma.customer.findUnique({ where: { id: customer.id } });
   return signIn(verified);
 }
 
@@ -121,6 +169,56 @@ async function assertEmailFree(email, exceptId) {
 export async function listCustomers() {
   const rows = await prisma.customer.findMany({ orderBy: { id: "desc" } });
   return rows.map(adminDto);
+}
+
+// Admin customer profile with a snapshot of the customer's order history.
+export async function getAdminCustomer(id) {
+  const customer = await prisma.customer.findUnique({
+    where: { id },
+    include: { orders: { orderBy: { createdAt: "desc" }, include: { items: true } } },
+  });
+  if (!customer) throw httpError(404, "Customer not found.");
+
+  const orders = customer.orders.map((order) => ({
+    id: order.id,
+    status: ["CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY"].includes(order.status) ? "ON_THE_WAY" : order.status,
+    name: order.name,
+    phone: order.phone,
+    address: order.address,
+    city: order.city,
+    note: order.note,
+    subtotal: Number(order.subtotal),
+    deliveryFee: Number(order.deliveryFee),
+    total: Number(order.total),
+    createdAt: order.createdAt.toISOString(),
+    items: order.items.map((item) => ({
+      id: item.id,
+      productId: item.productId,
+      productName: item.productName,
+      unit: item.unit,
+      unitPrice: Number(item.unitPrice),
+      quantity: item.quantity,
+      lineTotal: Number(item.lineTotal),
+    })),
+  }));
+  const countedOrders = orders.filter((order) => order.status !== "CANCELLED");
+  const totalSpent = countedOrders.reduce((sum, order) => sum + order.total, 0);
+  const lastOrder = orders[0];
+
+  return {
+    ...adminDto(customer),
+    stats: {
+      totalOrders: orders.length,
+      totalSpent,
+      averageOrder: countedOrders.length ? totalSpent / countedOrders.length : 0,
+      lastOrderAt: lastOrder?.createdAt ?? null,
+      pending: orders.filter((order) => order.status === "PENDING").length,
+      onTheWay: orders.filter((order) => order.status === "ON_THE_WAY").length,
+      delivered: orders.filter((order) => order.status === "DELIVERED").length,
+      cancelled: orders.filter((order) => order.status === "CANCELLED").length,
+    },
+    orders,
+  };
 }
 
 // An account made by the admin is already verified.

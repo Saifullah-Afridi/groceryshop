@@ -1,0 +1,29 @@
+RAKAN SHOP - FINAL PATCH AND STATIC TEST REPORT
+Date: 14 November 2026
+Source archive: Rakan-Shop-fixed-handover(1).zip
+
+PATCH APPLIED
+- Admin order transitions now allow PENDING -> ON_THE_WAY or CANCELLED.
+- ON_THE_WAY can now transition only to DELIVERED; it cannot be cancelled.
+- DELIVERED and CANCELLED are terminal states.
+- Customer cancellation remains restricted to PENDING.
+- When an order is cancelled, stockReserved is set to false in the same database update that changes its status. Stock restoration remains inside the transaction.
+
+CHECKS COMPLETED
+- ZIP integrity checked before extraction.
+- All backend JavaScript files passed `node --check`.
+- All project JSON files parsed successfully.
+- 11 static workflow assertions passed, covering order transitions, customer cancellation, server-side product pricing, conditional stock deduction, stock reservation release, image upload route protection and validation, RTL/LTR direction handling, and admin login rate limiting.
+
+NOT COMPLETED / NOT CERTIFIED
+- Frontend production build: not completed. `npm ci` timed out while fetching dependencies; an offline retry also failed because required packages were not cached. Running `tsc --noEmit` without dependencies produced missing-module/type errors, so this is not a valid application build result.
+- Customer registration and real email OTP delivery: not tested against SMTP/database.
+- Admin login: source-level checks only; not tested with live credentials.
+- Product/category image upload: source-level checks only; not tested against Supabase Storage.
+- Product create/edit: not tested against a live database/storage service.
+- Checkout, actual database price totals, stock deduction/restoration: source-level checks only; not exercised against a live database.
+- Arabic RTL: direction-setting code and CSS were inspected; visual browser rendering was not tested.
+- Prisma validation, Vercel deployment, and end-to-end browser testing were not completed.
+
+HANDOVER STATUS
+This archive includes the requested order-transition correction, but it must be treated as a patched testing candidate, not a fully certified production release. Complete dependency installation, frontend build, and live integration/browser tests with the project's configured environment before final client handover.

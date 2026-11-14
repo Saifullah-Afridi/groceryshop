@@ -1,10 +1,11 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { X } from "lucide-react";
 import { useLanguage, type TranslationKey } from "../../context/LanguageContext";
 import type { Category, Product, Unit } from "../../types";
 import type { ProductInput } from "../../types/admin";
 import { MAX_ORDER_QUANTITY } from "../../config";
 import { clampDiscount, formatPrice, stepFor } from "../../utils/format";
-import { localizedName } from "../../utils/localized";
+import { localizedDescription, localizedName } from "../../utils/localized";
 import { FormButtons, FormField, inputClass } from "./FormField";
 
 interface Props {
@@ -28,8 +29,8 @@ export function ProductForm({
 }: Props) {
   const { t, language, unitName } = useLanguage();
   const [f, setF] = useState({
-    name: initial?.name ?? "",
-    description: initial?.description ?? "",
+    name: initial ? localizedName(initial, language) : "",
+    description: initial ? localizedDescription(initial, language) : "",
     categoryId: initial?.categoryId ?? categories[0]?.id ?? "",
     price: initial ? String(initial.price) : "",
     discount: initial?.discount ? String(initial.discount) : "",
@@ -42,15 +43,36 @@ export function ProductForm({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState(initial?.image ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [removeImage, setRemoveImage] = useState(false);
 
   useEffect(() => {
-    if (!imageFile) return;
+    setF({
+      name: initial ? localizedName(initial, language) : "",
+      description: initial ? localizedDescription(initial, language) : "",
+      categoryId: initial?.categoryId ?? categories[0]?.id ?? "",
+      price: initial ? String(initial.price) : "",
+      discount: initial?.discount ? String(initial.discount) : "",
+      unit: (initial?.unit ?? "kg") as Unit,
+      minQuantity: initial?.minQuantity ? String(initial.minQuantity) : "",
+      stockQuantity: initial?.stockQuantity != null ? String(initial.stockQuantity) : "0",
+      image: initial?.image ?? "",
+    });
+    setImageFile(null);
+    setRemoveImage(false);
+    setImagePreview(initial?.image ?? "");
+  }, [initial?.id, language, categories[0]?.id]);
+
+  useEffect(() => {
+    if (!imageFile) {
+      setImagePreview(removeImage ? "" : initial?.image ?? "");
+      return;
+    }
 
     const previewUrl = URL.createObjectURL(imageFile);
     setImagePreview(previewUrl);
 
     return () => URL.revokeObjectURL(previewUrl);
-  }, [imageFile]);
+  }, [imageFile, removeImage, initial?.image]);
 
   const set =
     (key: keyof typeof f) =>
@@ -66,7 +88,9 @@ export function ProductForm({
     const file = e.target.files?.[0] ?? null;
     setImageFile(file);
 
-    if (!file) {
+    if (file) {
+      setRemoveImage(false);
+    } else if (!removeImage) {
       setImagePreview(f.image);
     }
   };
@@ -110,13 +134,15 @@ export function ProductForm({
       {
         name: f.name.trim(),
         description: f.description.trim(),
+        language,
         categoryId: f.categoryId,
         price,
         discount,
         unit: f.unit,
         minQuantity,
         stockQuantity,
-        image: f.image.trim(),
+        image: removeImage ? "" : f.image.trim(),
+        removeImage,
       },
       imageFile,
     );
@@ -278,11 +304,25 @@ export function ProductForm({
           <input
             id="product-image-upload"
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp,image/gif"
             onChange={handleImageChange}
             className="hidden"
           />
         </label>
+        {imagePreview && (
+          <button
+            type="button"
+            onClick={() => {
+              setImageFile(null);
+              setF((current) => ({ ...current, image: "" }));
+              setRemoveImage(true);
+            }}
+            className="mt-2 inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+          >
+            <X size={16} />
+            {t("admin.pf.removeImage")}
+          </button>
+        )}
       </FormField>
 
       <FormButtons saving={saving} onCancel={onCancel} />

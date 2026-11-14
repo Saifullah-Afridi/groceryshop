@@ -1,7 +1,14 @@
 import type { Category, Product } from "./index";
 
-// What the admin forms send. The API stores these fields in the Prisma models.
-export type CategoryInput = Omit<Category, "id">;
+export type ContentLanguage = "en" | "ar";
+
+// The form submits its text in the currently selected language. The API stores
+// both language variants and preserves the untouched translation.
+export type CategoryInput = Omit<Category, "id"> & {
+  language: ContentLanguage;
+  removeImage?: boolean;
+};
+
 export type ProductInput = Pick<
   Product,
   | "name"
@@ -13,4 +20,7 @@ export type ProductInput = Pick<
   | "stockQuantity"
   | "discount"
   | "image"
->;
+> & {
+  language: ContentLanguage;
+  removeImage?: boolean;
+};

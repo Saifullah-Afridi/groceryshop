@@ -5,7 +5,9 @@ import {
   type DragEvent,
   type FormEvent,
 } from "react";
+import { X } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
+import { localizedDescription, localizedName } from "../../utils/localized";
 import type { Category, IconKey } from "../../types";
 import type { CategoryInput } from "../../types/admin";
 import { CATEGORY_ICONS, ICON_KEYS } from "../../utils/categoryIcons";
@@ -26,16 +28,25 @@ export function CategoryForm({
   onSubmit,
   onCancel,
 }: Props) {
-  const { t } = useLanguage();
-  const [name, setName] = useState(initial?.name ?? "");
+  const { t, language } = useLanguage();
+  const [name, setName] = useState(initial ? localizedName(initial, language) : "");
   const [icon, setIcon] = useState<IconKey>(initial?.icon ?? "Carrot");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState(initial?.image ?? "");
   const [nameError, setNameError] = useState("");
+  const [removeImage, setRemoveImage] = useState(false);
+
+  useEffect(() => {
+    setName(initial ? localizedName(initial, language) : "");
+    setIcon(initial?.icon ?? "Carrot");
+    setImageFile(null);
+    setRemoveImage(false);
+    setNameError("");
+  }, [initial?.id, language]);
 
   useEffect(() => {
     if (!imageFile) {
-      setPreviewUrl(initial?.image ?? "");
+      setPreviewUrl(removeImage ? "" : initial?.image ?? "");
       return;
     }
 
@@ -43,10 +54,12 @@ export function CategoryForm({
     setPreviewUrl(objectUrl);
 
     return () => URL.revokeObjectURL(objectUrl);
-  }, [imageFile, initial?.image]);
+  }, [imageFile, initial?.image, removeImage]);
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setImageFile(event.target.files?.[0] ?? null);
+    const file = event.target.files?.[0] ?? null;
+    setImageFile(file);
+    if (file) setRemoveImage(false);
   };
 
   const handleDrop = (event: DragEvent<HTMLLabelElement>) => {
@@ -55,6 +68,7 @@ export function CategoryForm({
     const file = event.dataTransfer.files?.[0];
     if (file?.type.startsWith("image/")) {
       setImageFile(file);
+      setRemoveImage(false);
     }
   };
 
@@ -73,11 +87,13 @@ export function CategoryForm({
     onSubmit(
       {
         name: trimmedName,
-        description: initial?.description ?? "",
+        description: initial ? localizedDescription(initial, language) : "",
+        language,
         icon,
         color: initial?.color ?? "#0a4a2a",
         tint: initial?.tint ?? "#d9ecd9",
-        image: initial?.image ?? "",
+        image: removeImage ? "" : initial?.image ?? "",
+        removeImage,
       },
       imageFile,
     );
@@ -130,7 +146,7 @@ export function CategoryForm({
         >
           <input
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp,image/gif"
             onChange={handleImageChange}
             className="sr-only"
           />
@@ -142,7 +158,7 @@ export function CategoryForm({
                 alt={name || t("admin.cf.previewAlt")}
                 className="absolute inset-0 h-full w-full object-cover"
               />
-              <span className="absolute inset-0 grid place-items-center bg-black/40 text-sm font-medium text-white opacity-0 transition group-hover:opacity-100">
+              <span className="absolute inset-0 grid place-items-center bg-black/30 text-sm font-medium text-white opacity-0 transition group-hover:opacity-100">
                 {t("admin.cf.change")}
               </span>
             </>
@@ -156,6 +172,20 @@ export function CategoryForm({
             </div>
           )}
         </label>
+        {previewUrl && (
+          <button
+            type="button"
+            onClick={() => {
+              setImageFile(null);
+              setPreviewUrl("");
+              setRemoveImage(true);
+            }}
+            className="mt-2 inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+          >
+            <X size={16} />
+            {t("admin.cf.removeImage")}
+          </button>
+        )}
       </FormField>
 
       <FormButtons saving={saving} onCancel={onCancel} />

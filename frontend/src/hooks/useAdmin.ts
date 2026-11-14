@@ -17,6 +17,7 @@ import {
   getAdminCategories,
   getAdminCities,
   getAdminCustomers,
+  getAdminCustomer,
   getAdminOrders,
   getAdminProducts,
   getDashboard,
@@ -123,6 +124,12 @@ export const useDeleteCity = () =>
 // ---------- customers ----------
 export const useAdminCustomers = () =>
   useQuery({ queryKey: ["admin", "customers"], queryFn: getAdminCustomers });
+export const useAdminCustomer = (id: number) =>
+  useQuery({
+    queryKey: ["admin", "customers", id],
+    queryFn: () => getAdminCustomer(id),
+    enabled: Number.isInteger(id) && id > 0,
+  });
 export const useSaveCustomer = () =>
   useChange(
     ({ id, input }: { id?: number; input: CustomerInput }) =>

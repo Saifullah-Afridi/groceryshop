@@ -1,6 +1,7 @@
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { TableSkeleton } from "../../components/Skeleton";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ConfirmDialog } from "../../components/admin/ConfirmDialog";
 import { CustomerForm } from "../../components/admin/CustomerForm";
 import { Modal } from "../../components/admin/Modal";
@@ -12,6 +13,7 @@ import type { AdminCustomer } from "../../types/customer";
 
 export function AdminCustomersPage() {
   const { t, date } = useLanguage();
+  const navigate = useNavigate();
   const { data: customers = [], isLoading } = useAdminCustomers();
   const save = useSaveCustomer();
   const remove = useDeleteCustomer();
@@ -43,7 +45,7 @@ export function AdminCustomersPage() {
             </thead>
             <tbody className="divide-y divide-edge">
               {customers.map((c) => (
-                <tr key={c.id}>
+                <tr key={c.id} onClick={() => navigate(`/admin/users/${c.id}`)} onKeyDown={(event) => { if (event.key === "Enter") navigate(`/admin/users/${c.id}`); }} tabIndex={0} role="link" aria-label={t("admin.ud.viewCustomer", { name: c.name })} className="cursor-pointer transition hover:bg-surface/70 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand">
                   <td className="px-4 py-3"><p className="font-semibold">{c.name}</p><p className="text-xs text-muted">{c.email}</p></td>
                   <td className="px-4 py-3">{c.phone || <span className="text-muted">{t("admin.users.notSet")}</span>}</td>
                   <td className="px-4 py-3"><p className="line-clamp-2 max-w-xs">{c.address}</p></td>
@@ -55,8 +57,8 @@ export function AdminCustomersPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-1">
-                      <button onClick={() => openForm(c)} aria-label={t("admin.editLabel", { name: c.name })} className="grid h-9 w-9 place-items-center rounded-lg hover:bg-surface"><Pencil size={16} /></button>
-                      <button onClick={() => openDelete(c)} aria-label={t("admin.deleteLabel", { name: c.name })} className="grid h-9 w-9 place-items-center rounded-lg text-sale hover:bg-red-50"><Trash2 size={16} /></button>
+                      <button onClick={(event) => { event.stopPropagation(); openForm(c); }} aria-label={t("admin.editLabel", { name: c.name })} className="grid h-9 w-9 place-items-center rounded-lg hover:bg-surface"><Pencil size={16} /></button>
+                      <button onClick={(event) => { event.stopPropagation(); openDelete(c); }} aria-label={t("admin.deleteLabel", { name: c.name })} className="grid h-9 w-9 place-items-center rounded-lg text-sale hover:bg-red-50"><Trash2 size={16} /></button>
                     </div>
                   </td>
                 </tr>
