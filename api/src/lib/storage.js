@@ -3,21 +3,18 @@ import path from "node:path";
 import { env } from "../config/env.js";
 import { httpError } from "./httpError.js";
 
+// Supabase Storage API endpoint.
 const objectUrl = `${env.supabaseUrl.replace(/\/$/, "")}/storage/v1/object`;
 
-// Configure authentication for both Supabase key formats.
-const authHeaders = () => {
-  const key = env.supabaseKey;
+// Authentication headers for both old and new Supabase keys.
+const authHeaders = () => ({
+  apikey: env.supabaseKey,
 
-  if (!key) {
-    throw httpError(500, "Supabase Storage key is not configured.");
-  }
-
-  return {
-    apikey: key,
-    Authorization: `Bearer ${key}`,
-  };
-};
+  // Only legacy JWT-based service_role keys should be sent as Bearer tokens.
+  ...(env.supabaseKey.startsWith("eyJ")
+    ? { Authorization: `Bearer ${env.supabaseKey}` }
+    : {}),
+});
 
 // Upload an image to Supabase Storage and return its public URL.
 export async function uploadImage(file, folder) {
