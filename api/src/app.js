@@ -35,5 +35,4 @@ app.use("/api/admin/dashboard", dashboardRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
-// Required for Vercel Express deployment
 export default app;
