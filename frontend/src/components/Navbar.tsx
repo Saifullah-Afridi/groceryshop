@@ -18,16 +18,16 @@ export function Navbar() {
   const [params] = useSearchParams();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Desktop navigation styles
   const navClass = ({ isActive }: { isActive: boolean }) =>
     `relative whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
       isActive
-        ? "bg-green-50 text-brand"
+        ? "bg-transparent text-brand after:absolute after:bottom-0 after:left-3 after:right-3 after:h-[2px] after:rounded-full after:bg-brand after:content-['']"
         : "text-neutral-700 hover:bg-green-50 hover:text-brand"
     }`;
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 bg-transparent pt-0 sm:pt-5">
-      {" "}
       <Container>
         <div className="relative rounded-2xl border border-white/80 bg-white/95 p-3 shadow-lg shadow-black/10 backdrop-blur-xl sm:rounded-full sm:px-5 sm:py-3 lg:px-8">
           {/* Main navbar row */}
@@ -124,7 +124,7 @@ export function Navbar() {
           {/* Mobile smart search */}
           <NavbarSearch mobile currentQuery={params.get("q") ?? ""} />
 
-          {/* Floating mobile menu - does not change navbar height */}
+          {/* Floating mobile menu */}
           {mobileMenuOpen && (
             <div className="absolute left-0 right-0 top-full z-50 mt-2 rounded-2xl border border-neutral-200 bg-white p-3 shadow-xl shadow-black/10 sm:hidden">
               <nav
@@ -174,6 +174,7 @@ export function Navbar() {
                   {t("contact")}
                 </NavLink>
 
+                {/* Mobile language switcher */}
                 <button
                   type="button"
                   onClick={() => {

@@ -91,7 +91,7 @@ export function ShopPage() {
       {/* Shop Hero */}
       <ShopHero />
 
-      <div className="mx-auto mt-10 w-full max-w-[1600px] px-5 sm:px-8 lg:px-14">
+      <div className="mx-auto mt-10 w-full max-w-[1600px] px-5 sm:px-12 xl:px-30">
         <section id="shop-products" className="scroll-mt-28">
           {/* Section Heading */}
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">

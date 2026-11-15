@@ -45,11 +45,14 @@ createRoot(document.getElementById("root")!).render(
         </BrowserRouter>
 
         <ToastContainer
-          position="top-right"
-          autoClose={2500}
+          position="top-center"
+          autoClose={3500}
           limit={3}
+          newestOnTop
           closeOnClick
           pauseOnHover
+          theme="light"
+          toastStyle={{ borderRadius: "12px", fontWeight: 500 }}
         />
       </LanguageProvider>
     </QueryClientProvider>

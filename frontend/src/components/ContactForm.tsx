@@ -1,5 +1,6 @@
-import { CheckCircle2, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { useId, useState } from "react";
+import { toast } from "react-toastify";
 import type { ChangeEvent, FormEvent, ReactNode } from "react";
 import { useLanguage } from "../context/LanguageContext";
 import { sendContactMessage } from "../services/contactService";
@@ -44,13 +45,11 @@ export function ContactForm() {
   const { t, isArabic } = useLanguage();
   const [values, setValues] = useState<ContactValues>(EMPTY_VALUES);
   const [errors, setErrors] = useState<ContactErrors>({});
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
-  const [serverError, setServerError] = useState("");
+  const [status, setStatus] = useState<"idle" | "sending">("idle");
 
   const update = (field: keyof ContactValues) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setValues((current) => ({ ...current, [field]: event.target.value }));
     setStatus("idle");
-    setServerError("");
   };
 
   const submit = async (event: FormEvent) => {
@@ -64,21 +63,23 @@ export function ContactForm() {
     if (Object.keys(found).length > 0) return;
 
     setStatus("sending");
-    setServerError("");
     try {
       await sendContactMessage({
         name: values.name.trim(),
         email: values.email.trim(),
         message: values.message.trim(),
       });
-      setStatus("sent");
+      setStatus("idle");
       setValues(EMPTY_VALUES);
       setErrors({});
+      toast.success(isArabic
+        ? "تم إرسال رسالتك بنجاح. شكرًا لتواصلك معنا."
+        : "Your message has been sent successfully. Thank you for contacting us.");
     } catch (error) {
-      setStatus("error");
-      setServerError(error instanceof Error
+      const message = error instanceof Error
         ? error.message
-        : (isArabic ? "تعذر إرسال رسالتك. حاول مرة أخرى." : "Your message could not be sent. Please try again."));
+        : (isArabic ? "تعذر إرسال رسالتك. حاول مرة أخرى." : "Your message could not be sent. Please try again.");
+      toast.error(message);
     }
   };
 
@@ -109,15 +110,6 @@ export function ContactForm() {
           : t("contact.send")}
       </button>
 
-      {status === "sent" && (
-        <div role="status" className="flex items-start gap-3 rounded-xl bg-green-50 px-4 py-3 text-sm text-[#0B5D3B]">
-          <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
-          <p>{isArabic ? "تم إرسال رسالتك بنجاح. شكرًا لتواصلك معنا." : "Your message has been sent successfully. Thank you for contacting us."}</p>
-        </div>
-      )}
-      {status === "error" && (
-        <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{serverError}</p>
-      )}
     </form>
   );
 }

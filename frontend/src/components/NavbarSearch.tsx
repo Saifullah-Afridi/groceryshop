@@ -93,7 +93,7 @@ export function NavbarSearch({ mobile = false, currentQuery = "" }: Props) {
           aria-label={t("search")}
           aria-expanded={open && query.trim().length >= 2}
           aria-controls={listboxId}
-          className="w-full min-w-0 bg-transparent text-sm text-neutral-900 outline-none placeholder:text-neutral-400"
+          className="navbar-search-input w-full min-w-0 appearance-none rounded-none border-0 bg-transparent p-0 text-sm text-neutral-900 shadow-none outline-none ring-0 placeholder:text-neutral-400 focus:border-0 focus:shadow-none focus:outline-none focus:ring-0 focus-visible:border-0 focus-visible:shadow-none focus-visible:outline-none focus-visible:ring-0"
         />
         {query && <button type="button" aria-label={isArabic ? "مسح البحث" : "Clear search"} onClick={() => { setQuery(""); inputRef.current?.focus(); }} className="text-neutral-400 hover:text-neutral-700">×</button>}
       </form>

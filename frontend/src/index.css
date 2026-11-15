@@ -39,6 +39,15 @@ input:focus-visible {
   outline: 2px solid var(--color-brand);
   outline-offset: 2px;
 }
+/* The navbar search uses the outer pill as its focus indicator; suppress the
+   browser/global rectangular input outline so it does not appear inside the pill. */
+.navbar-search-input:focus,
+.navbar-search-input:focus-visible {
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  ring: 0 !important;
+}
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

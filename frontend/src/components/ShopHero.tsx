@@ -6,7 +6,7 @@ export function ShopHero() {
   const { isArabic } = useLanguage();
 
   return (
-    <section className="relative isolate min-h-[380px] w-full overflow-hidden bg-[#031D1A] pt-24 sm:min-h-[430px] lg:min-h-[460px]">
+    <section className="relative isolate min-h-[380px] w-full overflow-hidden bg-[#080F23] pt-24 sm:min-h-[430px] lg:min-h-[460px]">
       {/* Full-width background image */}
       <div
         className="absolute inset-0 -z-20 bg-cover bg-center"
@@ -15,53 +15,50 @@ export function ShopHero() {
         }}
       />
 
-      {/* Dark overlay */}
+      {/* Same overlay treatment as Home Hero */}
       <div
-        className={`absolute inset-0 -z-10 ${
-          isArabic
-            ? "bg-gradient-to-l from-[#031D1A]/95 via-[#031D1A]/80 to-[#031D1A]/20"
-            : "bg-gradient-to-r from-[#031D1A]/95 via-[#031D1A]/80 to-[#031D1A]/20"
+        className={`absolute inset-0 -z-10 bg-gradient-to-r from-[#080F23]/85 via-[#080F23]/50 to-[#080F23]/20 ${
+          isArabic ? "[direction:rtl]" : ""
         }`}
       />
 
-      {/* Subtle additional darkening */}
-      <div className="absolute inset-0 -z-10 bg-[#031D1A]/10" />
+      {/* Same subtle radial highlight as Home Hero */}
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_left,_rgba(0,201,149,0.18),_transparent_65%)]" />
 
       {/* Content container */}
       <div
-        className={`mx-auto flex min-h-[380px] w-full max-w-[1600px] items-center px-5 py-12 sm:min-h-[430px] sm:px-12 lg:min-h-[460px] lg:px-20 ${
+        className={`relative mx-auto flex min-h-[380px] w-full max-w-[1600px] items-center px-5 py-12 sm:min-h-[430px] sm:px-12 lg:min-h-[460px] xl:px-30 ${
           isArabic ? "text-right" : "text-left"
         }`}
       >
-        <div className="max-w-[600px]">
+        <div className="w-full max-w-[760px]">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#00C98D]/30 bg-[#003F35]/60 px-4 py-2 text-xs font-semibold tracking-wide text-[#00D6A0] backdrop-blur-sm">
-            <ShoppingBasket size={15} />
-
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#00C995]/30 bg-[#00C995]/10 px-4 py-2 text-sm font-semibold text-[#00C995]">
+            <ShoppingBasket size={17} />
             <span>
               {isArabic ? "اكتشف منتجات ركان" : "EXPLORE THE RAKAN COLLECTION"}
             </span>
           </div>
 
           {/* Heading */}
-          <h1 className="mt-6 text-3xl font-extrabold leading-[1.15] tracking-tight text-white sm:text-4xl lg:text-5xl">
+          <h1 className="mt-6 text-4xl font-extrabold leading-[1.12] tracking-[-0.04em] text-white sm:text-5xl xl:text-6xl">
             {isArabic ? (
               <>
                 احتياجاتك اليومية،
                 <br />
-                <span className="text-[#00C98D]">كلها في مكان واحد.</span>
+                <span className="text-[#00C995]">كلها في مكان واحد.</span>
               </>
             ) : (
               <>
                 Your Everyday Essentials.
                 <br />
-                <span className="text-[#00C98D]">All in One Place.</span>
+                <span className="text-[#00C995]">All in One Place.</span>
               </>
             )}
           </h1>
 
           {/* Description */}
-          <p className="mt-5 max-w-[520px] text-sm leading-7 text-white/75 sm:text-base">
+          <p className="mt-7 max-w-[620px] text-base leading-8 text-white/80 sm:text-lg">
             {isArabic
               ? "تصفح مجموعتنا من الخضروات والفواكه الطازجة ومنتجات الألبان والمخبوزات والمواد الغذائية اليومية."
               : "Browse our selection of fresh produce, dairy, bakery items, pantry staples, and everything you need for everyday living."}
@@ -70,12 +67,9 @@ export function ShopHero() {
           {/* Breadcrumbs */}
           <nav
             aria-label={isArabic ? "مسار التنقل" : "Breadcrumb"}
-            className="mt-7 flex items-center gap-2 text-sm"
+            className="mt-7 flex items-center gap-2 text-sm font-medium text-white/60"
           >
-            <Link
-              to="/"
-              className="text-white/60 transition hover:text-[#00C98D]"
-            >
+            <Link to="/" className="transition hover:text-[#00C995]">
               {isArabic ? "الرئيسية" : "Home"}
             </Link>
 
@@ -84,7 +78,7 @@ export function ShopHero() {
               className={`text-white/40 ${isArabic ? "rotate-180" : ""}`}
             />
 
-            <span className="font-semibold text-[#00C98D]">
+            <span className="font-semibold text-[#00C995]">
               {isArabic ? "المتجر" : "Shop"}
             </span>
           </nav>
