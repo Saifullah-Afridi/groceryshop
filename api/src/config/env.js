@@ -76,4 +76,5 @@ export const env = {
   },
 
   mailFrom: process.env.MAIL_FROM ?? "Rakan <no-reply@rakan.local>",
+  contactEmail: process.env.CONTACT_EMAIL?.trim() || process.env.ADMIN_EMAIL.trim(),
 };

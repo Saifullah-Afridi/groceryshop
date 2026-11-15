@@ -1,4 +1,4 @@
-import type { Product, ProductQuery } from "../types";
+import type { Product, ProductQuery, SearchSuggestions } from "../types";
 import { api } from "./apiClient";
 
 // Products come from the API. The admin dashboard is where they are created and changed.
@@ -12,3 +12,6 @@ export function getProducts(query: ProductQuery = {}) {
 }
 
 export const getProduct = (id: number) => api<Product>(`/products/${id}`, { auth: "none" });
+
+export const getSearchSuggestions = (q: string) =>
+  api<SearchSuggestions>(`/products/search/suggestions?q=${encodeURIComponent(q)}`, { auth: "none" });

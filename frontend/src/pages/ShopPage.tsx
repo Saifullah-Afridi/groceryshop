@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { Message } from "../components/Message";
@@ -14,6 +14,7 @@ import type { ProductQuery } from "../types";
 import { ShopHero } from "../components/ShopHero";
 
 export function ShopPage() {
+  const [visibleCount, setVisibleCount] = useState(36);
   const [params, setParams] = useSearchParams();
 
   const { isArabic, t } = useLanguage();
@@ -23,6 +24,10 @@ export function ShopPage() {
   const selectedCategory = params.get("category");
   const offersOnly = params.get("offers") === "1";
   const searchQuery = params.get("q") ?? "";
+
+  useEffect(() => {
+    setVisibleCount(36);
+  }, [selectedCategory, searchQuery, offersOnly]);
 
   useEffect(() => {
     window.scrollTo({
@@ -167,7 +172,22 @@ export function ShopPage() {
           )}
 
           {/* Product Grid */}
-          {data && data.length > 0 && <ProductGrid products={data} />}
+          {data && data.length > 0 && (
+            <>
+              <ProductGrid products={data.slice(0, visibleCount)} />
+              {visibleCount < data.length && (
+                <div className="mt-10 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setVisibleCount((current) => current + 36)}
+                    className="rounded-full bg-brand px-8 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-dark focus:outline-none focus:ring-4 focus:ring-brand/20"
+                  >
+                    {isArabic ? "عرض المزيد" : "Load More"}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </section>
       </div>
     </main>

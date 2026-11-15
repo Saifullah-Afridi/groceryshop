@@ -56,3 +56,8 @@ export interface ProductQuery {
   price?: "lt1" | "1to5" | "gt5";
   minRating?: number;
 }
+
+export interface SearchSuggestions {
+  products: Array<Product & { categoryName: string; categoryNameAr?: string }>;
+  categories: Array<Pick<Category, "id" | "name" | "nameAr" | "image">>;
+}

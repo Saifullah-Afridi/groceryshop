@@ -1,6 +1,6 @@
 import { asyncHandler } from "../../lib/asyncHandler.js";
 import { httpError } from "../../lib/httpError.js";
-import { createProduct, deleteProduct, getProduct, listProducts, updateProduct } from "./products.service.js";
+import { createProduct, deleteProduct, getProduct, getSearchSuggestions, listProducts, updateProduct } from "./products.service.js";
 import { createProductSchema, listQuerySchema, updateProductSchema } from "./products.validation.js";
 
 function readId(req) {
@@ -11,6 +11,12 @@ function readId(req) {
 
 export const list = asyncHandler(async (req, res) => {
   res.json(await listProducts(listQuerySchema.parse(req.query)));
+});
+
+export const suggestions = asyncHandler(async (req, res) => {
+  const query = String(req.query.q ?? "").trim();
+  if (query.length < 2 || query.length > 80) return res.json({ products: [], categories: [] });
+  res.json(await getSearchSuggestions(query));
 });
 
 export const getOne = asyncHandler(async (req, res) => {

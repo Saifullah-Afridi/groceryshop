@@ -1,18 +1,15 @@
 import { CheckCircle2, Send } from "lucide-react";
 import { useId, useState } from "react";
 import type { ChangeEvent, FormEvent, ReactNode } from "react";
-import { STORE } from "../config";
 import { useLanguage } from "../context/LanguageContext";
-import { buildMailtoLink, validateContact } from "../utils/contactMessage";
+import { sendContactMessage } from "../services/contactService";
+import { validateContact } from "../utils/contactMessage";
 import type { ContactErrors, ContactValues } from "../utils/contactMessage";
 
 const EMPTY_VALUES: ContactValues = { name: "", email: "", message: "" };
-
-// The same input look used by the auth forms: tall, rounded, with a soft green focus ring
 const FIELD_CLASS =
   "w-full rounded-xl border border-edge bg-white px-4 text-base outline-none transition placeholder:text-muted/60 focus:border-brand focus:ring-4 focus:ring-brand/10";
 
-// The attributes that connect an input to its label and to its error message
 interface InputLinkProps {
   id: string;
   "aria-invalid": boolean;
@@ -25,12 +22,14 @@ interface FieldProps {
   children: (inputProps: InputLinkProps) => ReactNode;
 }
 
-// One label, its input, and the error text under it.
-// The error sits outside the label, so the input's name stays "Your name" and the error is read as its description.
 function Field({ label, error, children }: FieldProps) {
   const fieldId = useId();
   const errorId = `${fieldId}-error`;
-  const inputProps: InputLinkProps = { id: fieldId, "aria-invalid": Boolean(error), "aria-describedby": error ? errorId : undefined };
+  const inputProps: InputLinkProps = {
+    id: fieldId,
+    "aria-invalid": Boolean(error),
+    "aria-describedby": error ? errorId : undefined,
+  };
 
   return (
     <div className="text-sm">
@@ -42,24 +41,45 @@ function Field({ label, error, children }: FieldProps) {
 }
 
 export function ContactForm() {
-  const { t } = useLanguage();
+  const { t, isArabic } = useLanguage();
   const [values, setValues] = useState<ContactValues>(EMPTY_VALUES);
   const [errors, setErrors] = useState<ContactErrors>({});
-  const [opened, setOpened] = useState(false);
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [serverError, setServerError] = useState("");
 
-  // Keeps one field in step with what the visitor types
   const update = (field: keyof ContactValues) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setValues((current) => ({ ...current, [field]: event.target.value }));
+    setStatus("idle");
+    setServerError("");
   };
 
-  // Checks the fields, then opens the email app with the message ready
-  const submit = (event: FormEvent) => {
+  const submit = async (event: FormEvent) => {
     event.preventDefault();
-    const found = validateContact(values, { name: t("contact.errName"), email: t("contact.errEmail"), message: t("contact.errMessage") });
+    const found = validateContact(values, {
+      name: t("contact.errName"),
+      email: t("contact.errEmail"),
+      message: t("contact.errMessage"),
+    });
     setErrors(found);
     if (Object.keys(found).length > 0) return;
-    window.location.href = buildMailtoLink(values, t("contact.mailSubject", { name: values.name.trim() }));
-    setOpened(true);
+
+    setStatus("sending");
+    setServerError("");
+    try {
+      await sendContactMessage({
+        name: values.name.trim(),
+        email: values.email.trim(),
+        message: values.message.trim(),
+      });
+      setStatus("sent");
+      setValues(EMPTY_VALUES);
+      setErrors({});
+    } catch (error) {
+      setStatus("error");
+      setServerError(error instanceof Error
+        ? error.message
+        : (isArabic ? "تعذر إرسال رسالتك. حاول مرة أخرى." : "Your message could not be sent. Please try again."));
+    }
   };
 
   return (
@@ -82,20 +102,21 @@ export function ContactForm() {
         {(inputProps) => <textarea {...inputProps} value={values.message} onChange={update("message")} rows={6} placeholder={t("contact.messagePlaceholder")} className={`${FIELD_CLASS} min-h-36 resize-y py-3 leading-6`} />}
       </Field>
 
-      <button type="submit" className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand text-base font-semibold text-white shadow-sm transition hover:bg-brand-dark">
+      <button type="submit" disabled={status === "sending"} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand text-base font-semibold text-white shadow-sm transition hover:bg-brand-dark disabled:cursor-wait disabled:opacity-60">
         <Send size={18} className="rtl:-scale-x-100" />
-        {t("contact.send")}
+        {status === "sending"
+          ? (isArabic ? "جارٍ الإرسال..." : "Sending...")
+          : t("contact.send")}
       </button>
 
-      {/* Shown after the email app was opened, with a phone fallback for devices without one */}
-      {opened && (
+      {status === "sent" && (
         <div role="status" className="flex items-start gap-3 rounded-xl bg-green-50 px-4 py-3 text-sm text-[#0B5D3B]">
           <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
-          <div>
-            <p>{t("contact.opened")}</p>
-            <p className="mt-1 text-xs text-[#45675A]">{t("contact.noMailApp", { phone: STORE.phone })}</p>
-          </div>
+          <p>{isArabic ? "تم إرسال رسالتك بنجاح. شكرًا لتواصلك معنا." : "Your message has been sent successfully. Thank you for contacting us."}</p>
         </div>
+      )}
+      {status === "error" && (
+        <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{serverError}</p>
       )}
     </form>
   );

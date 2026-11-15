@@ -29,7 +29,7 @@ export function ShopHero() {
 
       {/* Content container */}
       <div
-        className={`mx-auto flex min-h-[380px] w-full max-w-[1600px] items-center px-6 py-12 sm:min-h-[430px] sm:px-10 lg:min-h-[460px] lg:px-14 ${
+        className={`mx-auto flex min-h-[380px] w-full max-w-[1600px] items-center px-5 py-12 sm:min-h-[430px] sm:px-12 lg:min-h-[460px] lg:px-20 ${
           isArabic ? "text-right" : "text-left"
         }`}
       >
