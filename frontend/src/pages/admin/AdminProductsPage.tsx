@@ -1,24 +1,39 @@
-import { Package, Pencil, Plus, Search, Trash2 } from "lucide-react";
-import { TableSkeleton } from "../../components/Skeleton";
-import { useMemo, useState } from "react";
+import {
+  Image as ImageIcon,
+  Package,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
-import { ConfirmDialog } from "../../components/admin/ConfirmDialog";
-import { inputClass } from "../../components/admin/FormField";
-import { Modal } from "../../components/admin/Modal";
-import { PageHeader } from "../../components/admin/PageHeader";
-import { ProductForm } from "../../components/admin/ProductForm";
+import { TableSkeleton } from "../../components/Skeleton";
 import { Message } from "../../components/Message";
+
 import { useLanguage } from "../../context/LanguageContext";
+
 import {
   useAdminCategories,
   useAdminProducts,
   useDeleteProduct,
   useSaveProduct,
 } from "../../hooks/useAdmin";
+
 import type { Category, Product } from "../../types";
+
 import { CATEGORY_ICONS } from "../../utils/categoryIcons";
 import { formatPrice } from "../../utils/format";
 import { localizedDescription, localizedName } from "../../utils/localized";
+
+import { PageHeader } from "../../components/admin/PageHeader";
+import { ConfirmDialog } from "../../components/admin/ConfirmDialog";
+import { ProductForm } from "../../components/admin/ProductForm";
+import { Modal } from "../../components/admin/Modal";
+import { Pagination } from "../../components/admin/Pagination";
+import { inputClass } from "../../components/admin/FormField";
+
+const PAGE_SIZE = 8;
 
 function ProductImage({
   product,
@@ -34,7 +49,7 @@ function ProductImage({
         alt={product.name}
         loading="lazy"
         decoding="async"
-        className="h-12 w-12 rounded-lg bg-surface object-cover"
+        className="h-11 w-11 rounded-lg border border-edge object-cover"
       />
     );
   }
@@ -42,17 +57,20 @@ function ProductImage({
   const Icon = category ? CATEGORY_ICONS[category.icon] : Package;
 
   return (
-    <span
-      className="grid h-12 w-12 place-items-center rounded-lg text-brand"
-      style={{ background: category?.tint ?? "#eee" }}
+    <div
+      className="grid h-11 w-11 place-items-center rounded-lg border border-dashed border-edge bg-surface text-muted"
+      style={{
+        backgroundColor: category?.tint ?? undefined,
+      }}
     >
-      <Icon size={20} />
-    </span>
+      {Icon ? <Icon size={19} /> : <ImageIcon size={17} />}
+    </div>
   );
 }
 
 export function AdminProductsPage() {
-  const { t, language, unitName, money } = useLanguage();
+  const { t, language, isArabic, unitName, money } = useLanguage();
+
   const { data: categories = [] } = useAdminCategories();
   const { data: products = [], isLoading } = useAdminProducts();
 
@@ -61,26 +79,48 @@ export function AdminProductsPage() {
 
   const [editing, setEditing] = useState<Product | "new" | null>(null);
   const [deleting, setDeleting] = useState<Product | null>(null);
+
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState("");
-  const [page, setPage] = useState(1);
-  const PAGE_SIZE = 10;
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const list = useMemo(() => {
+  const filteredProducts = useMemo(() => {
     const text = search.trim().toLowerCase();
 
-    return products.filter(
-      (product) =>
-        (!categoryId || product.categoryId === categoryId) &&
-        (!text ||
-          `${product.name} ${product.nameAr ?? ""} ${product.description}`
-            .toLowerCase()
-            .includes(text)),
-    );
+    return products.filter((product) => {
+      const matchesCategory = !categoryId || product.categoryId === categoryId;
+
+      const searchableText = [
+        product.name,
+        product.nameAr ?? "",
+        product.description ?? "",
+        product.descriptionAr ?? "",
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      const matchesSearch = !text || searchableText.includes(text);
+
+      return matchesCategory && matchesSearch;
+    });
   }, [products, search, categoryId]);
 
-  const pageCount = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
-  const paginatedList = list.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredProducts.length / PAGE_SIZE),
+  );
+
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  );
+
+  // Return to the last available page if products are deleted or filtered.
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const categoryOf = (id: string) =>
     categories.find((category) => category.id === id);
@@ -95,35 +135,77 @@ export function AdminProductsPage() {
     setDeleting(value);
   };
 
+  const productName = (product: Product) => localizedName(product, language);
+
   return (
-    <>
+    <div dir={isArabic ? "rtl" : "ltr"} className="space-y-5">
+      {/* Page Header */}
       <PageHeader
         title={t("admin.products.title")}
         text={t("admin.products.text")}
         action={
           <button
+            type="button"
             onClick={() => openForm("new")}
             disabled={categories.length === 0}
             title={
-              categories.length === 0 ? t("admin.products.createCategoryFirst") : undefined
+              categories.length === 0
+                ? t("admin.products.createCategoryFirst")
+                : undefined
             }
-            className="flex h-10 items-center gap-2 rounded-lg bg-brand px-4 text-sm font-bold text-white shadow-sm transition hover:bg-brand-dark disabled:opacity-50"
+            className="
+              inline-flex h-10 cursor-pointer items-center gap-2
+              rounded-lg border border-brand
+              bg-brand px-4
+              text-sm font-semibold text-white
+              shadow-sm
+              transition-all duration-200 ease-in-out
+              hover:-translate-y-0.5
+              hover:border-brand-dark
+              hover:bg-brand-dark
+              hover:shadow-md
+              active:translate-y-0
+              active:scale-95
+              active:shadow-sm
+              focus:outline-none
+              focus:ring-2 focus:ring-brand
+              focus:ring-offset-2
+              disabled:cursor-not-allowed
+              disabled:opacity-50
+            "
           >
-            <Plus size={16} />
+            <Plus size={17} />
             {t("admin.products.add")}
           </button>
         }
       />
 
-      <div className="mb-4 flex flex-wrap gap-3">
-        <label className="relative min-w-[220px] flex-1 sm:max-w-sm">
+      {/* Product Count */}
+      {!isLoading && (
+        <div className="rounded-xl border border-edge bg-white px-5 py-4">
+          <p className="text-sm text-muted">{t("admin.products.title")}</p>
+
+          <p className="mt-1 text-2xl font-semibold tracking-tight text-brand">
+            {products.length}
+          </p>
+        </div>
+      )}
+
+      {/* Search and Category Filter */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <label className="relative min-w-0 flex-1">
           <Search
             size={16}
-            className="pointer-events-none absolute start-3 top-3 text-muted"
+            className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-muted"
           />
+
           <input
+            type="text"
             value={search}
-            onChange={(event) => { setSearch(event.target.value); setPage(1); }}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setCurrentPage(1);
+            }}
             placeholder={t("admin.products.search")}
             className={`${inputClass} ps-9`}
           />
@@ -131,11 +213,19 @@ export function AdminProductsPage() {
 
         <select
           value={categoryId}
-          onChange={(event) => { setCategoryId(event.target.value); setPage(1); }}
-          className={`${inputClass} w-auto`}
+          onChange={(event) => {
+            setCategoryId(event.target.value);
+            setCurrentPage(1);
+          }}
+          className={`
+            ${inputClass}
+            w-full cursor-pointer
+            sm:w-56
+          `}
           aria-label={t("admin.products.filterCategory")}
         >
           <option value="">{t("admin.products.allCategories")}</option>
+
           {categories.map((category) => (
             <option key={category.id} value={category.id}>
               {localizedName(category, language)}
@@ -143,138 +233,286 @@ export function AdminProductsPage() {
           ))}
         </select>
 
-        <span className="self-center text-sm text-muted">
-          {t("admin.products.count", { count: list.length })}
+        <span className="shrink-0 text-sm text-muted">
+          {t("admin.products.count", {
+            count: filteredProducts.length,
+          })}
         </span>
       </div>
 
+      {/* Loading */}
       {isLoading && <TableSkeleton />}
 
-      {!isLoading && list.length === 0 && (
-        <Message
-          title={t("admin.products.none")}
-          text={t("admin.products.noneText")}
-        />
+      {/* Empty State */}
+      {!isLoading && filteredProducts.length === 0 && (
+        <div className="rounded-xl border border-edge bg-white p-8">
+          <Message
+            title={
+              search || categoryId
+                ? t("admin.products.none")
+                : t("admin.products.none")
+            }
+            text={t("admin.products.noneText")}
+          />
+
+          {products.length === 0 && (
+            <div className="mt-5 flex justify-center">
+              <button
+                type="button"
+                onClick={() => openForm("new")}
+                disabled={categories.length === 0}
+                className="
+                  inline-flex h-10 cursor-pointer items-center gap-2
+                  rounded-lg bg-brand px-4
+                  text-sm font-semibold text-white
+                  transition hover:bg-brand-dark
+                  focus:outline-none focus:ring-2
+                  focus:ring-brand focus:ring-offset-2
+                  disabled:cursor-not-allowed disabled:opacity-50
+                "
+              >
+                <Plus size={16} />
+                {t("admin.products.add")}
+              </button>
+            </div>
+          )}
+        </div>
       )}
 
-      {list.length > 0 && (
-        <div className="overflow-x-auto rounded-2xl border border-edge bg-white shadow-sm">
-          <table className="w-full min-w-[1100px] text-start text-sm">
-            <thead className="bg-surface text-xs text-muted">
-              <tr>
-                <th className="px-4 py-3 text-start">{t("admin.products.colImage")}</th>
-                <th className="px-4 py-3 text-start">{t("admin.products.colProduct")}</th>
-                <th className="px-4 py-3 text-start">{t("admin.products.colDescription")}</th>
-                <th className="px-4 py-3 text-start">{t("admin.products.colCategory")}</th>
-                <th className="px-4 py-3 text-start">{t("admin.products.colPrice")}</th>
-                <th className="px-4 py-3 text-start">{t("admin.products.colDiscount")}</th>
-                <th className="px-4 py-3 text-start">{t("admin.products.colStockAlert")}</th>
-                <th className="px-4 py-3 text-start">{t("admin.products.colStock")}</th>
-                <th className="px-4 py-3 text-end">{t("actions")}</th>
-              </tr>
-            </thead>
+      {/* Products Table */}
+      {!isLoading && filteredProducts.length > 0 && (
+        <div className="overflow-hidden rounded-xl border border-edge bg-white">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[950px] text-sm">
+              <thead>
+                <tr className="border-b border-edge bg-surface text-xs font-semibold text-muted">
+                  <th className="px-5 py-3.5 text-start">
+                    {t("admin.products.colImage")}
+                  </th>
 
-            <tbody className="divide-y divide-edge">
-              {paginatedList.map((product) => {
-                const category = categoryOf(product.categoryId);
-                return (
-                  <tr key={product.id} className="transition hover:bg-surface/60">
-                    <td className="px-4 py-3">
-                      <ProductImage product={product} category={category} />
-                    </td>
+                  <th className="px-5 py-3.5 text-start">
+                    {t("admin.products.colProduct")}
+                  </th>
 
-                    <td className="px-4 py-3 font-semibold">{localizedName(product, language)}</td>
+                  <th className="px-5 py-3.5 text-start">
+                    {t("admin.products.colDescription")}
+                  </th>
 
-                    <td className="max-w-xs px-4 py-3 text-sm text-muted">
-                      <p className="line-clamp-2">
-                        {localizedDescription(product, language) || t("admin.products.noDescription")}
-                      </p>
-                    </td>
+                  <th className="px-5 py-3.5 text-start">
+                    {t("admin.products.colCategory")}
+                  </th>
 
-                    <td className="px-4 py-3">
-                      {category ? localizedName(category, language) : t("admin.products.unknown")}
-                    </td>
+                  <th className="px-5 py-3.5 text-start">
+                    {t("admin.products.colPrice")}
+                  </th>
 
-                    <td className="whitespace-nowrap px-4 py-3 font-semibold">
-                      {money(product.price)}
-                      <span className="ms-1 text-xs font-normal text-muted">
-                        / {product.unit === "kg" ? `0.25 ${unitName("kg")}` : unitName(product.unit)}
-                      </span>
-                    </td>
+                  <th className="px-5 py-3.5 text-start">
+                    {t("admin.products.colDiscount")}
+                  </th>
 
-                    <td className="px-4 py-3">
-                      {product.discount > 0 ? (
-                        <span className="rounded-full bg-[#EAF6EE] px-2.5 py-1 text-xs font-extrabold text-[#078A4B]">
-                          -{product.discount}%
+                  <th className="px-5 py-3.5 text-start">
+                    {t("admin.products.colStockAlert")}
+                  </th>
+
+                  <th className="px-5 py-3.5 text-start">
+                    {t("admin.products.colStock")}
+                  </th>
+
+                  <th className="px-5 py-3.5 text-end">{t("actions")}</th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-edge">
+                {paginatedProducts.map((product) => {
+                  const category = categoryOf(product.categoryId);
+                  const name = productName(product);
+
+                  return (
+                    <tr
+                      key={product.id}
+                      className="transition-colors duration-150 hover:bg-surface/70"
+                    >
+                      {/* Product Image */}
+                      <td className="px-5 py-4">
+                        <ProductImage product={product} category={category} />
+                      </td>
+
+                      {/* Product Name */}
+                      <td className="px-5 py-4">
+                        <p className="font-semibold text-brand">{name}</p>
+                      </td>
+
+                      {/* Description */}
+                      <td className="max-w-[220px] px-5 py-4">
+                        <p className="line-clamp-2 text-xs leading-5 text-muted">
+                          {localizedDescription(product, language) ||
+                            t("admin.products.noDescription")}
+                        </p>
+                      </td>
+
+                      {/* Category */}
+                      <td className="px-5 py-4">
+                        {category ? (
+                          <span className="text-sm text-brand">
+                            {localizedName(category, language)}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted">
+                            {t("admin.products.unknown")}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Price */}
+                      <td className="whitespace-nowrap px-5 py-4">
+                        <span className="font-semibold text-brand">
+                          {money(product.price)}
                         </span>
-                      ) : (
-                        <span className="text-xs text-muted">{t("admin.products.noDiscount")}</span>
-                      )}
-                    </td>
 
-                    <td className="whitespace-nowrap px-4 py-3">
-                      {product.minQuantity > 0
-                        ? `${formatPrice(product.minQuantity).replace(/\.00$/, "")} ${unitName(product.unit)}`
-                        : <span className="text-xs text-muted">{t("admin.products.noStockAlert")}</span>}
-                    </td>
+                        <span className="ms-1 text-xs text-muted">
+                          /{" "}
+                          {product.unit === "kg"
+                            ? `0.25 ${unitName("kg")}`
+                            : unitName(product.unit)}
+                        </span>
+                      </td>
 
-                    <td className="whitespace-nowrap px-4 py-3">
-                      <span className={product.stockQuantity <= 0 ? "font-bold text-sale" : ""}>
-                        {formatPrice(product.stockQuantity).replace(/\.00$/, "")} {unitName(product.unit)}
-                      </span>
-                    </td>
+                      {/* Discount */}
+                      <td className="px-5 py-4">
+                        {product.discount > 0 ? (
+                          <span className="rounded-full bg-[#EAF6EE] px-2.5 py-1 text-xs font-semibold text-[#078A4B]">
+                            -{product.discount}%
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted">
+                            {t("admin.products.noDiscount")}
+                          </span>
+                        )}
+                      </td>
 
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end gap-1">
-                        <button
-                          onClick={() => openForm(product)}
-                          aria-label={t("admin.editLabel", { name: localizedName(product, language) })}
-                          className="grid h-9 w-9 place-items-center rounded-lg hover:bg-surface"
+                      {/* Stock Alert */}
+                      <td className="whitespace-nowrap px-5 py-4">
+                        {product.minQuantity > 0 ? (
+                          <span className="text-sm text-brand">
+                            {formatPrice(product.minQuantity).replace(
+                              /\.00$/,
+                              "",
+                            )}{" "}
+                            {unitName(product.unit)}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted">
+                            {t("admin.products.noStockAlert")}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Stock */}
+                      <td className="whitespace-nowrap px-5 py-4">
+                        <span
+                          className={
+                            product.stockQuantity <= 0
+                              ? "font-semibold text-sale"
+                              : "text-sm text-brand"
+                          }
                         >
-                          <Pencil size={16} />
-                        </button>
+                          {formatPrice(product.stockQuantity).replace(
+                            /\.00$/,
+                            "",
+                          )}{" "}
+                          {unitName(product.unit)}
+                        </span>
+                      </td>
 
-                        <button
-                          onClick={() => openDelete(product)}
-                          aria-label={t("admin.deleteLabel", { name: localizedName(product, language) })}
-                          className="grid h-9 w-9 place-items-center rounded-lg text-sale hover:bg-red-50"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+                      {/* Actions */}
+                      <td className="px-5 py-4">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openForm(product)}
+                            aria-label={t("admin.editLabel", {
+                              name,
+                            })}
+                            title={t("admin.editLabel", {
+                              name,
+                            })}
+                            className="
+                              grid h-9 w-9 cursor-pointer
+                              place-items-center rounded-lg
+                              border border-edge bg-white
+                              text-muted
+                              transition-all duration-150
+                              hover:border-brand
+                              hover:bg-brand
+                              hover:text-white
+                              active:scale-95
+                              focus:outline-none
+                              focus:ring-2 focus:ring-brand
+                              focus:ring-offset-2
+                            "
+                          >
+                            <Pencil size={16} />
+                          </button>
 
-      {list.length > 0 && (
-        <div className="mt-4 flex items-center justify-between gap-3 text-sm">
-          <span className="text-muted">
-            {t("admin.showing", {
-              from: Math.min((page - 1) * PAGE_SIZE + 1, list.length),
-              to: Math.min(page * PAGE_SIZE, list.length),
-              total: list.length,
-            })}
-          </span>
-          <div className="flex items-center gap-2">
-            <button type="button" disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="rounded-lg border border-edge bg-white px-3 py-2 font-semibold disabled:cursor-not-allowed disabled:opacity-40">{t("admin.previous")}</button>
-            <span className="min-w-16 text-center text-muted">{t("admin.pageOf", { page, pages: pageCount })}</span>
-            <button type="button" disabled={page >= pageCount} onClick={() => setPage((p) => Math.min(pageCount, p + 1))} className="rounded-lg border border-edge bg-white px-3 py-2 font-semibold disabled:cursor-not-allowed disabled:opacity-40">{t("admin.next")}</button>
+                          <button
+                            type="button"
+                            onClick={() => openDelete(product)}
+                            aria-label={t("admin.deleteLabel", {
+                              name,
+                            })}
+                            title={t("admin.deleteLabel", {
+                              name,
+                            })}
+                            className="
+                              grid h-9 w-9 cursor-pointer
+                              place-items-center rounded-lg
+                              border border-edge bg-white
+                              text-muted
+                              transition-all duration-150
+                              hover:border-red-500
+                              hover:bg-red-500
+                              hover:text-white
+                              active:scale-95
+                              focus:outline-none
+                              focus:ring-2 focus:ring-red-300
+                              focus:ring-offset-2
+                            "
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
+
+          {/* Reusable Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredProducts.length}
+            pageSize={PAGE_SIZE}
+            itemLabel="products"
+            onPageChange={setCurrentPage}
+          />
         </div>
       )}
 
+      {/* Add / Edit Modal */}
       {editing && (
         <Modal
-          title={editing === "new" ? t("admin.products.add") : t("admin.products.edit")}
+          title={
+            editing === "new"
+              ? t("admin.products.add")
+              : t("admin.products.edit")
+          }
           onClose={() => setEditing(null)}
-          size="lg"
         >
           <ProductForm
+            key={editing === "new" ? "new-product" : editing.id}
             initial={editing === "new" ? undefined : editing}
             categories={categories}
             saving={save.isPending}
@@ -296,10 +534,13 @@ export function AdminProductsPage() {
         </Modal>
       )}
 
+      {/* Delete Confirmation */}
       {deleting && (
         <ConfirmDialog
           title={t("admin.products.delete")}
-          text={t("admin.confirmDelete", { name: localizedName(deleting, language) })}
+          text={t("admin.confirmDelete", {
+            name: localizedName(deleting, language),
+          })}
           confirmLabel={t("delete")}
           busy={remove.isPending}
           error={remove.error?.message}
@@ -311,6 +552,6 @@ export function AdminProductsPage() {
           }
         />
       )}
-    </>
+    </div>
   );
 }
