@@ -526,5 +526,6 @@
   "admin.ud.stat.spent": "Total spent",
   "admin.ud.stat.total": "Total orders",
   "admin.ud.view": "View order",
-  "admin.ud.viewCustomer": "View details for {{name}}"
+  "admin.ud.viewCustomer": "View details for {{name}}",
+  "admin.configuration": "Configuration"
 }

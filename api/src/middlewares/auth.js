@@ -12,9 +12,12 @@ const requireRole = (role) => (req, _res, next) => {
   try {
     payload = jwt.verify(token, env.jwtSecret);
   } catch {
-    return next(httpError(401, "Your session has expired. Please sign in again."));
+    return next(
+      httpError(401, "Your session has expired. Please sign in again."),
+    );
   }
-  if (payload.role !== role) return next(httpError(403, "You do not have access to this."));
+  if (payload.role !== role)
+    return next(httpError(403, "You do not have access to this."));
 
   req.auth = payload;
   next();

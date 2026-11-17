@@ -53,4 +53,5 @@ export const listQuerySchema = z.object({
   q: z.string().trim().optional(),
   sort: z.enum(["featured", "newest", "price-asc", "price-desc", "rating"]).default("featured"),
   offers: z.preprocess((v) => v === "1" || v === "true", z.boolean()).default(false),
+  includeArchived: z.preprocess((v) => v === "1" || v === "true", z.boolean()).default(false),
 });

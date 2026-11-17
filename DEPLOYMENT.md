@@ -21,9 +21,11 @@ For a personal test deployment, create two Vercel projects from the same Git rep
    npx prisma generate
    ```
 
-5. Deploy the API, then deploy the frontend.
-6. Test login, email verification, image uploads, order checkout, cancellation, and admin status changes.
+5. Run `api/prisma/enable-notification-realtime.sql` once in Supabase SQL Editor.
+6. Add `SUPABASE_JWT_SECRET` to the API project and `VITE_SUPABASE_URL` plus `VITE_SUPABASE_PUBLISHABLE_KEY` to the frontend project. See `REALTIME-NOTIFICATIONS-SETUP.md`.
+7. Deploy the API, then deploy the frontend.
+8. Test login, email verification, image uploads, order checkout, cancellation, admin status changes, and live notification delivery in two separate sessions.
 
-Do not put `SUPABASE_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `JWT_SECRET`, admin credentials, or Azure Translator credentials in frontend environment variables. They belong only in the API environment.
+Do not put `SUPABASE_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`, `JWT_SECRET`, admin credentials, or Azure Translator credentials in frontend environment variables. Only the Supabase URL and publishable/anon key belong in the frontend. They belong only in the API environment.
 
 Vercel Hobby is intended for personal, non-commercial use. Check Vercel's current plan terms and function limits before using this deployment for a real shop.

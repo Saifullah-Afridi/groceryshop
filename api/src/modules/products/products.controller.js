@@ -1,6 +1,6 @@
 import { asyncHandler } from "../../lib/asyncHandler.js";
 import { httpError } from "../../lib/httpError.js";
-import { createProduct, deleteProduct, getProduct, getSearchSuggestions, listProducts, updateProduct } from "./products.service.js";
+import { archiveProduct, createProduct, deleteProduct, getProduct, getSearchSuggestions, listProducts, restoreProduct, updateProduct } from "./products.service.js";
 import { createProductSchema, listQuerySchema, updateProductSchema } from "./products.validation.js";
 
 function readId(req) {
@@ -10,7 +10,12 @@ function readId(req) {
 }
 
 export const list = asyncHandler(async (req, res) => {
-  res.json(await listProducts(listQuerySchema.parse(req.query)));
+  const query = listQuerySchema.parse(req.query);
+  res.json(await listProducts({ ...query, includeArchived: false }));
+});
+
+export const adminList = asyncHandler(async (_req, res) => {
+  res.json(await listProducts({ includeArchived: true }));
 });
 
 export const suggestions = asyncHandler(async (req, res) => {
@@ -34,6 +39,13 @@ export const update = asyncHandler(async (req, res) => {
 });
 
 export const remove = asyncHandler(async (req, res) => {
-  await deleteProduct(readId(req));
-  res.status(204).end();
+  res.json(await deleteProduct(readId(req)));
+});
+
+export const archive = asyncHandler(async (req, res) => {
+  res.json(await archiveProduct(readId(req)));
+});
+
+export const restore = asyncHandler(async (req, res) => {
+  res.json(await restoreProduct(readId(req)));
 });

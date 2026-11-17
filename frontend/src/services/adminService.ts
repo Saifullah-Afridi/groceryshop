@@ -48,7 +48,7 @@ export const updateCategory = (id: string, input: CategoryInput, imageFile?: Fil
 export const deleteCategory = (id: string) => api<void>(`/categories/${encodeURIComponent(id)}`, { method: "DELETE" });
 
 // ---------- products ----------
-export const getAdminProducts = () => api<Product[]>("/products");
+export const getAdminProducts = () => api<Product[]>("/products/admin/all");
 
 export const createProduct = (input: ProductInput, imageFile?: File | null) =>
   api<Product>("/products", { method: "POST", body: productForm(input, imageFile) });
@@ -56,7 +56,9 @@ export const createProduct = (input: ProductInput, imageFile?: File | null) =>
 export const updateProduct = (id: number, input: ProductInput, imageFile?: File | null) =>
   api<Product>(`/products/${id}`, { method: "PUT", body: productForm(input, imageFile) });
 
+export const archiveProduct = (id: number) => api<void>(`/products/${id}/archive`, { method: "POST" });
 export const deleteProduct = (id: number) => api<void>(`/products/${id}`, { method: "DELETE" });
+export const restoreProduct = (id: number) => api<Product>(`/products/${id}/restore`, { method: "POST" });
 
 // ---------- delivery cities ----------
 export const getAdminCities = () => api<City[]>("/cities/all");

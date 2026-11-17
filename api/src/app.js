@@ -13,6 +13,7 @@ import ordersRoutes from "./modules/orders/orders.routes.js";
 import productsRoutes from "./modules/products/products.routes.js";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes.js";
 import contactRoutes from "./modules/contact/contact.routes.js";
+import notificationsRoutes from "./modules/notifications/notifications.routes.js";
 
 export const app = express();
 
@@ -58,6 +59,7 @@ app.use("/api/orders", ordersRoutes);
 app.use("/api/products", productsRoutes);
 app.use("/api/admin/dashboard", dashboardRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/notifications", notificationsRoutes);
 
 // Error handling.
 app.use(notFound);

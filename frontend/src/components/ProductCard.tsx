@@ -60,10 +60,10 @@ export function ProductCard({ product }: { product: Product }) {
   const discount = clampDiscount(product.discount);
 
   const grossPrice = isWeightBased
-    ? product.price * (selectedWeight / 0.25)
-    : product.price;
+    ? product.originalPrice * (selectedWeight / 0.25)
+    : product.originalPrice;
 
-  const displayPrice = grossPrice * (1 - discount / 100);
+  const displayPrice = product.discountedPrice * (isWeightBased ? selectedWeight / 0.25 : 1);
 
   // Language
   const displayName = localizedName(product, language);

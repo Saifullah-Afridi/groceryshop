@@ -69,3 +69,15 @@ The `Order.stockReserved` field distinguishes orders created after stock reserva
 ## Image uploads
 
 Category and product image uploads accept JPEG, PNG, WebP, and GIF files up to 5 MB. The API checks both the declared MIME type and the file signature before uploading to Supabase Storage.
+
+
+## Recent feature update
+
+- Product and category images accept JPG, PNG, or WebP up to 4 MB. The browser validates dimensions (minimum 300 × 300), compresses to WebP (target 500 KB, maximum dimension 1600 px), and the API independently validates and converts with Sharp to WebP (maximum dimension 1200 px, quality 87).
+- Products are archived instead of hard-deleted. Archived products are hidden from the public catalogue and cannot be checked out; existing order line snapshots remain intact.
+- Product API responses include `originalPrice` and backend-calculated `discountedPrice`. Order totals are still recalculated authoritatively by the API at checkout.
+- Notifications are stored in PostgreSQL and delivered through Supabase Realtime Postgres Changes. The frontend receives only new-row events and fetches notification details through the authenticated API. Run `api/prisma/enable-notification-realtime.sql` and configure `SUPABASE_JWT_SECRET` in the API plus `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in the frontend. See `REALTIME-NOTIFICATIONS-SETUP.md` for the secure RLS/token setup.
+
+### Deploying the schema and dependencies
+
+From `api/`, run `npm install` and then `npm run db:push` against the configured Supabase PostgreSQL database. From `frontend/`, run `npm install` before building. Add the `sharp` dependency in the API and `browser-image-compression` in the frontend (both are listed in their package manifests). Deploy the API before the frontend. Do not run `db:push` against production until you have a current database backup.

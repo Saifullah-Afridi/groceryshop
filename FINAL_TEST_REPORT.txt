@@ -1,29 +1,49 @@
-RAKAN SHOP - FINAL PATCH AND STATIC TEST REPORT
-Date: 14 November 2026
-Source archive: Rakan-Shop-fixed-handover(1).zip
+RAKAN SHOP - FEATURE UPDATE HANDOVER REPORT
+Date: 16 November 2026
 
-PATCH APPLIED
-- Admin order transitions now allow PENDING -> ON_THE_WAY or CANCELLED.
-- ON_THE_WAY can now transition only to DELIVERED; it cannot be cancelled.
-- DELIVERED and CANCELLED are terminal states.
-- Customer cancellation remains restricted to PENDING.
-- When an order is cancelled, stockReserved is set to false in the same database update that changes its status. Stock restoration remains inside the transaction.
+IMPLEMENTED IN THIS ARCHIVE
+1. Image upload pipeline
+   - Frontend validation: JPG/JPEG, PNG, WebP; original file maximum 4 MB; minimum dimensions 300 x 300.
+   - Browser compression and WebP conversion using browser-image-compression (target 500 KB, maximum dimension 1600 px).
+   - Backend multipart limit 4 MB and Sharp processing/validation; output is WebP, maximum dimension 1200 px, quality 87.
+   - Applies to product and category image forms.
 
-CHECKS COMPLETED
-- ZIP integrity checked before extraction.
-- All backend JavaScript files passed `node --check`.
-- All project JSON files parsed successfully.
-- 11 static workflow assertions passed, covering order transitions, customer cancellation, server-side product pricing, conditional stock deduction, stock reservation release, image upload route protection and validation, RTL/LTR direction handling, and admin login rate limiting.
+2. Backend discount pricing
+   - Product API now returns originalPrice and discountedPrice.
+   - discountedPrice is calculated by the API from the stored price and discount percentage.
+   - Product cards display the discounted amount and strike through the original amount.
+   - Checkout continues to calculate the final order price on the server.
+
+3. Product archive
+   - Added Product.isArchived.
+   - Admin product page has Active products and Archived products views, with archive and restore actions.
+   - Public product lists and search suggestions exclude archived products.
+   - Checkout rejects archived products already left in a customer's cart.
+   - Products are not hard-deleted, so old order item snapshots and order history remain intact.
+
+4. Admin navigation
+   - Sidebar order is Dashboard, Orders, Products, Categories, Delivery, Users.
+
+5. Notifications
+   - Added persistent database notifications for new orders (admin) and order status changes/cancellations (customer).
+   - Added authenticated notification list/read/read-all endpoints and notification dropdowns.
+   - Replaced 10-second polling with Supabase Postgres Changes subscriptions on public."Notification".
+   - Added short-lived, server-minted Supabase Realtime JWTs based on the authenticated Rakan admin/customer session.
+   - Added a SQL setup script with audience/customer-scoped RLS and Realtime publication membership.
+   - On initial load/reconnect and each INSERT event, the UI reloads the persistent feed through the authenticated API, so offline notifications are not lost.
+
+VALIDATION COMPLETED
+- All API JavaScript files passed node --check.
+- ZIP archive integrity passed unzip -t.
+- Source inspection confirmed public product list/search filtering, archive/restore endpoints, order rejection for archived products, and transactional notification creation.
 
 NOT COMPLETED / NOT CERTIFIED
-- Frontend production build: not completed. `npm ci` timed out while fetching dependencies; an offline retry also failed because required packages were not cached. Running `tsc --noEmit` without dependencies produced missing-module/type errors, so this is not a valid application build result.
-- Customer registration and real email OTP delivery: not tested against SMTP/database.
-- Admin login: source-level checks only; not tested with live credentials.
-- Product/category image upload: source-level checks only; not tested against Supabase Storage.
-- Product create/edit: not tested against a live database/storage service.
-- Checkout, actual database price totals, stock deduction/restoration: source-level checks only; not exercised against a live database.
-- Arabic RTL: direction-setting code and CSS were inspected; visual browser rendering was not tested.
-- Prisma validation, Vercel deployment, and end-to-end browser testing were not completed.
+- Full frontend production build was not completed because dependencies could not be downloaded in this environment. The frontend TypeScript command therefore reports missing installed modules, not a valid build result.
+- Sharp and browser-image-compression are declared in package.json. The frontend now also declares @supabase/supabase-js; run npm install in frontend/ to install it and update package-lock.json before building/deploying.
+- Prisma schema was updated but was not applied to the live Supabase database. Back up the database, then run npx prisma db push from api/.
+- Live Supabase Storage image upload, real checkout, Supabase Realtime delivery, Arabic visual rendering, and Vercel deployment were not tested against the project's live environment.
+- Realtime requires the one-time SQL in api/prisma/enable-notification-realtime.sql, SUPABASE_JWT_SECRET in the API environment, and VITE_SUPABASE_URL plus VITE_SUPABASE_PUBLISHABLE_KEY in the frontend environment. Follow REALTIME-NOTIFICATIONS-SETUP.md before expecting live events.
+- The Realtime token exchange uses the project's legacy HS256 JWT signing secret. If the Supabase project uses only asymmetric signing keys and has no legacy JWT secret, this token-signing integration must be adapted before deployment.
 
 HANDOVER STATUS
-This archive includes the requested order-transition correction, but it must be treated as a patched testing candidate, not a fully certified production release. Complete dependency installation, frontend build, and live integration/browser tests with the project's configured environment before final client handover.
+This is an implementation/testing candidate, not a production-certified release. Install dependencies, apply the Prisma schema, build both applications, and run live integration/browser tests before client production handover.

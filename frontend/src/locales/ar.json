@@ -538,5 +538,6 @@
   "admin.ud.stat.spent": "إجمالي الإنفاق",
   "admin.ud.stat.total": "إجمالي الطلبات",
   "admin.ud.view": "عرض الطلب",
-  "admin.ud.viewCustomer": "عرض تفاصيل {{name}}"
+  "admin.ud.viewCustomer": "عرض تفاصيل {{name}}",
+  "admin.configuration": "الإعدادات"
 }

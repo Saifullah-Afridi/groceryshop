@@ -7,6 +7,7 @@ import { BlankFallback } from "./components/RouteFallbacks";
 import { AuthProvider } from "./context/AuthContext";
 import {
   AdminCategoriesPage,
+  AdminConfigurationPage,
   AdminCitiesPage,
   AdminCustomersPage,
   AdminCustomerPage,
@@ -51,6 +52,7 @@ export default function App() {
               <Route path="users" element={<AdminCustomersPage />} />
               <Route path="users/:id" element={<AdminCustomerPage />} />
               <Route path="delivery" element={<AdminCitiesPage />} />
+              <Route path="configuration" element={<AdminConfigurationPage />} />
             </Route>
           </Route>
         </Routes>

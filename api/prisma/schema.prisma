@@ -35,6 +35,7 @@ model Product {
   minQuantity Float    @default(0) // low-stock alert threshold in product units; 0 disables the alert
   stockQuantity Float  @default(0) // available inventory; kg for kg products
   discount    Float    @default(0) // one percentage discount (0-100) applied to the whole price
+  isArchived  Boolean  @default(false)
   image       String?
   categoryId  String
   category    Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
@@ -104,6 +105,9 @@ model Order {
 
   @@index([customerId])
   @@index([status])
+  // Supports the common customer/order-history and admin status/order-list queries.
+  @@index([customerId, id])
+  @@index([status, id])
 }
 
 model OrderItem {
@@ -116,4 +120,31 @@ model OrderItem {
   unitPrice   Decimal @db.Decimal(10, 2) // price per 0.25 kg (or per piece) when the order was placed
   quantity    Float // kg for weighed products, otherwise pieces
   lineTotal   Decimal @db.Decimal(10, 2)
+}
+
+
+model Notification {
+  id          Int      @id @default(autoincrement())
+  audience    String   // ADMIN or CUSTOMER
+  customerId  Int?
+  title       String
+  message     String
+  orderId     Int?
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([audience, isRead, createdAt])
+  @@index([customerId, isRead, createdAt])
+  // List queries sort by createdAt without filtering on isRead.
+  @@index([audience, createdAt])
+  @@index([customerId, createdAt])
+}
+
+
+// The single store administrator account. Passwords are stored as bcrypt hashes.
+model AdminAccount {
+  id           String   @id @default("primary")
+  email        String   @unique
+  passwordHash String
+  updatedAt    DateTime @updatedAt
 }

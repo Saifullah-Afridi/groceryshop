@@ -5,6 +5,8 @@ import {
   Plus,
   Search,
   Trash2,
+  Archive,
+  ArchiveRestore,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -17,6 +19,8 @@ import {
   useAdminCategories,
   useAdminProducts,
   useDeleteProduct,
+  useArchiveProduct,
+  useRestoreProduct,
   useSaveProduct,
 } from "../../hooks/useAdmin";
 
@@ -76,18 +80,23 @@ export function AdminProductsPage() {
 
   const save = useSaveProduct();
   const remove = useDeleteProduct();
+  const archive = useArchiveProduct();
+  const restore = useRestoreProduct();
 
   const [editing, setEditing] = useState<Product | "new" | null>(null);
   const [deleting, setDeleting] = useState<Product | null>(null);
+  const [archiving, setArchiving] = useState<Product | null>(null);
 
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [showArchived, setShowArchived] = useState(false);
 
   const filteredProducts = useMemo(() => {
     const text = search.trim().toLowerCase();
 
     return products.filter((product) => {
+      if (Boolean(product.isArchived) !== showArchived) return false;
       const matchesCategory = !categoryId || product.categoryId === categoryId;
 
       const searchableText = [
@@ -103,7 +112,7 @@ export function AdminProductsPage() {
 
       return matchesCategory && matchesSearch;
     });
-  }, [products, search, categoryId]);
+  }, [products, search, categoryId, showArchived]);
 
   const totalPages = Math.max(
     1,
@@ -133,6 +142,11 @@ export function AdminProductsPage() {
   const openDelete = (value: Product) => {
     remove.reset();
     setDeleting(value);
+  };
+
+  const openArchive = (value: Product) => {
+    archive.reset();
+    setArchiving(value);
   };
 
   const productName = (product: Product) => localizedName(product, language);
@@ -186,10 +200,16 @@ export function AdminProductsPage() {
           <p className="text-sm text-muted">{t("admin.products.title")}</p>
 
           <p className="mt-1 text-2xl font-semibold tracking-tight text-brand">
-            {products.length}
+            {products.filter((product) => Boolean(product.isArchived) === showArchived).length}
           </p>
         </div>
       )}
+
+      {/* Active products / archive */}
+      <div className="flex gap-2">
+        <button type="button" onClick={() => { setShowArchived(false); setCurrentPage(1); }} className={`rounded-lg border px-4 py-2 text-sm font-semibold ${!showArchived ? "border-brand bg-brand text-white" : "border-edge bg-white text-muted"}`}>Active products</button>
+        <button type="button" onClick={() => { setShowArchived(true); setCurrentPage(1); }} className={`rounded-lg border px-4 py-2 text-sm font-semibold ${showArchived ? "border-brand bg-brand text-white" : "border-edge bg-white text-muted"}`}>Archived products</button>
+      </div>
 
       {/* Search and Category Filter */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -454,32 +474,25 @@ export function AdminProductsPage() {
                             <Pencil size={16} />
                           </button>
 
-                          <button
-                            type="button"
-                            onClick={() => openDelete(product)}
-                            aria-label={t("admin.deleteLabel", {
-                              name,
-                            })}
-                            title={t("admin.deleteLabel", {
-                              name,
-                            })}
-                            className="
-                              grid h-9 w-9 cursor-pointer
-                              place-items-center rounded-lg
-                              border border-edge bg-white
-                              text-muted
-                              transition-all duration-150
-                              hover:border-red-500
-                              hover:bg-red-500
-                              hover:text-white
-                              active:scale-95
-                              focus:outline-none
-                              focus:ring-2 focus:ring-red-300
-                              focus:ring-offset-2
-                            "
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                          {showArchived ? (
+                            <>
+                              <button type="button" onClick={() => restore.mutate(product.id)} title="Restore product" aria-label="Restore product" className="grid h-9 w-9 place-items-center rounded-lg border border-edge bg-white text-muted transition hover:border-brand hover:bg-brand hover:text-white">
+                                <ArchiveRestore size={16} />
+                              </button>
+                              <button type="button" onClick={() => openDelete(product)} aria-label={`Delete ${name}`} title="Delete permanently" className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg border border-edge bg-white text-muted transition hover:border-sale hover:bg-sale hover:text-white">
+                                <Trash2 size={16} />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button type="button" onClick={() => openArchive(product)} aria-label={`Archive ${name}`} title="Move to archive" className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg border border-edge bg-white text-muted transition hover:border-amber-500 hover:bg-amber-500 hover:text-white">
+                                <Archive size={16} />
+                              </button>
+                              <button type="button" onClick={() => openDelete(product)} aria-label={`Delete ${name}`} title="Delete permanently" className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg border border-edge bg-white text-muted transition hover:border-sale hover:bg-sale hover:text-white">
+                                <Trash2 size={16} />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -534,22 +547,29 @@ export function AdminProductsPage() {
         </Modal>
       )}
 
-      {/* Delete Confirmation */}
+      {/* Archive Confirmation */}
+      {archiving && (
+        <ConfirmDialog
+          title="Archive product"
+          text={`Move ${localizedName(archiving, language)} to the archive? It will no longer appear in the shop, and existing order history will remain intact. You can restore it later.`}
+          confirmLabel="Move to archive"
+          busy={archive.isPending}
+          error={archive.error?.message}
+          onCancel={() => setArchiving(null)}
+          onConfirm={() => archive.mutate(archiving.id, { onSuccess: () => setArchiving(null) })}
+        />
+      )}
+
+      {/* Permanent Delete Confirmation */}
       {deleting && (
         <ConfirmDialog
-          title={t("admin.products.delete")}
-          text={t("admin.confirmDelete", {
-            name: localizedName(deleting, language),
-          })}
-          confirmLabel={t("delete")}
+          title="Delete product permanently"
+          text={`Permanently delete ${localizedName(deleting, language)}? It will be removed from the product catalogue. Existing order details will be preserved, but this action cannot be undone.`}
+          confirmLabel="Delete permanently"
           busy={remove.isPending}
           error={remove.error?.message}
           onCancel={() => setDeleting(null)}
-          onConfirm={() =>
-            remove.mutate(deleting.id, {
-              onSuccess: () => setDeleting(null),
-            })
-          }
+          onConfirm={() => remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) })}
         />
       )}
     </div>

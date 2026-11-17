@@ -16,6 +16,9 @@ const toDto = (p) => ({
   isOutOfStock: Number(p.stockQuantity) <= 0,
   farm: p.farm,
   price: Number(p.price),
+  originalPrice: Number(p.price),
+  discountedPrice: Math.round(Number(p.price) * (1 - Number(p.discount ?? 0) / 100) * 100) / 100,
+  isArchived: Boolean(p.isArchived),
   unit: p.unit,
   minQuantity: Number(p.minQuantity ?? 0),
   image: p.image ?? "",
@@ -108,9 +111,10 @@ async function assertCategoryExists(categoryId) {
   }
 }
 
-export async function listProducts({ category, q, sort, offers }) {
+export async function listProducts({ category, q, sort, offers, includeArchived = false }) {
   const rows = await prisma.product.findMany({
     where: {
+      ...(includeArchived ? {} : { isArchived: false }),
       ...(category && { categoryId: category }),
       ...(offers && { discount: { gt: 0 } }),
     },
@@ -129,7 +133,7 @@ export async function listProducts({ category, q, sort, offers }) {
 
 export async function getSearchSuggestions(query) {
   const [products, categories] = await Promise.all([
-    prisma.product.findMany({ include: { category: true } }),
+    prisma.product.findMany({ where: { isArchived: false }, include: { category: true } }),
     prisma.category.findMany(),
   ]);
 
@@ -158,7 +162,9 @@ export async function getSearchSuggestions(query) {
 }
 
 export async function getProduct(id) {
-  return toDto(await findOrFail(id));
+  const product = await findOrFail(id);
+  if (product.isArchived) throw httpError(404, "Product not found.");
+  return toDto(product);
 }
 
 export async function createProduct(data, file) {
@@ -195,8 +201,30 @@ export async function updateProduct(id, data, file) {
   }
 }
 
+// Products are archived, never hard-deleted, so historical order references remain safe.
+export async function archiveProduct(id) {
+  const current = await findOrFail(id);
+  if (current.isArchived) return toDto(current);
+  return toDto(await prisma.product.update({ where: { id }, data: { isArchived: true } }));
+}
+
+export async function restoreProduct(id) {
+  const current = await findOrFail(id);
+  if (!current.isArchived) return toDto(current);
+  return toDto(await prisma.product.update({ where: { id }, data: { isArchived: false } }));
+}
+
 export async function deleteProduct(id) {
   const current = await findOrFail(id);
-  await prisma.product.delete({ where: { id } });
+
+  // Order items store a product-name/price snapshot. Detach the optional product ID
+  // before deleting so historical orders remain readable and unchanged.
+  await prisma.$transaction(async (tx) => {
+    await tx.orderItem.updateMany({ where: { productId: id }, data: { productId: null } });
+    await tx.product.delete({ where: { id } });
+  });
+
+  // Remove the stored image only after the database transaction succeeds.
   await deleteImage(current.image);
+  return { id, deleted: true };
 }

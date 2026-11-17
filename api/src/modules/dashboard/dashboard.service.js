@@ -5,7 +5,7 @@ export async function getDashboard() {
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const [products, categories, todaysOrders, monthOrders, pendingOrders, recentOrders, customers] = await Promise.all([
-    prisma.product.findMany({ orderBy: { name: "asc" } }),
+    prisma.product.findMany({ where: { isArchived: false }, orderBy: { name: "asc" } }),
     prisma.category.count(),
     prisma.order.findMany({ where: { createdAt: { gte: start }, status: { not: "CANCELLED" } }, include: { items: true } }),
     prisma.order.findMany({ where: { createdAt: { gte: monthStart }, status: { not: "CANCELLED" } } }),

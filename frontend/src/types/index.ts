@@ -29,7 +29,10 @@ export interface Product {
   description: string;
   descriptionAr?: string;
   farm: string;
-  price: number; // JOD per 0.25 kg (kg products) or per selling unit
+  price: number; // original JOD price per 0.25 kg (kg products) or per selling unit
+  originalPrice: number;
+  discountedPrice: number;
+  isArchived?: boolean;
   discount: number; // percent, 0 to 100. One discount for the whole price.
   unit: Unit;
   minQuantity: number; // inventory low-stock alert threshold; 0 disables the alert.

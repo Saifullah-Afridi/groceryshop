@@ -1,3 +1,4 @@
+import { prepareImageUpload } from "../../utils/imageUpload";
 import {
   useEffect,
   useState,
@@ -122,26 +123,30 @@ export function ProductForm({
     };
 
   // Select image.
-  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
-
-    if (file && file.type.startsWith("image/")) {
-      setImageFile(file);
-      setRemoveImage(false);
-    }
-
     event.target.value = "";
+    if (!file) return;
+    try {
+      const prepared = await prepareImageUpload(file);
+      setImageFile(prepared);
+      setRemoveImage(false);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Could not process this image.");
+    }
   };
 
   // Drag and drop image.
-  const handleDrop = (event: DragEvent<HTMLLabelElement>) => {
+  const handleDrop = async (event: DragEvent<HTMLLabelElement>) => {
     event.preventDefault();
-
     const file = event.dataTransfer.files?.[0];
-
-    if (file && file.type.startsWith("image/")) {
-      setImageFile(file);
+    if (!file) return;
+    try {
+      const prepared = await prepareImageUpload(file);
+      setImageFile(prepared);
       setRemoveImage(false);
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Could not process this image.");
     }
   };
 

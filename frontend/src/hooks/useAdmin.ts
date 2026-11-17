@@ -14,6 +14,7 @@ import {
   deleteCity,
   deleteCustomer,
   deleteProduct,
+  archiveProduct,
   getAdminCategories,
   getAdminCities,
   getAdminCustomers,
@@ -26,6 +27,7 @@ import {
   updateCustomer,
   updateOrderStatus,
   updateProduct,
+  restoreProduct,
 } from "../services/adminService";
 import type { CategoryInput, ProductInput } from "../types/admin";
 import type { CustomerInput } from "../types/customer";
@@ -100,10 +102,20 @@ export const useSaveProduct = () =>
     ({ id }) => i18n.t(id ? "admin.products.updated" : "admin.products.created"),
   );
 
+export const useArchiveProduct = () =>
+  useChange(
+    (id: number) => archiveProduct(id),
+    () => "Product moved to archive.",
+  );
 export const useDeleteProduct = () =>
   useChange(
     (id: number) => deleteProduct(id),
-    () => i18n.t("admin.products.deleted"),
+    () => "Product permanently deleted.",
+  );
+export const useRestoreProduct = () =>
+  useChange(
+    (id: number) => restoreProduct(id),
+    () => "Product restored to the active product list.",
   );
 
 // ---------- delivery cities ----------
@@ -148,7 +160,6 @@ export const useAdminOrders = (query: { status?: OrderStatus; q?: string }) =>
     queryKey: ["admin", "orders", query],
     queryFn: () => getAdminOrders(query),
     placeholderData: keepPreviousData,
-    refetchInterval: 30_000, // new orders show up without a refresh
   });
 export const useSetOrderStatus = () =>
   useChange(

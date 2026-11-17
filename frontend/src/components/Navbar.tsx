@@ -6,14 +6,17 @@ import { STORE } from "../config";
 import { useCart } from "../context/CartContext";
 import { PRELOAD } from "../routes";
 import { useLanguage } from "../context/LanguageContext";
+import { useCustomerAuth } from "../context/CustomerAuthContext";
 
 import { AccountMenu } from "./AccountMenu";
 import { Container } from "./Container";
 import { NavbarSearch } from "./NavbarSearch";
+import { NotificationBell } from "./NotificationBell";
 
 export function Navbar() {
   const { count, open } = useCart();
   const { language, toggleLanguage, t } = useLanguage();
+  const { customer } = useCustomerAuth();
 
   const [params] = useSearchParams();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -85,6 +88,9 @@ export function Navbar() {
               <Globe size={17} />
               <span>{language === "ar" ? "EN" : "عربي"}</span>
             </button>
+
+            {/* Customer notifications are only available during a signed-in session. */}
+            {customer && <NotificationBell audience="customer" />}
 
             {/* Account */}
             <AccountMenu />

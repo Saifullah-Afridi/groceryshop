@@ -64,6 +64,8 @@ export const env = {
 
   supabaseUrl: process.env.SUPABASE_URL,
   supabaseKey,
+  // Legacy Supabase JWT signing secret used only to mint short-lived Realtime access tokens.
+  supabaseJwtSecret: process.env.SUPABASE_JWT_SECRET,
 
   bucket: process.env.SUPABASE_BUCKET ?? "rakan",
 
@@ -76,5 +78,6 @@ export const env = {
   },
 
   mailFrom: process.env.MAIL_FROM ?? "Rakan <no-reply@rakan.local>",
-  contactEmail: process.env.CONTACT_EMAIL?.trim() || process.env.ADMIN_EMAIL.trim(),
+  contactEmail:
+    process.env.CONTACT_EMAIL?.trim() || process.env.ADMIN_EMAIL.trim(),
 };
