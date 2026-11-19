@@ -377,7 +377,7 @@ export function AdminDashboardPage() {
                 </span>
               </span>
               <span className="text-lg font-semibold tabular-nums text-[#614b26]">
-                {data.lowStock.length}
+                {data.lowStockCount}
               </span>
             </Link>
 
@@ -419,7 +419,7 @@ export function AdminDashboardPage() {
                 </span>
               </span>
               <span className="text-lg font-semibold tabular-nums text-[#713c37]">
-                {data.outOfStock.length}
+                {data.outOfStockCount}
               </span>
             </Link>
 
@@ -443,7 +443,7 @@ export function AdminDashboardPage() {
               </p>
             )}
 
-            {(data.lowStock.length > 5 || data.outOfStock.length > 5) && (
+            {(data.lowStockCount > data.lowStock.length || data.outOfStockCount > data.outOfStock.length) && (
               <Link
                 to="/admin/products"
                 className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-[#287247] hover:text-[#174d2e]"

@@ -9,6 +9,7 @@ import {
   ArchiveRestore,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import { TableSkeleton } from "../../components/Skeleton";
 import { Message } from "../../components/Message";
@@ -73,6 +74,9 @@ function ProductImage({
 
 export function AdminProductsPage() {
   const { t, language, isArabic, unitName, money } = useLanguage();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const stockParam = searchParams.get("stock");
+  const stockFilter = stockParam === "out" || stockParam === "low" ? stockParam : undefined;
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -87,7 +91,7 @@ export function AdminProductsPage() {
   const categories = categoryResult?.data ?? [];
   const { data: productResult, isLoading, isError, error } = useAdminProducts({
     page: currentPage, limit: PAGE_SIZE, search: debouncedSearch,
-    category: categoryId || undefined, archived: showArchived, sort: "oldest",
+    category: categoryId || undefined, archived: showArchived, stock: stockFilter, sort: "oldest",
   });
   const products = productResult?.data ?? [];
   const pagination = productResult?.pagination;
@@ -176,6 +180,24 @@ export function AdminProductsPage() {
         <button type="button" onClick={() => { setShowArchived(false); setCurrentPage(1); }} className={`rounded-lg border px-4 py-2 text-sm font-semibold ${!showArchived ? "border-brand bg-brand text-white" : "border-edge bg-white text-muted"}`}>Active products</button>
         <button type="button" onClick={() => { setShowArchived(true); setCurrentPage(1); }} className={`rounded-lg border px-4 py-2 text-sm font-semibold ${showArchived ? "border-brand bg-brand text-white" : "border-edge bg-white text-muted"}`}>Archived products</button>
       </div>
+
+      {stockFilter && (
+        <div className={`flex flex-wrap items-center justify-between gap-2 rounded-lg border px-4 py-3 text-sm ${stockFilter === "out" ? "border-[#efd8d5] bg-[#fff7f6]" : "border-[#f0e2c6] bg-[#fffaf1]"}`}>
+          <span className={`font-medium ${stockFilter === "out" ? "text-[#713c37]" : "text-[#614b26]"}`}>{stockFilter === "out" ? "Showing all out-of-stock products" : "Showing all low-stock products"}</span>
+          <button
+            type="button"
+            onClick={() => {
+              const next = new URLSearchParams(searchParams);
+              next.delete("stock");
+              setSearchParams(next, { replace: true });
+              setCurrentPage(1);
+            }}
+            className="font-semibold text-[#8d4038] underline underline-offset-2"
+          >
+            Clear filter
+          </button>
+        </div>
+      )}
 
       {/* Search and Category Filter */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

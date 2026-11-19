@@ -109,12 +109,17 @@ async function assertCategoryExists(categoryId) {
   }
 }
 
-export async function listProducts({ category, q, search, sort, offers, includeArchived = false, archivedOnly = false, page, limit }) {
+export async function listProducts({ category, q, search, sort, offers, stock, includeArchived = false, archivedOnly = false, page, limit }) {
   const term = String(search ?? q ?? "").trim();
+  const lowStockIds = stock === "low"
+    ? await prisma.$queryRaw`SELECT "id" FROM "Product" WHERE "isArchived" = ${Boolean(archivedOnly)} AND "minQuantity" > 0 AND "stockQuantity" > 0 AND "stockQuantity" <= "minQuantity"`
+    : null;
   const baseWhere = {
     ...(includeArchived ? (archivedOnly ? { isArchived: true } : { isArchived: false }) : { isArchived: false }),
     ...(category && { categoryId: category }),
     ...(offers && { discount: { gt: 0 } }),
+    ...(stock === "out" && { stockQuantity: { lte: 0 } }),
+    ...(stock === "low" && { id: { in: lowStockIds.map((row) => row.id) } }),
   };
   const orderBy = sort === "newest" ? [{ id: "desc" }]
     : sort === "price-asc" ? [{ price: "asc" }, { id: "asc" }]

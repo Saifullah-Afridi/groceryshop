@@ -9,7 +9,7 @@ export interface PaginationMeta {
   hasNextPage: boolean; hasPreviousPage: boolean;
 }
 export interface PaginatedResponse<T> { data: T[]; pagination: PaginationMeta }
-export interface AdminListQuery { page?: number; limit?: number; search?: string; q?: string; sort?: string; category?: string; archived?: boolean; status?: OrderStatus }
+export interface AdminListQuery { page?: number; limit?: number; search?: string; q?: string; sort?: string; category?: string; archived?: boolean; stock?: "out" | "low"; status?: OrderStatus }
 function listParams(query: AdminListQuery = {}) {
   const params = new URLSearchParams();
   Object.entries(query).forEach(([key, value]) => {
@@ -111,6 +111,7 @@ export interface DashboardData {
   todayRevenue: number; todayOrders: number; averageOrderValue: number;
   monthRevenue: number; pendingOrders: number; productsCount: number;
   categoriesCount: number; newCustomersToday: number;
+  lowStockCount: number; outOfStockCount: number;
   lowStock: { id:number; name:string; nameAr:string; stockQuantity:number; minQuantity:number; unit:string }[];
   outOfStock: { id:number; name:string; nameAr:string; stockQuantity:number; unit:string }[];
   bestSellers: { name:string; quantity:number; revenue:number }[];

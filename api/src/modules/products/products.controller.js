@@ -25,7 +25,9 @@ export const adminList = asyncHandler(async (req, res) => {
     throw httpError(400, "Invalid archived filter.");
   }
   const archivedOnly = req.query.archived === "true" || req.query.archived === "1";
-  res.json(await listProducts({ ...pagination, q: pagination.search, category, sort, includeArchived: true, archivedOnly }));
+  const stock = typeof req.query.stock === "string" ? req.query.stock : undefined;
+  if (stock && !["out", "low"].includes(stock)) throw httpError(400, "Invalid product stock filter.");
+  res.json(await listProducts({ ...pagination, q: pagination.search, category, sort, stock, includeArchived: true, archivedOnly }));
 });
 
 export const suggestions = asyncHandler(async (req, res) => {

@@ -22,11 +22,18 @@ const PAGE_SIZE = 8;
 export function AdminCategoriesPage() {
   const { t, language, isArabic } = useLanguage();
   const [currentPage, setCurrentPage] = useState(1);
-  const { data: categoryResult, isLoading, isError, error } = useAdminCategories({ page: currentPage, limit: PAGE_SIZE });
+  const {
+    data: categoryResult,
+    isLoading,
+    isError,
+    error,
+  } = useAdminCategories({ page: currentPage, limit: PAGE_SIZE });
   const categories = categoryResult?.data ?? [];
   const pagination = categoryResult?.pagination;
   const totalPages = Math.max(1, pagination?.totalPages ?? 1);
-  useEffect(() => { if (currentPage > totalPages) setCurrentPage(totalPages); }, [currentPage, totalPages]);
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
   const paginatedCategories = categories;
 
   const save = useSaveCategory();
@@ -95,7 +102,12 @@ export function AdminCategoriesPage() {
 
       {/* Loading */}
       {isLoading && <TableSkeleton />}
-      {isError && <Message title="Could not load categories" text={error instanceof Error ? error.message : "Please try again."} />}
+      {isError && (
+        <Message
+          title="Could not load categories"
+          text={error instanceof Error ? error.message : "Please try again."}
+        />
+      )}
 
       {/* Empty State */}
       {!isLoading && !isError && categories.length === 0 && (
@@ -126,11 +138,10 @@ export function AdminCategoriesPage() {
               <thead>
                 <tr className="border-b border-edge bg-surface text-xs font-semibold text-muted">
                   <th className="px-5 py-3.5 text-start">
-                    {t("admin.categories.colCategory")}
-                  </th>
-
-                  <th className="px-5 py-3.5 text-start">
                     {t("admin.categories.colImage")}
+                  </th>
+                  <th className="px-5 py-3.5 text-start">
+                    {t("admin.categories.colCategory")}
                   </th>
 
                   <th className="px-5 py-3.5 text-start">
@@ -151,14 +162,8 @@ export function AdminCategoriesPage() {
                       key={category.id}
                       className="transition-colors duration-150 hover:bg-surface/70"
                     >
-                      {/* Category Name Only */}
-                      <td className="px-5 py-4">
-                        <p className="font-semibold text-brand">
-                          {categoryName}
-                        </p>
-                      </td>
-
                       {/* Category Image */}
+
                       <td className="px-5 py-4">
                         {category.image ? (
                           <img
@@ -175,6 +180,12 @@ export function AdminCategoriesPage() {
                             <ImageIcon size={17} />
                           </div>
                         )}
+                      </td>
+                      {/* Category Name Only */}
+                      <td className="px-5 py-4">
+                        <p className="font-semibold text-brand">
+                          {categoryName}
+                        </p>
                       </td>
 
                       {/* Category Icon */}

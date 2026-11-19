@@ -17,7 +17,7 @@ import type { Category, Product, Unit } from "../../types";
 import type { ProductInput } from "../../types/admin";
 
 import { MAX_ORDER_QUANTITY } from "../../config";
-import { clampDiscount, formatPrice, stepFor } from "../../utils/format";
+import { stepFor } from "../../utils/format";
 import { localizedName } from "../../utils/localized";
 
 import { FormButtons, FormField, inputClass } from "./FormField";
@@ -162,11 +162,6 @@ export function ProductForm({
   const step = stepFor(f.unit);
   const unitLabel = unitName(f.unit);
 
-  // Discount preview.
-  const priceNumber = Number(f.price);
-  const discountNumber = clampDiscount(Number(f.discount));
-  const showPreview = priceNumber > 0 && discountNumber > 0;
-
   // Submit form.
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -189,10 +184,6 @@ export function ProductForm({
 
     if (!(price > 0) || !Number.isFinite(price)) {
       found.price = t("admin.pf.errPrice");
-    }
-
-    if (!Number.isFinite(discount) || !(discount >= 0 && discount <= 100)) {
-      found.discount = t("admin.pf.errDiscount");
     }
 
     // Inventory warning threshold validation.
@@ -326,49 +317,13 @@ export function ProductForm({
           />
         </FormField>
 
-        <FormField
-          label={t("admin.pf.discount")}
-          error={errors.discount}
-          hint={t("admin.pf.discountHint")}
-        >
-          <input
-            type="number"
-            step="1"
-            min="0"
-            max="100"
-            value={f.discount}
-            onChange={set("discount")}
-            className={inputClass}
-            placeholder="0"
-          />
-        </FormField>
       </div>
-
-      {/* Discount Preview */}
-      {showPreview && (
-        <div className="rounded-xl border border-[#cce8d5] bg-[#EAF6EE] px-4 py-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#078A4B]">
-            {t("admin.pf.discount")}
-          </p>
-
-          <p className="mt-1 text-sm font-semibold text-[#078A4B]">
-            {t("admin.pf.preview", {
-              final: formatPrice(priceNumber * (1 - discountNumber / 100)),
-              old: formatPrice(priceNumber),
-              per: isKg
-                ? t("admin.pf.previewQuarter")
-                : t("admin.pf.previewUnit", { unit: unitLabel }),
-            })}
-          </p>
-        </div>
-      )}
 
       {/* Stock Settings */}
       <div className="grid gap-4 sm:grid-cols-2">
         <FormField
           label={t("admin.pf.stockAlert", { unit: unitLabel })}
           error={errors.minQuantity}
-          hint={t("admin.pf.stockAlertHint", { unit: unitLabel })}
         >
           <input
             type="number"

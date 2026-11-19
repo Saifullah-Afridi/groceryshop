@@ -6,7 +6,7 @@ export async function getDashboard() {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const activeOrderWhere = { createdAt: { gte: monthStart }, status: { not: "CANCELLED" } };
 
-  const [productsCount, categoriesCount, today, month, pendingOrders, recentOrders, newCustomersToday, bestSellerGroups, lowStock, outOfStock] = await Promise.all([
+  const [productsCount, categoriesCount, today, month, pendingOrders, recentOrders, newCustomersToday, bestSellerGroups, lowStockCount, outOfStockCount, lowStock, outOfStock] = await Promise.all([
     prisma.product.count({ where: { isArchived: false } }),
     prisma.category.count(),
     prisma.order.aggregate({ where: { createdAt: { gte: start }, status: { not: "CANCELLED" } }, _sum: { total: true }, _count: { _all: true } }),
@@ -20,6 +20,15 @@ export async function getDashboard() {
       _sum: { quantity: true, lineTotal: true },
       orderBy: { _sum: { quantity: "desc" } },
       take: 5,
+    }),
+    prisma.$queryRaw`SELECT COUNT(*)::int AS count
+      FROM "Product"
+      WHERE "isArchived" = false AND "minQuantity" > 0
+        AND "stockQuantity" > 0 AND "stockQuantity" <= "minQuantity"`,
+    // Count every active out-of-stock product. This is deliberately separate
+    // from the five-row preview below, so the dashboard number is never capped.
+    prisma.product.count({
+      where: { isArchived: false, stockQuantity: { lte: 0 } },
     }),
     prisma.$queryRaw`SELECT "id", "name", "nameAr", "stockQuantity", "minQuantity", "unit"
       FROM "Product"
@@ -44,6 +53,8 @@ export async function getDashboard() {
     productsCount,
     categoriesCount,
     newCustomersToday,
+    lowStockCount: Number(lowStockCount[0]?.count ?? 0),
+    outOfStockCount: Number(outOfStockCount),
     lowStock: lowStock.map((p) => ({ id: p.id, name: p.name, nameAr: p.nameAr, stockQuantity: Number(p.stockQuantity), minQuantity: Number(p.minQuantity), unit: p.unit })),
     outOfStock: outOfStock.map((p) => ({ id: p.id, name: p.name, nameAr: p.nameAr, stockQuantity: Number(p.stockQuantity), unit: p.unit })),
     bestSellers: bestSellerGroups.map((row) => ({ name: row.productName, quantity: Number(row._sum.quantity ?? 0), revenue: Number(row._sum.lineTotal ?? 0) })),
