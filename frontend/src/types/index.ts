@@ -14,8 +14,6 @@ export interface Category {
   id: string;
   name: string;
   nameAr?: string;
-  description: string;
-  descriptionAr?: string;
   icon: IconKey;
   tint: string;
   color: string;
@@ -26,8 +24,6 @@ export interface Product {
   categoryId: string;
   name: string;
   nameAr?: string;
-  description: string;
-  descriptionAr?: string;
   farm: string;
   price: number; // original JOD price per 0.25 kg (kg products) or per selling unit
   originalPrice: number;

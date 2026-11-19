@@ -12,8 +12,6 @@ model Category {
   id          String    @id
   name        String
   nameAr      String    @default("")
-  description String    @default("")
-  descriptionAr String  @default("")
   icon        String    @default("Carrot")
   color       String    @default("#138040")
   tint        String    @default("#dff3e0")
@@ -27,8 +25,6 @@ model Product {
   id          Int      @id @default(autoincrement())
   name        String
   nameAr      String   @default("")
-  description String   @default("")
-  descriptionAr String @default("")
   farm        String   @default("")
   price       Decimal  @db.Decimal(10, 2) // JOD per 0.25 kg, as set in the admin form
   unit        String   @default("kg")
@@ -53,6 +49,7 @@ model Customer {
   passwordHash  String
   phone         String    @default("")
   address       String
+  addressAr     String    @default("")
   emailVerified Boolean   @default(false)
   otpHash       String? // the pending 6-digit code, hashed
   otpExpiresAt  DateTime?
@@ -92,8 +89,10 @@ model Order {
   name        String
   phone       String
   address     String
+  addressAr   String      @default("")
   city        String
   note        String      @default("")
+  noteAr      String      @default("")
   subtotal    Decimal     @db.Decimal(10, 2)
   deliveryFee Decimal     @db.Decimal(10, 2)
   total       Decimal     @db.Decimal(10, 2)
@@ -105,9 +104,6 @@ model Order {
 
   @@index([customerId])
   @@index([status])
-  // Supports the common customer/order-history and admin status/order-list queries.
-  @@index([customerId, id])
-  @@index([status, id])
 }
 
 model OrderItem {
@@ -135,16 +131,4 @@ model Notification {
 
   @@index([audience, isRead, createdAt])
   @@index([customerId, isRead, createdAt])
-  // List queries sort by createdAt without filtering on isRead.
-  @@index([audience, createdAt])
-  @@index([customerId, createdAt])
-}
-
-
-// The single store administrator account. Passwords are stored as bcrypt hashes.
-model AdminAccount {
-  id           String   @id @default("primary")
-  email        String   @unique
-  passwordHash String
-  updatedAt    DateTime @updatedAt
 }

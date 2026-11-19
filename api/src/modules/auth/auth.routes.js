@@ -1,25 +1,15 @@
 import { Router } from "express";
-import rateLimit from "express-rate-limit";
-import { requireAdmin } from "../../middlewares/auth.js";
-import { getSettings, login, updateSettings } from "./auth.controller.js";
+import { databaseRateLimit } from "../../middlewares/databaseRateLimit.js";
+import { login } from "./auth.controller.js";
 
-const loginLimiter = rateLimit({
+const loginLimiter = databaseRateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 30,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { message: "Too many attempts. Try again in a few minutes." },
-});
-const settingsLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
+  namespace: "admin:login",
+  message: "Too many attempts. Try again in a few minutes.",
 });
 
 const router = Router();
 router.post("/login", loginLimiter, login);
-router.get("/settings", requireAdmin, getSettings);
-router.put("/settings", requireAdmin, settingsLimiter, updateSettings);
 
 export default router;

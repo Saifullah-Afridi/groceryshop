@@ -12,7 +12,6 @@ export type CategoryInput = Omit<Category, "id"> & {
 export type ProductInput = Pick<
   Product,
   | "name"
-  | "description"
   | "categoryId"
   | "price"
   | "unit"

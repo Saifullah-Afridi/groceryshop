@@ -8,7 +8,7 @@ Open Supabase Dashboard → SQL Editor and run the complete file:
 
 `api/prisma/enable-notification-realtime.sql`
 
-This enables row-level security, grants read permission to the `authenticated` database role, adds an audience/customer-specific SELECT policy, and adds the table to the `supabase_realtime` publication. The policy allows admins to see only ADMIN notification rows and customers to see only their own CUSTOMER rows.
+This enables row-level security, grants schema/table read permission to the `authenticated` database role, adds an audience/customer-specific SELECT policy, and adds the table to the `supabase_realtime` publication. The policy allows admins to see only ADMIN notification rows and customers to see only their own CUSTOMER rows. The frontend listens only for INSERT events; it then reloads the durable list through the authenticated Rakan API. Mark-as-read operations are also scoped by audience/customer in the database write.
 
 ## 2. Backend environment — Vercel project `rakan-api`
 
@@ -63,10 +63,28 @@ Redeploy both Vercel projects after adding the environment variables.
 If Realtime authorization fails, verify the SQL policy/publication, exact matching Supabase project URL and publishable key, and that `SUPABASE_JWT_SECRET` is the project's actual legacy JWT signing secret.
 
 
-## 6. Order query performance
+## 6. Verify the database configuration
 
-Run `api/prisma/order-notification-performance.sql` once in the Supabase SQL Editor. It adds composite indexes for the order and notification list queries, plus trigram indexes for the admin's case-insensitive name/phone/city search.
+After running the setup SQL, run these queries in Supabase SQL Editor. The first must return the `Notification` table in `supabase_realtime`; the second must show the `rakan_notifications_realtime_select` policy with RLS enabled. Also review every other policy on this table: PostgreSQL permissive policies are combined with OR, so an older broad SELECT policy could weaken the audience restriction.
 
-The API order service also reserves/restores all stock lines with one conditional SQL statement rather than one Prisma request per product. Order cancellation/status updates reuse the order row already loaded inside the transaction instead of performing another read. Interactive order transactions now have a 15-second timeout and a 10-second connection-acquisition wait.
+```sql
+SELECT pubname, schemaname, tablename
+FROM pg_publication_tables
+WHERE pubname = 'supabase_realtime'
+  AND schemaname = 'public'
+  AND tablename = 'Notification';
 
-These changes reduce round trips; they do not replace checking Supabase connection health, pooler mode, or database load if latency remains high.
+SELECT policyname, roles, cmd, qual
+FROM pg_policies
+WHERE schemaname = 'public' AND tablename = 'Notification';
+
+SELECT relrowsecurity, relforcerowsecurity
+FROM pg_class
+WHERE oid = 'public."Notification"'::regclass;
+```
+
+The expected result is one publication row, an enabled RLS flag, and no other permissive SELECT policy that grants broader access. The `authenticated` role must have SELECT permission.
+
+## 7. Live end-to-end verification
+
+Source review confirms the intended flow: order transaction inserts a persistent notification; Supabase emits the INSERT; the browser refreshes through the authenticated API; and RLS filters the Realtime event by audience/customer. A source-code audit cannot prove that your live Supabase project has the correct legacy JWT secret, publication, grants, or network connectivity. Complete the two-session test in section 5 after deployment. Check browser console and API logs for subscription status `SUBSCRIBED`; `CHANNEL_ERROR`, `TIMED_OUT`, or `CLOSED` trigger a reconnect attempt.

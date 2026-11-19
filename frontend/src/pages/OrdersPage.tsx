@@ -147,7 +147,7 @@ function Totals({ order }: { order: Order }) {
 
 // ---------- ACTIVE orders ----------
 function ActiveOrderCard({ order, defaultOpen, onCancel }: { order: Order; defaultOpen: boolean; onCancel: () => void }) {
-  const { t, money, date } = useLanguage();
+  const { t, money, date, language } = useLanguage();
   const [open, setOpen] = useState(defaultOpen);
   const pending = order.status === "PENDING";
 
@@ -198,8 +198,8 @@ function ActiveOrderCard({ order, defaultOpen, onCancel }: { order: Order; defau
                 <p className="text-sm text-[#45675A]">
                   {order.name} · <span dir="ltr">{order.phone}</span>
                 </p>
-                <p className="text-sm text-[#45675A]">{order.address}, {order.city}</p>
-                {order.note && <p className="mt-2 text-xs italic text-[#87958D]">“{order.note}”</p>}
+                <p className="text-sm text-[#45675A]">{language === "ar" ? (order.addressAr || order.address) : order.address}, {order.city}</p>
+                {(language === "ar" ? (order.noteAr || order.note) : order.note) && <p className="mt-2 text-xs italic text-[#87958D]">“{language === "ar" ? (order.noteAr || order.note) : order.note}”</p>}
               </section>
               <section className="rounded-xl border border-[#DCEAE1] p-5">
                 <Totals order={order} />
@@ -286,7 +286,7 @@ function HistoryRow({ order, open, onToggle, onOrderAgain, busy }: { order: Orde
           <div>
             <Totals order={order} />
             <p className="mt-3 text-xs text-[#87958D]">
-              {delivered ? t("orders.deliveredTo", { place: `${order.address}, ${order.city}` }) : t("orders.cancelledNote")}
+              {delivered ? t("orders.deliveredTo", { place: `${language === "ar" ? (order.addressAr || order.address) : order.address}, ${order.city}` }) : t("orders.cancelledNote")}
             </p>
           </div>
         </div>

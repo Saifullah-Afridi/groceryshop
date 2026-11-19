@@ -4,9 +4,9 @@ import i18n from "../i18n";
 import { cancelMyOrder, createOrder, getMyOrders } from "../services/orderService";
 import type { Order, OrderInput } from "../types/order";
 
-// Order data is refreshed immediately by the shared Supabase Realtime notification listener.
+// The shopper's orders. They are refreshed every 30 seconds so the status stays current.
 export const useMyOrders = (enabled: boolean) =>
-  useQuery({ queryKey: ["orders", "mine"], queryFn: getMyOrders, enabled });
+  useQuery({ queryKey: ["orders", "mine"], queryFn: getMyOrders, enabled, refetchInterval: 30_000 });
 
 export function usePlaceOrder() {
   const client = useQueryClient();

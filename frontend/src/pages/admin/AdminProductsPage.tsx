@@ -19,7 +19,6 @@ import {
   useAdminCategories,
   useAdminProducts,
   useDeleteProduct,
-  useArchiveProduct,
   useRestoreProduct,
   useSaveProduct,
 } from "../../hooks/useAdmin";
@@ -28,7 +27,7 @@ import type { Category, Product } from "../../types";
 
 import { CATEGORY_ICONS } from "../../utils/categoryIcons";
 import { formatPrice } from "../../utils/format";
-import { localizedDescription, localizedName } from "../../utils/localized";
+import { localizedName } from "../../utils/localized";
 
 import { PageHeader } from "../../components/admin/PageHeader";
 import { ConfirmDialog } from "../../components/admin/ConfirmDialog";
@@ -80,12 +79,10 @@ export function AdminProductsPage() {
 
   const save = useSaveProduct();
   const remove = useDeleteProduct();
-  const archive = useArchiveProduct();
   const restore = useRestoreProduct();
 
   const [editing, setEditing] = useState<Product | "new" | null>(null);
   const [deleting, setDeleting] = useState<Product | null>(null);
-  const [archiving, setArchiving] = useState<Product | null>(null);
 
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState("");
@@ -102,8 +99,6 @@ export function AdminProductsPage() {
       const searchableText = [
         product.name,
         product.nameAr ?? "",
-        product.description ?? "",
-        product.descriptionAr ?? "",
       ]
         .join(" ")
         .toLowerCase();
@@ -142,11 +137,6 @@ export function AdminProductsPage() {
   const openDelete = (value: Product) => {
     remove.reset();
     setDeleting(value);
-  };
-
-  const openArchive = (value: Product) => {
-    archive.reset();
-    setArchiving(value);
   };
 
   const productName = (product: Product) => localizedName(product, language);
@@ -226,7 +216,7 @@ export function AdminProductsPage() {
               setSearch(event.target.value);
               setCurrentPage(1);
             }}
-            placeholder={t("admin.products.search")}
+            placeholder={t("admin.products.searchByName")}
             className={`${inputClass} ps-9`}
           />
         </label>
@@ -315,10 +305,6 @@ export function AdminProductsPage() {
                   </th>
 
                   <th className="px-5 py-3.5 text-start">
-                    {t("admin.products.colDescription")}
-                  </th>
-
-                  <th className="px-5 py-3.5 text-start">
                     {t("admin.products.colCategory")}
                   </th>
 
@@ -360,14 +346,6 @@ export function AdminProductsPage() {
                       {/* Product Name */}
                       <td className="px-5 py-4">
                         <p className="font-semibold text-brand">{name}</p>
-                      </td>
-
-                      {/* Description */}
-                      <td className="max-w-[220px] px-5 py-4">
-                        <p className="line-clamp-2 text-xs leading-5 text-muted">
-                          {localizedDescription(product, language) ||
-                            t("admin.products.noDescription")}
-                        </p>
                       </td>
 
                       {/* Category */}
@@ -475,23 +453,13 @@ export function AdminProductsPage() {
                           </button>
 
                           {showArchived ? (
-                            <>
-                              <button type="button" onClick={() => restore.mutate(product.id)} title="Restore product" aria-label="Restore product" className="grid h-9 w-9 place-items-center rounded-lg border border-edge bg-white text-muted transition hover:border-brand hover:bg-brand hover:text-white">
-                                <ArchiveRestore size={16} />
-                              </button>
-                              <button type="button" onClick={() => openDelete(product)} aria-label={`Delete ${name}`} title="Delete permanently" className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg border border-edge bg-white text-muted transition hover:border-sale hover:bg-sale hover:text-white">
-                                <Trash2 size={16} />
-                              </button>
-                            </>
+                            <button type="button" onClick={() => restore.mutate(product.id)} title="Restore product" aria-label="Restore product" className="grid h-9 w-9 place-items-center rounded-lg border border-edge bg-white text-muted transition hover:border-brand hover:bg-brand hover:text-white">
+                              <ArchiveRestore size={16} />
+                            </button>
                           ) : (
-                            <>
-                              <button type="button" onClick={() => openArchive(product)} aria-label={`Archive ${name}`} title="Move to archive" className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg border border-edge bg-white text-muted transition hover:border-amber-500 hover:bg-amber-500 hover:text-white">
-                                <Archive size={16} />
-                              </button>
-                              <button type="button" onClick={() => openDelete(product)} aria-label={`Delete ${name}`} title="Delete permanently" className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg border border-edge bg-white text-muted transition hover:border-sale hover:bg-sale hover:text-white">
-                                <Trash2 size={16} />
-                              </button>
-                            </>
+                            <button type="button" onClick={() => openDelete(product)} aria-label={`Archive ${name}`} title="Move to archive" className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg border border-edge bg-white text-muted transition hover:border-amber-500 hover:bg-amber-500 hover:text-white">
+                              <Archive size={16} />
+                            </button>
                           )}
                         </div>
                       </td>
@@ -547,29 +515,20 @@ export function AdminProductsPage() {
         </Modal>
       )}
 
-      {/* Archive Confirmation */}
-      {archiving && (
-        <ConfirmDialog
-          title="Archive product"
-          text={`Move ${localizedName(archiving, language)} to the archive? It will no longer appear in the shop, and existing order history will remain intact. You can restore it later.`}
-          confirmLabel="Move to archive"
-          busy={archive.isPending}
-          error={archive.error?.message}
-          onCancel={() => setArchiving(null)}
-          onConfirm={() => archive.mutate(archiving.id, { onSuccess: () => setArchiving(null) })}
-        />
-      )}
-
-      {/* Permanent Delete Confirmation */}
+      {/* Delete Confirmation */}
       {deleting && (
         <ConfirmDialog
-          title="Delete product permanently"
-          text={`Permanently delete ${localizedName(deleting, language)}? It will be removed from the product catalogue. Existing order details will be preserved, but this action cannot be undone.`}
-          confirmLabel="Delete permanently"
+          title="Archive product"
+          text={`Move ${localizedName(deleting, language)} to the archive? It will no longer appear in the shop, and existing order history will remain intact.`}
+          confirmLabel="Move to archive"
           busy={remove.isPending}
           error={remove.error?.message}
           onCancel={() => setDeleting(null)}
-          onConfirm={() => remove.mutate(deleting.id, { onSuccess: () => setDeleting(null) })}
+          onConfirm={() =>
+            remove.mutate(deleting.id, {
+              onSuccess: () => setDeleting(null),
+            })
+          }
         />
       )}
     </div>

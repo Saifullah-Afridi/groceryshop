@@ -18,7 +18,7 @@ import type { ProductInput } from "../../types/admin";
 
 import { MAX_ORDER_QUANTITY } from "../../config";
 import { clampDiscount, formatPrice, stepFor } from "../../utils/format";
-import { localizedDescription, localizedName } from "../../utils/localized";
+import { localizedName } from "../../utils/localized";
 
 import { FormButtons, FormField, inputClass } from "./FormField";
 
@@ -45,7 +45,6 @@ export function ProductForm({
 
   const getInitialValues = () => ({
     name: initial ? localizedName(initial, language) : "",
-    description: initial ? localizedDescription(initial, language) : "",
     categoryId: initial?.categoryId ?? categories[0]?.id ?? "",
     price: initial ? String(initial.price) : "",
     discount: initial?.discount ? String(initial.discount) : "",
@@ -74,8 +73,6 @@ export function ProductForm({
     initial?.id,
     initial?.name,
     initial?.nameAr,
-    initial?.description,
-    initial?.descriptionAr,
     initial?.categoryId,
     initial?.price,
     initial?.discount,
@@ -185,9 +182,6 @@ export function ProductForm({
       found.name = t("admin.pf.errName");
     }
 
-    if (!f.description.trim()) {
-      found.description = t("admin.pf.errDescription");
-    }
 
     if (!f.categoryId) {
       found.categoryId = t("admin.pf.errCategory");
@@ -232,7 +226,6 @@ export function ProductForm({
     onSubmit(
       {
         name: f.name.trim(),
-        description: f.description.trim(),
         language,
         categoryId: f.categoryId,
         price,
@@ -266,18 +259,6 @@ export function ProductForm({
           onChange={set("name")}
           placeholder={initial ? "" : t("admin.pf.namePlaceholder")}
           className={inputClass}
-        />
-      </FormField>
-
-      {/* Product Description */}
-      <FormField label={t("admin.pf.description")} error={errors.description}>
-        <textarea
-          name="productDescription"
-          value={f.description}
-          onChange={set("description")}
-          placeholder={initial ? "" : t("admin.pf.descPlaceholder")}
-          className={`${inputClass} min-h-24 resize-y`}
-          rows={3}
         />
       </FormField>
 

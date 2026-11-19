@@ -20,6 +20,7 @@ export const createOrderSchema = z.object({
   phone,
   address: z.string().trim().min(5, "Enter your delivery address").max(300),
   note: z.string().trim().max(300).default(""),
+  language: z.enum(["en", "ar"]).default("en"),
 });
 
 export const statusSchema = z.object({ status: z.enum(ORDER_STATUSES) });

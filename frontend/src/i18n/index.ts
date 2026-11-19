@@ -7,7 +7,7 @@ import en from "../locales/en.json";
 // Static text for the storefront and the admin lives in src/locales/en.json and ar.json.
 // Keys are flat strings (for example "cart.emptyText"), so the key separator is switched off.
 // Product and category names come from the database; they will be translated there later
-// (nameAr / descriptionAr), and until then the English text is shown.
+// (nameAr), and until then the English text is shown.
 
 export type Language = "ar" | "en";
 export const LANGUAGE_KEY = "rakan-language";

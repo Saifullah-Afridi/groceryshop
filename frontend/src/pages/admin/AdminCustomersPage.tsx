@@ -254,7 +254,7 @@ export function AdminCustomersPage() {
                       {/* Address */}
                       <td className="px-5 py-4">
                         <p className="line-clamp-2 max-w-xs text-sm text-brand">
-                          {customer.address || (
+                          {(isArabic ? (customer.addressAr || customer.address) : customer.address) || (
                             <span className="text-muted">
                               {t("admin.users.notSet")}
                             </span>

@@ -1,11 +1,9 @@
 // The database translation comes later.
-// Until then, nameAr and descriptionAr fall back to English.
+// Arabic names fall back to English when a translation is unavailable.
 
 type Named = {
   name: string;
   nameAr?: string | null;
-  description?: string | null;
-  descriptionAr?: string | null;
 };
 
 /**
@@ -18,18 +16,6 @@ export const localizedName = (item: Named, language: string): string => {
   }
 
   return item.name;
-};
-
-/**
- * Returns the description in the selected language.
- * Falls back to English if the Arabic description is empty or unavailable.
- */
-export const localizedDescription = (item: Named, language: string): string => {
-  if (language === "ar") {
-    return item.descriptionAr?.trim() || item.description || "";
-  }
-
-  return item.description || "";
 };
 
 // Keep old function names so existing imports continue working.

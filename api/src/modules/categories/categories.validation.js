@@ -8,8 +8,6 @@ const fields = z.object({
   removeImage: z.preprocess((value) => value === true || value === "true", z.boolean()).optional().default(false),
   name: z.string().trim().min(1, "Enter a category name").max(80),
   nameAr: z.string().trim().max(80).optional().default(""),
-  description: z.string().trim().max(500).default(""),
-  descriptionAr: z.string().trim().max(500).optional().default(""),
   icon: z.enum(ICONS).default("Carrot"),
   color: hexColor.default("#138040"),
   tint: hexColor.default("#dff3e0"),

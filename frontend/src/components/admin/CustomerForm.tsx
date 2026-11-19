@@ -20,13 +20,13 @@ export function CustomerForm({
   onSubmit,
   onCancel,
 }: Props) {
-  const { t, isArabic } = useLanguage();
+  const { t, isArabic, language } = useLanguage();
 
   const [f, setF] = useState({
     name: initial?.name ?? "",
     email: initial?.email ?? "",
     phone: initial?.phone ?? "",
-    address: initial?.address ?? "",
+    address: initial ? (language === "ar" ? (initial.addressAr || initial.address) : initial.address) : "",
     password: "",
   });
 
@@ -38,13 +38,13 @@ export function CustomerForm({
       name: initial?.name ?? "",
       email: initial?.email ?? "",
       phone: initial?.phone ?? "",
-      address: initial?.address ?? "",
+      address: initial ? (language === "ar" ? (initial.addressAr || initial.address) : initial.address) : "",
       password: "",
     });
 
     setErrors({});
     setShowPassword(false);
-  }, [initial]);
+  }, [initial, language]);
 
   const set = (key: keyof typeof f) => (value: string) => {
     setF((current) => ({
@@ -97,6 +97,7 @@ export function CustomerForm({
       email: f.email.trim(),
       phone: f.phone.trim(),
       address: f.address.trim(),
+      language,
       ...(f.password && { password: f.password }),
     });
   };

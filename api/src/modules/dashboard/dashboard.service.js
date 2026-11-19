@@ -4,41 +4,44 @@ export async function getDashboard() {
   const now = new Date();
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const [products, categories, todaysOrders, monthOrders, pendingOrders, recentOrders, customers] = await Promise.all([
-    prisma.product.findMany({ where: { isArchived: false }, orderBy: { name: "asc" } }),
+  const activeOrderWhere = { createdAt: { gte: monthStart }, status: { not: "CANCELLED" } };
+
+  const [products, categoriesCount, today, month, pendingOrders, recentOrders, newCustomersToday, bestSellerGroups] = await Promise.all([
+    prisma.product.findMany({
+      where: { isArchived: false },
+      select: { id: true, name: true, nameAr: true, stockQuantity: true, minQuantity: true, unit: true },
+      orderBy: { name: "asc" },
+    }),
     prisma.category.count(),
-    prisma.order.findMany({ where: { createdAt: { gte: start }, status: { not: "CANCELLED" } }, include: { items: true } }),
-    prisma.order.findMany({ where: { createdAt: { gte: monthStart }, status: { not: "CANCELLED" } } }),
+    prisma.order.aggregate({ where: { createdAt: { gte: start }, status: { not: "CANCELLED" } }, _sum: { total: true }, _count: { _all: true } }),
+    prisma.order.aggregate({ where: activeOrderWhere, _sum: { total: true } }),
     prisma.order.count({ where: { status: "PENDING" } }),
-    prisma.order.findMany({ take: 8, orderBy: { createdAt: "desc" }, include: { items: true } }),
+    prisma.order.findMany({ take: 8, orderBy: { createdAt: "desc" }, select: { id: true, name: true, total: true, status: true, createdAt: true, _count: { select: { items: true } } } }),
     prisma.customer.count({ where: { createdAt: { gte: start } } }),
+    prisma.orderItem.groupBy({
+      by: ["productId", "productName"],
+      where: { order: { is: activeOrderWhere } },
+      _sum: { quantity: true, lineTotal: true },
+      orderBy: { _sum: { quantity: "desc" } },
+      take: 5,
+    }),
   ]);
-  const lowStock = products.filter(p => Number(p.minQuantity) > 0 && Number(p.stockQuantity) > 0 && Number(p.stockQuantity) <= Number(p.minQuantity));
-  const outOfStock = products.filter(p => Number(p.stockQuantity) <= 0);
-  const sold = new Map();
-  for (const order of monthOrders) {
-    const items = await prisma.orderItem.findMany({ where: { orderId: order.id } });
-    for (const item of items) {
-      const key = item.productName;
-      const current = sold.get(key) || { name: key, quantity: 0, revenue: 0 };
-      current.quantity += Number(item.quantity);
-      current.revenue += Number(item.lineTotal);
-      sold.set(key, current);
-    }
-  }
-  const sum = rows => rows.reduce((n, row) => n + Number(row.total), 0);
+
+  const lowStock = products.filter((p) => Number(p.minQuantity) > 0 && Number(p.stockQuantity) > 0 && Number(p.stockQuantity) <= Number(p.minQuantity));
+  const outOfStock = products.filter((p) => Number(p.stockQuantity) <= 0);
+  const todayRevenue = Number(today._sum.total ?? 0);
   return {
-    todayRevenue: sum(todaysOrders),
-    todayOrders: todaysOrders.length,
-    averageOrderValue: todaysOrders.length ? sum(todaysOrders) / todaysOrders.length : 0,
-    monthRevenue: sum(monthOrders),
+    todayRevenue,
+    todayOrders: today._count._all,
+    averageOrderValue: today._count._all ? todayRevenue / today._count._all : 0,
+    monthRevenue: Number(month._sum.total ?? 0),
     pendingOrders,
     productsCount: products.length,
-    categoriesCount: categories,
-    newCustomersToday: customers,
-    lowStock: lowStock.map(p => ({ id:p.id, name:p.name, nameAr:p.nameAr, stockQuantity:p.stockQuantity, minQuantity:p.minQuantity, unit:p.unit })),
-    outOfStock: outOfStock.map(p => ({ id:p.id, name:p.name, nameAr:p.nameAr, stockQuantity:p.stockQuantity, unit:p.unit })),
-    bestSellers: [...sold.values()].sort((a,b) => b.quantity-a.quantity).slice(0,5),
-    recentOrders: recentOrders.map(o => ({ id:o.id, name:o.name, total:Number(o.total), status:o.status, createdAt:o.createdAt.toISOString(), itemsCount:o.items.length })),
+    categoriesCount,
+    newCustomersToday,
+    lowStock: lowStock.map((p) => ({ id: p.id, name: p.name, nameAr: p.nameAr, stockQuantity: Number(p.stockQuantity), minQuantity: Number(p.minQuantity), unit: p.unit })),
+    outOfStock: outOfStock.map((p) => ({ id: p.id, name: p.name, nameAr: p.nameAr, stockQuantity: Number(p.stockQuantity), unit: p.unit })),
+    bestSellers: bestSellerGroups.map((row) => ({ name: row.productName, quantity: Number(row._sum.quantity ?? 0), revenue: Number(row._sum.lineTotal ?? 0) })),
+    recentOrders: recentOrders.map((o) => ({ id: o.id, name: o.name, total: Number(o.total), status: o.status, createdAt: o.createdAt.toISOString(), itemsCount: o._count.items })),
   };
 }

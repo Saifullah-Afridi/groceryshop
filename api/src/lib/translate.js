@@ -54,17 +54,16 @@ export async function translateTexts(texts, source, target) {
 }
 
 /**
- * The form submits name/description in its active language.
+ * The form submits the selected content fields in its active language.
  * Only fields present in the request are translated; untouched pairs remain unchanged.
  */
-export async function buildBilingualContent(data, language, current = {}) {
+export async function buildBilingualContent(data, language, current = {}, fields = ["name"]) {
   if (language !== "ar" && language !== "en") {
     throw new Error("A valid content language (en or ar) is required.");
   }
   const result = {};
   const source = language;
   const target = language === "ar" ? "en" : "ar";
-  const fields = ["name", "description"];
   const inputs = fields.map((field) => data[field]);
   const indexes = inputs.map((value, index) =>
     value !== undefined && typeof value === "string" && value.trim() ? index : -1
@@ -87,4 +86,28 @@ export async function buildBilingualContent(data, language, current = {}) {
     }
   });
   return result;
+}
+
+
+/**
+ * Translate one customer-supplied delivery field and preserve the original.
+ * Only the supplied address/instruction text is sent to Azure Translator.
+ */
+export async function translateCustomerField(text, sourceLanguage) {
+  const original = String(text ?? "").trim();
+  if (!original) return { en: "", ar: "" };
+  if (!["en", "ar"].includes(sourceLanguage)) {
+    throw new Error("A valid customer content language (en or ar) is required.");
+  }
+  // Detect the actual script, not just the app locale: an English address can
+  // be entered while the Arabic UI is active, and vice versa.
+  const hasArabic = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(original);
+  const hasLatin = /[A-Za-z]/.test(original);
+  const detectedLanguage = hasArabic ? "ar" : hasLatin ? "en" : sourceLanguage;
+  if (detectedLanguage === "ar") {
+    const [en] = await translateTexts([original], "ar", "en");
+    return { en, ar: original };
+  }
+  const [ar] = await translateTexts([original], "en", "ar");
+  return { en: original, ar };
 }

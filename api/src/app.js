@@ -14,8 +14,12 @@ import productsRoutes from "./modules/products/products.routes.js";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes.js";
 import contactRoutes from "./modules/contact/contact.routes.js";
 import notificationsRoutes from "./modules/notifications/notifications.routes.js";
+import { prisma } from "./lib/prisma.js";
 
 export const app = express();
+
+// The API runs behind one trusted hosting proxy; this makes req.ip reflect the client.
+app.set("trust proxy", 1);
 
 // Security middleware.
 app.use(helmet());
@@ -46,8 +50,14 @@ app.use(
 app.use(express.json({ limit: "1mb" }));
 
 // Health check.
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok" });
+app.get("/api/health", async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.status(200).json({ status: "ok", database: "connected" });
+  } catch (error) {
+    console.error("Health check database failure:", error?.message ?? error);
+    res.status(503).json({ status: "degraded", database: "unavailable" });
+  }
 });
 
 // API routes.

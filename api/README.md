@@ -1,83 +1,51 @@
-# Rakan API
+# Rakan Shop API
 
-Express (JavaScript, functions only) + Prisma + Supabase (Postgres database and image storage).
+Express (JavaScript ES modules) + Prisma + Supabase PostgreSQL and Storage.
 
-## Set up
-1. In Supabase > Storage, create a **public** bucket named exactly `rakan`. The bucket is just a name you choose, it is not a key.
-2. `cp .env.example .env` and fill it in. The comments in the file say which Supabase screen each value comes from (Connect > Direct for `DATABASE_URL`, Connect > Server for `SUPABASE_URL` and `SUPABASE_SECRET_KEY`). Both must come from the same project.
-3. `npm install`
-4. `npm run db:push` creates the tables. `npm run db:seed` adds the six categories, 10 products in each category, and two delivery cities (Irbid, Ramtha). It is safe to run again. Rename them and set the fees in the admin dashboard.
-5. In the Supabase SQL editor, run this once so the tables cannot be read through Supabase's public data API (our API uses Prisma, which is not affected):
-   ```sql
-   alter table "Category" enable row level security;
-   alter table "Product" enable row level security;
-   alter table "Customer" enable row level security;
-   alter table "City" enable row level security;
-   alter table "Order" enable row level security;
-   alter table "OrderItem" enable row level security;
-   ```
-6. `npm run dev` starts the API on http://localhost:4000
+## Setup
 
-## Email codes
-New shoppers confirm their email with a 6-digit code. While `SMTP_HOST` is empty the code is printed in the terminal, which is enough for development. For real emails, fill in the SMTP settings in `.env` (see the comments there).
+1. Create a public Supabase Storage bucket named `rakan`.
+2. Copy `api/.env.example` to `api/.env` and configure the values. Keep `.env` private.
+3. Configure Azure Translator in the API environment: `AZURE_TRANSLATOR_KEY`, `AZURE_TRANSLATOR_REGION`, and `AZURE_TRANSLATOR_ENDPOINT`.
+4. Install dependencies with `npm install`.
+5. Apply the Prisma schema to a development database with `npm run db:push`.
+6. Run `api/prisma/enable-notification-realtime.sql` in Supabase SQL Editor and follow `REALTIME-NOTIFICATIONS-SETUP.md` to verify RLS and Realtime.
+7. Run `npm run db:seed` to create six Jordanian Arabic categories and 20 one-word Arabic product names per category. The seed calls Azure Translator and stores the original Arabic in `nameAr` and the English translation in `name`.
+8. Start the API with `npm run dev`.
 
-## Folder layout
-Each feature has its own folder in `src/modules`: `*.routes.js` (URLs and who may call them), `*.controller.js` (reads the request, sends the reply), `*.service.js` (the real work), `*.validation.js` (rules for incoming data).
-Shared code: `src/lib` (database, storage, email, helpers), `src/middlewares`, `src/config/env.js`.
+For production, use a database backup and a controlled migration process. Do not run `prisma db push` against production without reviewing the schema diff.
 
-## Endpoints
-| Method | URL | Who |
-|---|---|---|
-| POST | `/api/auth/login` | admin |
-| GET | `/api/categories`, `/api/categories/:id` | anyone |
-| POST, PUT, DELETE | `/api/categories`, `/api/categories/:id` | admin |
-| GET | `/api/products?category=&q=&sort=`, `/api/products/:id` | anyone |
-| POST, PUT, DELETE | `/api/products`, `/api/products/:id` | admin |
-| POST | `/api/customers/register` | anyone (sends the code) |
-| POST | `/api/customers/verify-otp` | anyone (returns a token) |
-| POST | `/api/customers/resend-otp` | anyone |
-| POST | `/api/customers/login` | anyone |
-| GET | `/api/customers/me` | signed-in customer |
-| GET, POST, PUT, DELETE | `/api/customers`, `/api/customers/:id` | admin |
-| GET | `/api/cities` (active only) | anyone |
-| GET | `/api/cities/all` | admin |
-| POST, PUT, DELETE | `/api/cities`, `/api/cities/:id` | admin |
-| POST | `/api/orders` | signed-in customer |
-| GET | `/api/orders/mine` | signed-in customer |
-| POST | `/api/orders/:id/cancel` | signed-in customer (only while PENDING) |
-| GET | `/api/orders`, `/api/orders/:id` | admin |
-| PUT | `/api/orders/:id/status` | admin |
+## Customer address translation
 
-## Orders are priced by the server
-The order request only contains product ids, quantities, the city id and the delivery details. It never contains a price, a delivery fee or a total. The server reads every price and the city fee from the database, checks that each quantity goes up in steps of 0.25 kg (and is at most 50), and works out the totals itself. Changing numbers in the browser cannot change what an order costs.
+Registration and checkout send the current UI language (`en` or `ar`) with the submitted delivery address and instructions. The API sends only the address/instruction text to Azure Translator, never customer names or phone numbers. It stores English in `address`/`note` and Arabic in `addressAr`/`noteAr`. If translation is unavailable, registration or checkout returns HTTP 503 and does not save a partially translated record.
 
-Admin and customer tokens are different: a customer token cannot use admin routes.
+The existing migration `20261119010000_jordanian_arabic_customer_translations` adds these columns. The Prisma schema now includes them. For existing deployments, verify that migration is applied before running the updated API.
 
-## Environment setup
+To fill missing translations on older rows, run `npm run translate:customers` after configuring Azure Translator. The script preserves any existing translation pair.
 
-Copy `.env.example` to `.env` and fill in the values from your Supabase, Azure Translator, and email provider dashboards. Keep `.env` private and never add it to Git.
+## Shared rate limiting
 
-After changing `prisma/schema.prisma`, apply the schema to your development database and regenerate Prisma Client:
+Authentication, OTP, checkout, and contact routes use the PostgreSQL `RateLimitBucket` table, so counters are shared across API instances. The table is created by the `20261118000000_production_hardening` migration. The API fails closed with HTTP 503 if the shared limiter is unavailable.
 
-```bash
-npm run db:push
-npm run prisma:generate
-```
+## Health check
 
-The `Order.stockReserved` field distinguishes orders created after stock reservation was introduced from older orders. This prevents cancelling an older order from incorrectly increasing inventory that was never deducted.
+`GET /api/health` checks PostgreSQL with `SELECT 1`. It returns HTTP 200 when the database is reachable and HTTP 503 when it is not.
 
-## Image uploads
+## Query performance
 
-Category and product image uploads accept JPEG, PNG, WebP, and GIF files up to 5 MB. The API checks both the declared MIME type and the file signature before uploading to Supabase Storage.
+- Search suggestions query a bounded candidate set instead of loading the full product/category catalogue.
+- Dashboard totals use database aggregates, and best sellers use one `groupBy` query rather than an N+1 query loop.
+- `api/prisma/query-performance-indexes.sql` adds trigram indexes for case-insensitive contains searches and btree indexes for order history. Run it in Supabase SQL Editor or apply the matching migration.
+- Admin pages already paginate visible rows in the browser. The current list endpoints still return the full admin list; server-side pagination is a remaining scaling improvement for very large customer/product datasets.
 
+## API features
 
-## Recent feature update
+- Admin and customer authentication are separate.
+- Order prices, discounts, stock reservations, delivery fees, and totals are calculated by the API.
+- Stock reservations use conditional database updates to prevent concurrent overselling.
+- Product and category descriptions are not part of the data model.
+- Notifications are persisted in PostgreSQL and delivered through Supabase Realtime.
 
-- Product and category images accept JPG, PNG, or WebP up to 4 MB. The browser validates dimensions (minimum 300 × 300), compresses to WebP (target 500 KB, maximum dimension 1600 px), and the API independently validates and converts with Sharp to WebP (maximum dimension 1200 px, quality 87).
-- Products are archived instead of hard-deleted. Archived products are hidden from the public catalogue and cannot be checked out; existing order line snapshots remain intact.
-- Product API responses include `originalPrice` and backend-calculated `discountedPrice`. Order totals are still recalculated authoritatively by the API at checkout.
-- Notifications are stored in PostgreSQL and delivered through Supabase Realtime Postgres Changes. The frontend receives only new-row events and fetches notification details through the authenticated API. Run `api/prisma/enable-notification-realtime.sql` and configure `SUPABASE_JWT_SECRET` in the API plus `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in the frontend. See `REALTIME-NOTIFICATIONS-SETUP.md` for the secure RLS/token setup.
+## Environment and build
 
-### Deploying the schema and dependencies
-
-From `api/`, run `npm install` and then `npm run db:push` against the configured Supabase PostgreSQL database. From `frontend/`, run `npm install` before building. Add the `sharp` dependency in the API and `browser-image-compression` in the frontend (both are listed in their package manifests). Deploy the API before the frontend. Do not run `db:push` against production until you have a current database backup.
+Run `npm install` separately in `api/` and `frontend/`. Then run `npm run build` in `frontend/`. Run `npm run prisma:generate` in `api/` after changing `prisma/schema.prisma`.

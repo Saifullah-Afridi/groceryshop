@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { requireAdmin } from "../../middlewares/auth.js";
 import { parseImage } from "../../middlewares/parseImage.js";
-import { adminList, archive, create, getOne, list, remove, restore, suggestions, update } from "./products.controller.js";
+import { adminList, create, getOne, list, remove, restore, suggestions, update } from "./products.controller.js";
 
 const router = Router();
 
@@ -12,8 +12,8 @@ router.get("/search/suggestions", suggestions);
 router.get("/:id", getOne);
 router.post("/", requireAdmin, parseImage, create);
 router.put("/:id", requireAdmin, parseImage, update);
-router.delete("/:id", requireAdmin, remove); // permanently delete product
-router.post("/:id/archive", requireAdmin, archive);
+router.delete("/:id", requireAdmin, remove); // legacy clients archive rather than permanently delete
+router.post("/:id/archive", requireAdmin, remove);
 router.post("/:id/restore", requireAdmin, restore);
 
 export default router;

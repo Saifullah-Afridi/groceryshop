@@ -2,6 +2,7 @@ import { httpError } from "../../lib/httpError.js";
 import { prisma } from "../../lib/prisma.js";
 import { deleteImage, uploadImage } from "../../lib/storage.js";
 import { buildBilingualContent } from "../../lib/translate.js";
+import { validateProductInventoryUpdate } from "./products.validation.js";
 
 // The shape the React app expects. Prisma returns price as a Decimal, so it is turned into a number.
 const toDto = (p) => ({
@@ -9,8 +10,6 @@ const toDto = (p) => ({
   categoryId: p.categoryId,
   name: p.name,
   nameAr: p.nameAr,
-  description: p.description,
-  descriptionAr: p.descriptionAr,
   stockQuantity: Number(p.stockQuantity),
   discount: Number(p.discount ?? 0),
   isOutOfStock: Number(p.stockQuantity) <= 0,
@@ -94,9 +93,9 @@ function scoreCategorySearch(query, category) {
 function productSearchScore(product, query) {
   const nameScore = scoreSearch(query, [product.name, product.nameAr]);
   const categoryScore = scoreCategorySearch(query, product.category);
-  const detailScore = scoreSearch(query, [product.description, product.descriptionAr, product.farm]);
-  // Product-name matches rank first, followed by category matches, then descriptions/farm text.
-  return Math.max(nameScore ? nameScore + 30 : 0, categoryScore ? categoryScore + 10 : 0, detailScore);
+  const farmScore = scoreSearch(query, [product.farm]);
+  // Product-name matches rank first, followed by category matches, then farm text.
+  return Math.max(nameScore ? nameScore + 30 : 0, categoryScore ? categoryScore + 10 : 0, farmScore);
 }
 
 async function findOrFail(id) {
@@ -132,9 +131,26 @@ export async function listProducts({ category, q, sort, offers, includeArchived 
 }
 
 export async function getSearchSuggestions(query) {
+  const tokens = [...new Set([...normalizeSearch(query).split(" "), ...String(query).trim().split(/\s+/)])].filter((token) => token.length >= 2).slice(0, 6);
+  if (!tokens.length) return { products: [], categories: [] };
+  const containsFilters = tokens.flatMap((token) => [
+    { name: { contains: token, mode: "insensitive" } },
+    { nameAr: { contains: token, mode: "insensitive" } },
+    { farm: { contains: token, mode: "insensitive" } },
+  ]);
+  const categoryFilters = tokens.flatMap((token) => [
+    { name: { contains: token, mode: "insensitive" } },
+    { nameAr: { contains: token, mode: "insensitive" } },
+  ]);
   const [products, categories] = await Promise.all([
-    prisma.product.findMany({ where: { isArchived: false }, include: { category: true } }),
-    prisma.category.findMany(),
+    prisma.product.findMany({
+      where: { isArchived: false, ...(containsFilters.length ? { OR: containsFilters } : {}) },
+      include: { category: true }, orderBy: { id: "asc" }, take: 150,
+    }),
+    prisma.category.findMany({
+      where: categoryFilters.length ? { OR: categoryFilters } : {},
+      orderBy: { createdAt: "asc" }, take: 40,
+    }),
   ]);
 
   const matchedCategories = categories
@@ -169,8 +185,8 @@ export async function getProduct(id) {
 
 export async function createProduct(data, file) {
   await assertCategoryExists(data.categoryId);
-  const bilingual = await buildBilingualContent(data, data.language ?? "en");
-  const { language, name, description, removeImage, ...rest } = data;
+  const bilingual = await buildBilingualContent(data, data.language ?? "en", {}, ["name"]);
+  const { language, name, removeImage, ...rest } = data;
   const image = file ? await uploadImage(file, "products") : null;
   try {
     return toDto(await prisma.product.create({ data: { ...rest, ...bilingual, image } }));
@@ -182,10 +198,11 @@ export async function createProduct(data, file) {
 
 export async function updateProduct(id, data, file) {
   const current = await findOrFail(id);
+  validateProductInventoryUpdate(data, current);
   if (data.categoryId) await assertCategoryExists(data.categoryId);
   const language = data.language ?? "en";
-  const bilingual = await buildBilingualContent(data, language, current);
-  const { language: _language, name, description, removeImage, ...rest } = data;
+  const bilingual = await buildBilingualContent(data, language, current, ["name"]);
+  const { language: _language, name, removeImage, ...rest } = data;
   const image = file ? await uploadImage(file, "products") : undefined;
   const shouldRemoveImage = Boolean(removeImage) && !file;
   try {
@@ -215,16 +232,6 @@ export async function restoreProduct(id) {
 }
 
 export async function deleteProduct(id) {
-  const current = await findOrFail(id);
-
-  // Order items store a product-name/price snapshot. Detach the optional product ID
-  // before deleting so historical orders remain readable and unchanged.
-  await prisma.$transaction(async (tx) => {
-    await tx.orderItem.updateMany({ where: { productId: id }, data: { productId: null } });
-    await tx.product.delete({ where: { id } });
-  });
-
-  // Remove the stored image only after the database transaction succeeds.
-  await deleteImage(current.image);
-  return { id, deleted: true };
+  // Kept as a compatibility alias for older clients; this is an archive operation.
+  return archiveProduct(id);
 }

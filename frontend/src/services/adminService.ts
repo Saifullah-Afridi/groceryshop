@@ -10,7 +10,6 @@ import i18n from "../i18n";
 function categoryForm(input: CategoryInput, imageFile?: File | null) {
   const form = new FormData();
   form.append("name", input.name);
-  form.append("description", input.description ?? "");
   form.append("language", input.language);
   if (input.removeImage) form.append("removeImage", "true");
   form.append("icon", input.icon);
@@ -23,7 +22,6 @@ function categoryForm(input: CategoryInput, imageFile?: File | null) {
 function productForm(input: ProductInput, imageFile?: File | null) {
   const form = new FormData();
   form.append("name", input.name);
-  form.append("description", input.description);
   form.append("language", input.language);
   if (input.removeImage) form.append("removeImage", "true");
   form.append("categoryId", input.categoryId);
@@ -56,8 +54,7 @@ export const createProduct = (input: ProductInput, imageFile?: File | null) =>
 export const updateProduct = (id: number, input: ProductInput, imageFile?: File | null) =>
   api<Product>(`/products/${id}`, { method: "PUT", body: productForm(input, imageFile) });
 
-export const archiveProduct = (id: number) => api<void>(`/products/${id}/archive`, { method: "POST" });
-export const deleteProduct = (id: number) => api<void>(`/products/${id}`, { method: "DELETE" });
+export const deleteProduct = (id: number) => api<void>(`/products/${id}/archive`, { method: "POST" });
 export const restoreProduct = (id: number) => api<Product>(`/products/${id}/restore`, { method: "POST" });
 
 // ---------- delivery cities ----------

@@ -54,7 +54,7 @@ function CheckoutForm({ customer }: { customer: Customer }) {
   const navigate = useNavigate();
 
   // The delivery details start from the account, and can be changed for this order.
-  const [f, setF] = useState({ name: customer.name, phone: customer.phone ?? "", address: customer.address, note: "" });
+  const [f, setF] = useState({ name: customer.name, phone: customer.phone ?? "", address: language === "ar" ? (customer.addressAr || customer.address) : customer.address, note: "" });
   const [cityId, setCityId] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const set = (key: keyof typeof f) => (value: string) => setF((current) => ({ ...current, [key]: value }));
@@ -81,6 +81,7 @@ function CheckoutForm({ customer }: { customer: Customer }) {
         phone: f.phone.trim(),
         address: f.address.trim(),
         note: f.note.trim(),
+        language,
       },
       {
         onSuccess: (order) => {

@@ -1,13 +1,12 @@
 import { Router } from "express";
-import rateLimit from "express-rate-limit";
+import { databaseRateLimit } from "../../middlewares/databaseRateLimit.js";
 import { submitContact } from "./contact.controller.js";
 
-const contactLimiter = rateLimit({
+const contactLimiter = databaseRateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 5,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { message: "Too many messages. Please try again later." },
+  namespace: "contact:submit",
+  message: "Too many messages. Please try again later.",
 });
 
 const router = Router();

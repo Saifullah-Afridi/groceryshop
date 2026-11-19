@@ -16,7 +16,7 @@ const validPhone = (value: string) => {
 };
 
 export function RegisterForm({ onLogin, onRegistered }: Props) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [f, setF] = useState({ name: "", email: "", phone: "", password: "", address: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState("");
@@ -47,6 +47,7 @@ export function RegisterForm({ onLogin, onRegistered }: Props) {
         phone: f.phone.trim(),
         password: f.password,
         address: f.address.trim(),
+        language,
       });
       onRegistered(email);
     } catch (err) {

@@ -4,6 +4,7 @@ export interface Customer {
   email: string;
   phone: string;
   address: string;
+  addressAr?: string;
 }
 
 export interface RegisterInput {
@@ -12,6 +13,7 @@ export interface RegisterInput {
   phone: string;
   password: string;
   address: string;
+  language: "en" | "ar";
 }
 
 // Admin side
@@ -26,4 +28,5 @@ export interface CustomerInput {
   phone: string;
   address: string;
   password?: string; // required when creating, optional when editing
+  language?: "en" | "ar";
 }

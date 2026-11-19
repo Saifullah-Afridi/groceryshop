@@ -237,14 +237,14 @@ export function OrderDrawer({
               <p className="flex items-start gap-2">
                 <MapPin size={15} className="mt-0.5 shrink-0 text-muted" />
                 <span>
-                  {[order.address, order.city].filter(Boolean).join(", ")}
+                  {[isArabic ? (order.addressAr || order.address) : order.address, order.city].filter(Boolean).join(", ")}
                 </span>
               </p>
             </div>
 
-            {order.note && (
+            {(isArabic ? (order.noteAr || order.note) : order.note) && (
               <p className="mt-3 rounded-lg border border-edge bg-white px-3 py-2 text-xs italic text-gray-600">
-                {t("admin.od.note", { note: order.note })}
+                {t("admin.od.note", { note: isArabic ? (order.noteAr || order.note) : order.note })}
               </p>
             )}
           </section>
@@ -386,7 +386,7 @@ export function OrderDrawer({
             <div dir="ltr" style={{ textAlign: isArabic ? "right" : "left" }}>
               {order.phone}
             </div>
-            <div>{[order.address, order.city].filter(Boolean).join(", ")}</div>
+            <div>{[isArabic ? (order.addressAr || order.address) : order.address, order.city].filter(Boolean).join(", ")}</div>
           </div>
 
           <hr style={{ border: 0, borderTop: "1px dashed #000" }} />
@@ -450,9 +450,9 @@ export function OrderDrawer({
             </div>
           </div>
 
-          {order.note && (
+          {(isArabic ? (order.noteAr || order.note) : order.note) && (
             <div style={{ marginTop: 6 }}>
-              {t("admin.od.note", { note: order.note })}
+              {t("admin.od.note", { note: isArabic ? (order.noteAr || order.note) : order.note })}
             </div>
           )}
 

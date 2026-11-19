@@ -10,7 +10,7 @@ import {
 import { Trash2, ImagePlus } from "lucide-react";
 
 import { useLanguage } from "../../context/LanguageContext";
-import { localizedDescription, localizedName } from "../../utils/localized";
+import { localizedName } from "../../utils/localized";
 
 import type { Category, IconKey } from "../../types";
 import type { CategoryInput } from "../../types/admin";
@@ -132,7 +132,6 @@ export function CategoryForm({
     onSubmit(
       {
         name: trimmedName,
-        description: initial ? localizedDescription(initial, language) : "",
         language,
         icon,
         color: initial?.color ?? "#0a4a2a",

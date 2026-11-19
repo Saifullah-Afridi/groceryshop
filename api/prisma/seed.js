@@ -1,109 +1,214 @@
 import { PrismaClient } from "@prisma/client";
+import { translateTexts } from "../src/lib/translate.js";
 
 const prisma = new PrismaClient();
 
-// The six Rakan categories. Run with: npm run db:seed (safe to run again).
+// The source names below are intentionally Jordanian Arabic. The seed translates
+// them to English with Azure Translator and stores both values in the bilingual
+// columns: `nameAr` keeps the submitted Arabic; `name` stores the translation.
 const categories = [
-  { id: "vegetables", name: "Vegetables", description: "Daily harvest from Houran plains and Jordan Valley", icon: "Carrot", color: "#6f7d1f", tint: "#d9ecd9" },
-  { id: "fruits", name: "Fruits", description: "Seasonal orchard fruit from Ajloun and Irbid groves", icon: "Apple", color: "#157a66", tint: "#f6dfd3" },
-  { id: "meats", name: "Meats", description: "Baladi Naemi lamb, fresh veal, and farm-chilled poultry", icon: "Beef", color: "#7f1717", tint: "#f2d6da" },
-  { id: "dairy-cheeses", name: "Dairy & Cheeses", description: "Nabulsi cheese, Jerash labneh, Karak jameed, fresh milk", icon: "Milk", color: "#6b1f6e", tint: "#d8e6f2" },
-  { id: "fresh-juices", name: "Fresh Juices", description: "100% cold-pressed daily, zero added sugar", icon: "CupSoda", color: "#10337a", tint: "#f7e6c4" },
-  { id: "supermarket", name: "Supermarket", description: "Kafarat olive oil, aged basmati rice, grains, pantry", icon: "Wheat", color: "#6b3d10", tint: "#e6e2cf" },
+  { id: "vegetables", nameAr: "خضرة", icon: "Carrot", color: "#6f7d1f", tint: "#d9ecd9" },
+  { id: "fruits", nameAr: "فواكه", icon: "Apple", color: "#157a66", tint: "#f6dfd3" },
+  { id: "meats", nameAr: "لحوم", icon: "Beef", color: "#7f1717", tint: "#f2d6da" },
+  { id: "dairy-cheeses", nameAr: "ألبان", icon: "Milk", color: "#6b1f6e", tint: "#d8e6f2" },
+  { id: "fresh-juices", nameAr: "عصاير", icon: "CupSoda", color: "#10337a", tint: "#f7e6c4" },
+  { id: "supermarket", nameAr: "تموين", icon: "Wheat", color: "#6b3d10", tint: "#e6e2cf" },
 ];
 
-for (const category of categories) {
-  await prisma.category.upsert({ where: { id: category.id }, update: {}, create: category });
-}
-console.log(`Seeded ${categories.length} categories.`);
-
-// The two delivery cities. Change the names and fees any time from the admin dashboard.
-const cities = [
-  { name: "Irbid", fee: 1.5 },
-  { name: "Ramtha", fee: 2 },
-];
-for (const city of cities) {
-  await prisma.city.upsert({ where: { name: city.name }, update: {}, create: city });
-}
-console.log(`Seeded ${cities.length} delivery cities.`);
-// 10 products for each category. Prices are in JOD for 0.25 kg, or for one piece when the unit is "bottle" or "pack".
-// Photos are not included. Add them from the admin dashboard. Running the seed again will not create duplicates.
+// Exactly 20 single-word Jordanian Arabic product names per category.
+// Prices are JOD per 0.25 kg for kg products, or per bottle/pack otherwise.
 const products = [
-  // [category, name, description, price, unit, farm]
-  ["vegetables", "Fresh Jordan Valley Tomatoes", "Daily harvested ripe tomatoes, juicy and rich in flavor.", 0.16, "kg", "Northern Jordan Valley Farms"],
-  ["vegetables", "Crisp Greenhouse Cucumbers", "First-grade small cucumbers, crunchy and refreshing.", 0.14, "kg", "Houran Plains Greenhouses"],
-  ["vegetables", "Cooking & Frying Potatoes", "Clean golden potatoes for crispy fries and hearty cooking.", 0.15, "kg", "Ramtha & Irbid Farms"],
-  ["vegetables", "Small Zucchini (Kousa)", "Tender baby zucchini, ideal for classic stuffed dishes.", 0.18, "kg", "Jordan Valley Farms"],
-  ["vegetables", "Dark Eggplant for Maqluba", "Firm glossy eggplant that holds its shape when fried.", 0.15, "kg", "Jordan Valley Farms"],
-  ["vegetables", "Local Red Dry Onions", "Strong-flavored dry onions for everyday cooking.", 0.1, "kg", "Houran Plains"],
-  ["vegetables", "Sweet Crunchy Carrots", "Bright orange carrots, sweet and crisp.", 0.13, "kg", "Houran Farms"],
-  ["vegetables", "White Cauliflower", "Dense white heads, wonderful fried or baked with tahini.", 0.19, "kg", "Irbid Farms"],
-  ["vegetables", "Colorful Sweet Bell Peppers", "Thick, sweet and juicy peppers in vibrant colors.", 0.28, "kg", "Jordan Valley Greenhouses"],
-  ["vegetables", "Local Garlic", "Fragrant local garlic with a strong, fresh flavor.", 0.45, "kg", "Houran Plains"],
+  // Vegetables — خضرة
+  ["vegetables", "بندورة", 0.16, "kg", "مزارع الأغوار"],
+  ["vegetables", "خيار", 0.14, "kg", "مزارع الأغوار"],
+  ["vegetables", "بطاطا", 0.15, "kg", "مزارع إربد"],
+  ["vegetables", "كوسا", 0.18, "kg", "مزارع الرمثا"],
+  ["vegetables", "باذنجان", 0.15, "kg", "مزارع الأغوار"],
+  ["vegetables", "بصل", 0.10, "kg", "مزارع حوران"],
+  ["vegetables", "جزر", 0.13, "kg", "مزارع إربد"],
+  ["vegetables", "زهرة", 0.19, "kg", "مزارع إربد"],
+  ["vegetables", "فليفلة", 0.28, "kg", "بيوت الأغوار"],
+  ["vegetables", "ثوم", 0.45, "kg", "مزارع حوران"],
+  ["vegetables", "ملفوف", 0.16, "kg", "مزارع عجلون"],
+  ["vegetables", "خس", 0.12, "kg", "مزارع الأغوار"],
+  ["vegetables", "سبانخ", 0.18, "kg", "مزارع إربد"],
+  ["vegetables", "ملوخية", 0.22, "kg", "مزارع الأغوار"],
+  ["vegetables", "بامية", 0.30, "kg", "مزارع الأغوار"],
+  ["vegetables", "فجل", 0.12, "kg", "مزارع الرمثا"],
+  ["vegetables", "لفت", 0.14, "kg", "مزارع حوران"],
+  ["vegetables", "بقدونس", 0.10, "bunch", "مزارع إربد"],
+  ["vegetables", "نعنع", 0.10, "bunch", "مزارع إربد"],
+  ["vegetables", "بازيلا", 0.24, "kg", "مزارع عجلون"],
 
-  ["fruits", "Sweet Mountain Apples", "Crisp, juicy apples from the Ajloun mountains.", 0.24, "kg", "Ajloun Orchards"],
-  ["fruits", "Jordan Valley Bananas", "Naturally sweet bananas from the Jordan Valley.", 0.2, "kg", "Jordan Valley Farms"],
-  ["fruits", "Local Strawberries", "Ripe, fragrant strawberries picked this week.", 0.4, "kg", "Irbid Farms"],
-  ["fruits", "Shamouti & Navel Oranges", "Sweet, juicy oranges loaded with vitamin C.", 0.21, "kg", "Wadi Al-Arab Citrus"],
-  ["fruits", "Sweet Clementines", "Seedless, easy-peel clementines packed with citrus sweetness.", 0.19, "kg", "Northern Valley Orchards"],
-  ["fruits", "Baladi Lemons", "Thin-skinned aromatic lemons with plenty of juice.", 0.18, "kg", "Wadi Al-Arab Orchards"],
-  ["fruits", "Seedless Grapes", "Sweet seedless grapes, perfect for snacking.", 0.35, "kg", "Jerash Vineyards"],
-  ["fruits", "Sweet Watermelon", "Red, sweet and refreshing watermelon.", 0.09, "kg", "Jordan Valley Farms"],
-  ["fruits", "Local Pomegranates", "Deep red pomegranates with sweet-tart seeds.", 0.38, "kg", "Northern Orchards"],
-  ["fruits", "Fresh Figs", "Soft, honey-sweet figs in season.", 0.55, "kg", "Ajloun Orchards"],
+  // Fruits — فواكه
+  ["fruits", "تفاح", 0.24, "kg", "بساتين عجلون"],
+  ["fruits", "موز", 0.20, "kg", "مزارع الأغوار"],
+  ["fruits", "فراولة", 0.40, "kg", "مزارع إربد"],
+  ["fruits", "برتقال", 0.21, "kg", "بساتين وادي العرب"],
+  ["fruits", "كلمنتينا", 0.19, "kg", "بساتين الشمال"],
+  ["fruits", "ليمون", 0.18, "kg", "بساتين وادي العرب"],
+  ["fruits", "عنب", 0.35, "kg", "كروم جرش"],
+  ["fruits", "بطيخ", 0.09, "kg", "مزارع الأغوار"],
+  ["fruits", "رمان", 0.38, "kg", "بساتين الشمال"],
+  ["fruits", "تين", 0.55, "kg", "بساتين عجلون"],
+  ["fruits", "مشمش", 0.42, "kg", "بساتين عجلون"],
+  ["fruits", "خوخ", 0.36, "kg", "بساتين إربد"],
+  ["fruits", "دراق", 0.38, "kg", "بساتين عجلون"],
+  ["fruits", "كرز", 0.65, "kg", "بساتين عجلون"],
+  ["fruits", "إجاص", 0.32, "kg", "بساتين الشمال"],
+  ["fruits", "كيوي", 0.45, "kg", "مورد الفواكه"],
+  ["fruits", "مانجا", 0.50, "kg", "مورد الفواكه"],
+  ["fruits", "جوافة", 0.38, "kg", "مزارع الأغوار"],
+  ["fruits", "أفوكادو", 0.60, "kg", "مورد الفواكه"],
+  ["fruits", "تمر", 0.48, "kg", "مزارع الأغوار"],
 
-  ["meats", "Baladi Naemi Lamb", "Tender local lamb, cut fresh to order.", 2.38, "kg", "Local Baladi Farms"],
-  ["meats", "Fresh Local Veal", "Lean, tender veal for stews and grills.", 2.13, "kg", "Local Baladi Farms"],
-  ["meats", "Farm-Chilled Whole Chicken", "Whole chicken, chilled and cleaned.", 0.8, "kg", "Irbid Poultry Farms"],
-  ["meats", "Fresh Chicken Breast", "Skinless, boneless chicken breast.", 1.2, "kg", "Irbid Poultry Farms"],
-  ["meats", "Baladi Lamb Chops", "Juicy chops, great on the grill.", 2.75, "kg", "Local Baladi Farms"],
-  ["meats", "Fresh Minced Beef", "Freshly minced beef for kofta and burgers.", 1.88, "kg", "Local Baladi Farms"],
-  ["meats", "Chicken Thighs", "Juicy bone-in chicken thighs.", 0.95, "kg", "Irbid Poultry Farms"],
-  ["meats", "Beef Steak Cuts", "Tender steak cuts for the pan or grill.", 3, "kg", "Local Baladi Farms"],
-  ["meats", "Chicken Wings", "Fresh chicken wings, ready to marinate.", 0.88, "kg", "Irbid Poultry Farms"],
-  ["meats", "Fresh Lamb Liver", "Fresh lamb liver, cleaned and trimmed.", 1.5, "kg", "Local Baladi Farms"],
+  // Meats — لحوم
+  ["meats", "غنم", 2.38, "kg", "مزارع بلدية"],
+  ["meats", "عجل", 2.13, "kg", "مزارع بلدية"],
+  ["meats", "دجاج", 0.80, "kg", "مزارع دواجن إربد"],
+  ["meats", "حبش", 1.40, "kg", "مزارع دواجن"],
+  ["meats", "مفروم", 1.88, "kg", "مزارع بلدية"],
+  ["meats", "كفتة", 1.95, "kg", "مزارع بلدية"],
+  ["meats", "كباب", 2.10, "kg", "مزارع بلدية"],
+  ["meats", "ريش", 2.75, "kg", "مزارع بلدية"],
+  ["meats", "موزات", 2.45, "kg", "مزارع بلدية"],
+  ["meats", "كبدة", 1.50, "kg", "مزارع بلدية"],
+  ["meats", "قلوب", 1.20, "kg", "مزارع دواجن إربد"],
+  ["meats", "قوانص", 0.95, "kg", "مزارع دواجن إربد"],
+  ["meats", "صدور", 1.20, "kg", "مزارع دواجن إربد"],
+  ["meats", "أفخاذ", 0.95, "kg", "مزارع دواجن إربد"],
+  ["meats", "أجنحة", 0.88, "kg", "مزارع دواجن إربد"],
+  ["meats", "شاورما", 1.65, "kg", "مزارع دواجن إربد"],
+  ["meats", "نقانق", 1.35, "kg", "مزارع بلدية"],
+  ["meats", "سجق", 1.45, "kg", "مزارع بلدية"],
+  ["meats", "ستيك", 3.00, "kg", "مزارع بلدية"],
+  ["meats", "فيليه", 1.70, "kg", "مزارع دواجن إربد"],
 
-  ["dairy-cheeses", "Authentic Nabulsi Cheese", "Salty white Nabulsi cheese, perfect for knafeh.", 1.63, "kg", "Baladi Dairy"],
-  ["dairy-cheeses", "Jerash Labneh", "Thick, tangy strained yogurt.", 0.7, "kg", "Jerash Dairy"],
-  ["dairy-cheeses", "Karak Jameed", "Traditional dried yogurt for mansaf.", 1.38, "kg", "Karak Dairy"],
-  ["dairy-cheeses", "Akkawi Cheese", "Mild, soft white cheese.", 1.5, "kg", "Baladi Dairy"],
-  ["dairy-cheeses", "Halloumi Cheese", "Firm cheese that grills beautifully.", 1.38, "kg", "Baladi Dairy"],
-  ["dairy-cheeses", "Baladi Plain Yogurt", "Creamy plain yogurt with no additives.", 0.4, "kg", "Jerash Dairy"],
-  ["dairy-cheeses", "White Cheese (Jibneh Baida)", "Everyday white cheese for breakfast.", 1.13, "kg", "Baladi Dairy"],
-  ["dairy-cheeses", "Fresh Baladi Butter", "Rich, creamy farm butter.", 1.75, "kg", "Karak Dairy"],
-  ["dairy-cheeses", "Fresh Mozzarella", "Soft mozzarella that melts well.", 1.55, "kg", "Baladi Dairy"],
-  ["dairy-cheeses", "Shanklish", "Aged, spiced cheese balls.", 1.88, "kg", "Karak Dairy"],
+  // Dairy — ألبان
+  ["dairy-cheeses", "حليب", 0.38, "bottle", "ألبان جرش"],
+  ["dairy-cheeses", "لبن", 0.40, "kg", "ألبان جرش"],
+  ["dairy-cheeses", "لبنة", 0.70, "kg", "ألبان جرش"],
+  ["dairy-cheeses", "شنينة", 0.35, "bottle", "ألبان الكرك"],
+  ["dairy-cheeses", "جميد", 1.38, "kg", "ألبان الكرك"],
+  ["dairy-cheeses", "نابلسية", 1.63, "kg", "ألبان بلدية"],
+  ["dairy-cheeses", "عكاوي", 1.50, "kg", "ألبان بلدية"],
+  ["dairy-cheeses", "حلوم", 1.38, "kg", "ألبان بلدية"],
+  ["dairy-cheeses", "قريشة", 0.75, "kg", "ألبان جرش"],
+  ["dairy-cheeses", "زبدة", 1.75, "kg", "ألبان الكرك"],
+  ["dairy-cheeses", "قشطة", 0.65, "pack", "ألبان جرش"],
+  ["dairy-cheeses", "كريمة", 0.80, "pack", "ألبان جرش"],
+  ["dairy-cheeses", "موزاريلا", 1.55, "kg", "ألبان بلدية"],
+  ["dairy-cheeses", "شيدر", 1.60, "kg", "ألبان بلدية"],
+  ["dairy-cheeses", "بارميزان", 2.10, "kg", "ألبان بلدية"],
+  ["dairy-cheeses", "فيتا", 1.35, "kg", "ألبان بلدية"],
+  ["dairy-cheeses", "بيض", 1.20, "dozen", "مزارع دواجن إربد"],
+  ["dairy-cheeses", "زبادي", 0.42, "kg", "ألبان جرش"],
+  ["dairy-cheeses", "سمنة", 1.90, "pack", "ألبان الكرك"],
+  ["dairy-cheeses", "جبنة", 1.25, "kg", "ألبان بلدية"],
 
-  ["fresh-juices", "Fresh Orange Juice (1L)", "Freshly squeezed oranges, nothing added.", 2, "bottle", "Rakan Fresh Juicery"],
-  ["fresh-juices", "Pure Cold-Pressed Ajloun Apple Juice (1L)", "Golden juice pressed from mountain apples.", 2.2, "bottle", "Ajloun Apple Orchards"],
-  ["fresh-juices", "Carrot, Apple & Orange Vitamin Boost (1L)", "Immune-boosting blend of sweet carrots, apples and oranges.", 2.4, "bottle", "Rakan Fresh Juicery"],
-  ["fresh-juices", "Lemon & Mint Juice (1L)", "Cooling lemonade with fresh mint.", 1.8, "bottle", "Rakan Fresh Juicery"],
-  ["fresh-juices", "Pomegranate Juice (1L)", "Pure pressed pomegranate juice.", 3, "bottle", "Rakan Fresh Juicery"],
-  ["fresh-juices", "Strawberry & Banana Smoothie (1L)", "Thick, creamy and naturally sweet.", 2.6, "bottle", "Rakan Fresh Juicery"],
-  ["fresh-juices", "Fresh Mango Juice (1L)", "Ripe mango blended smooth.", 2.5, "bottle", "Rakan Fresh Juicery"],
-  ["fresh-juices", "Pink Grapefruit Juice (1L)", "Tangy, refreshing grapefruit juice.", 2.2, "bottle", "Rakan Fresh Juicery"],
-  ["fresh-juices", "Watermelon Juice (1L)", "Light and hydrating, great in summer.", 1.9, "bottle", "Rakan Fresh Juicery"],
-  ["fresh-juices", "Mixed Fruit Cocktail (1L)", "A sweet blend of seasonal fruits.", 2.7, "bottle", "Rakan Fresh Juicery"],
+  // Juices — عصاير
+  ["fresh-juices", "برتقال", 2.00, "bottle", "عصائر راكان"],
+  ["fresh-juices", "ليمون", 1.80, "bottle", "عصائر راكان"],
+  ["fresh-juices", "رمان", 3.00, "bottle", "عصائر راكان"],
+  ["fresh-juices", "تفاح", 2.20, "bottle", "عصائر راكان"],
+  ["fresh-juices", "جزر", 2.00, "bottle", "عصائر راكان"],
+  ["fresh-juices", "مانجا", 2.50, "bottle", "عصائر راكان"],
+  ["fresh-juices", "فراولة", 2.60, "bottle", "عصائر راكان"],
+  ["fresh-juices", "موز", 2.30, "bottle", "عصائر راكان"],
+  ["fresh-juices", "جوافة", 2.40, "bottle", "عصائر راكان"],
+  ["fresh-juices", "أناناس", 2.70, "bottle", "عصائر راكان"],
+  ["fresh-juices", "شمام", 1.90, "bottle", "عصائر راكان"],
+  ["fresh-juices", "بطيخ", 1.90, "bottle", "عصائر راكان"],
+  ["fresh-juices", "كيوي", 2.80, "bottle", "عصائر راكان"],
+  ["fresh-juices", "خوخ", 2.30, "bottle", "عصائر راكان"],
+  ["fresh-juices", "عنب", 2.40, "bottle", "عصائر راكان"],
+  ["fresh-juices", "كرز", 2.90, "bottle", "عصائر راكان"],
+  ["fresh-juices", "تمرهندي", 2.10, "bottle", "عصائر راكان"],
+  ["fresh-juices", "أفوكادو", 3.20, "bottle", "عصائر راكان"],
+  ["fresh-juices", "قصب", 2.00, "bottle", "عصائر راكان"],
+  ["fresh-juices", "مشمش", 2.40, "bottle", "عصائر راكان"],
 
-  ["supermarket", "Kafarat Extra Virgin Olive Oil (1L)", "Cold-pressed olive oil from Kafarat mills.", 7.5, "bottle", "Kafarat Olive Mills"],
-  ["supermarket", "Aged Basmati Rice", "Long-grain aged rice that cooks up fluffy.", 0.45, "kg", "Rakan Pantry"],
-  ["supermarket", "Local Red Lentils", "Quick-cooking red lentils for soups.", 0.3, "kg", "Rakan Pantry"],
-  ["supermarket", "Local Chickpeas", "Large chickpeas for hummus and stews.", 0.33, "kg", "Rakan Pantry"],
-  ["supermarket", "Coarse Bulgur", "Coarse bulgur for kibbeh and salads.", 0.25, "kg", "Rakan Pantry"],
-  ["supermarket", "Green Freekeh", "Smoky roasted green wheat.", 0.75, "kg", "Rakan Pantry"],
-  ["supermarket", "Dried Fava Beans", "Dried fava beans for foul and soups.", 0.35, "kg", "Rakan Pantry"],
-  ["supermarket", "White Sugar", "Fine white sugar.", 0.23, "kg", "Rakan Pantry"],
-  ["supermarket", "Zaatar Mix (250 g)", "Thyme, sesame and sumac blend.", 2.5, "pack", "Irbid Spice House"],
-  ["supermarket", "Tahini Paste (500 g)", "Smooth stone-ground sesame paste.", 3.2, "pack", "Irbid Spice House"],
+  // Supermarket — تموين
+  ["supermarket", "رز", 0.45, "kg", "تموين راكان"],
+  ["supermarket", "سكر", 0.23, "kg", "تموين راكان"],
+  ["supermarket", "ملح", 0.12, "kg", "تموين راكان"],
+  ["supermarket", "طحين", 0.20, "kg", "تموين راكان"],
+  ["supermarket", "عدس", 0.30, "kg", "تموين راكان"],
+  ["supermarket", "حمص", 0.33, "kg", "تموين راكان"],
+  ["supermarket", "فاصوليا", 0.38, "kg", "تموين راكان"],
+  ["supermarket", "برغل", 0.25, "kg", "تموين راكان"],
+  ["supermarket", "فريكة", 0.75, "kg", "تموين راكان"],
+  ["supermarket", "معكرونة", 0.35, "pack", "تموين راكان"],
+  ["supermarket", "شعيرية", 0.25, "pack", "تموين راكان"],
+  ["supermarket", "زيت", 1.80, "bottle", "مطاحن الكفارات"],
+  ["supermarket", "زيتون", 0.90, "kg", "مطاحن الكفارات"],
+  ["supermarket", "زعتر", 1.20, "pack", "بيت البهارات"],
+  ["supermarket", "سماق", 1.30, "pack", "بيت البهارات"],
+  ["supermarket", "طحينية", 1.60, "pack", "بيت البهارات"],
+  ["supermarket", "دبس", 1.40, "bottle", "تموين راكان"],
+  ["supermarket", "قهوة", 2.50, "pack", "تموين راكان"],
+  ["supermarket", "شاي", 1.75, "pack", "تموين راكان"],
+  ["supermarket", "مربى", 1.20, "bottle", "تموين راكان"],
 ];
 
-let added = 0;
-for (const [categoryId, name, description, price, unit, farm] of products) {
-  const exists = await prisma.product.findFirst({ where: { name, categoryId } });
-  if (exists) continue;
-  await prisma.product.create({ data: { categoryId, name, description, price, unit, farm } });
-  added += 1;
+async function translateInBatches(values, batchSize = 100) {
+  const output = [];
+  for (let i = 0; i < values.length; i += batchSize) {
+    output.push(...await translateTexts(values.slice(i, i + batchSize), "ar", "en"));
+  }
+  return output;
 }
-console.log(`Seeded products: ${added} added, ${products.length - added} already there.`);
 
-await prisma.$disconnect();
+try {
+  if (products.length !== categories.length * 20) {
+    throw new Error(`Expected 20 products per category; found ${products.length} total products.`);
+  }
+  for (const category of categories) {
+    const count = products.filter(([categoryId]) => categoryId === category.id).length;
+    if (count !== 20) throw new Error(`Category ${category.id} has ${count} products instead of 20.`);
+  }
+  for (const [, name] of products) {
+    if (/\s/.test(name.trim())) throw new Error(`Product name must be one word: ${name}`);
+  }
+  const existingUntranslated = await prisma.product.count({ where: { isArchived: false, nameAr: "" } });
+  if (existingUntranslated > 0) {
+    console.warn(`Warning: ${existingUntranslated} existing active product(s) have no Arabic name. They will be left untouched; use a clean test database if you want to see only this 120-product Arabic test catalog.`);
+  }
+
+  // Translate all 126 category/product labels in just two Azure Translator requests.
+  const labels = [...categories.map((item) => item.nameAr), ...products.map((item) => item[1])];
+  const englishLabels = await translateInBatches(labels);
+
+  for (let i = 0; i < categories.length; i += 1) {
+    const category = categories[i];
+    const bilingual = { name: englishLabels[i], nameAr: category.nameAr };
+    await prisma.category.upsert({
+      where: { id: category.id },
+      update: { ...bilingual, icon: category.icon, color: category.color, tint: category.tint },
+      create: { id: category.id, ...bilingual, icon: category.icon, color: category.color, tint: category.tint },
+    });
+  }
+  console.log(`Seeded ${categories.length} bilingual categories from Jordanian Arabic.`);
+
+  let added = 0;
+  let updated = 0;
+  for (let i = 0; i < products.length; i += 1) {
+    const [categoryId, nameAr, price, unit, farm] = products[i];
+    const data = { name: englishLabels[categories.length + i], nameAr, categoryId, price, unit, farm };
+    const existing = await prisma.product.findFirst({ where: { categoryId, nameAr } });
+    if (existing) {
+      await prisma.product.update({ where: { id: existing.id }, data });
+      updated += 1;
+    } else {
+      await prisma.product.create({ data });
+      added += 1;
+    }
+  }
+  console.log(`Seeded ${products.length} Jordanian Arabic products: ${added} added, ${updated} updated.`);
+  console.log("Original Arabic is stored in nameAr; Azure Translator English output is stored in name.");
+} catch (error) {
+  console.error("Seed failed:", error.message);
+  process.exitCode = 1;
+} finally {
+  await prisma.$disconnect();
+}

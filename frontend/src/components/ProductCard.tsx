@@ -23,7 +23,7 @@ import {
   roundAmount,
   stepFor,
 } from "../utils/format";
-import { localizedDescription, localizedName } from "../utils/localized";
+import { localizedName } from "../utils/localized";
 import type { Product } from "../types";
 
 // Quick selections are always the quarter-kilo increments.
@@ -67,7 +67,6 @@ export function ProductCard({ product }: { product: Product }) {
 
   // Language
   const displayName = localizedName(product, language);
-  const displayDescription = localizedDescription(product, language);
 
   const weightLabel = (weight: number) =>
     `${String(Number(weight.toFixed(2)))} ${unitName("kg")}`;
@@ -164,15 +163,6 @@ export function ProductCard({ product }: { product: Product }) {
         <h3 className="line-clamp-2 text-sm font-extrabold leading-[1.35] text-[#123B2A] transition-colors group-hover:text-[#078A4B] sm:text-[15px]">
           {displayName}
         </h3>
-
-        {/* Product Description */}
-
-        <p className="mt-1.5 line-clamp-2 min-h-[30px] text-[11px] leading-[15px] text-[#718078] sm:text-xs">
-          {displayDescription ||
-            (isWeightBased
-              ? t("pricePerQuarter")
-              : `${t("pricePer")} ${unitName(product.unit)}`)}
-        </p>
 
         {/* ================= WEIGHT SELECTION ================= */}
 

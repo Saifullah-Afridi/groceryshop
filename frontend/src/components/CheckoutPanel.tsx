@@ -26,7 +26,7 @@ export function CheckoutPanel({ onDone }: { onDone: () => void }) {
   const [f, setF] = useState({
     name: customer?.name ?? "",
     phone: customer?.phone ?? "",
-    address: customer?.address ?? "",
+    address: language === "ar" ? (customer?.addressAr || customer?.address || "") : (customer?.address ?? ""),
     note: "",
   });
   const [cityId, setCityId] = useState("");
@@ -57,6 +57,7 @@ export function CheckoutPanel({ onDone }: { onDone: () => void }) {
         phone: f.phone.trim(),
         address: f.address.trim(),
         note: f.note.trim(),
+        language,
       },
       {
         onSuccess: (order) => {

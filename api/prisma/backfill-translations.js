@@ -4,14 +4,19 @@ import { translateTexts } from "../src/lib/translate.js";
 
 const prisma = new PrismaClient();
 
-async function backfill(model, label) {
+async function backfill(model, label, fields) {
   const rows = await model.findMany();
   let updated = 0;
   for (const row of rows) {
     const missing = [];
     const values = [];
-    if (row.name && !row.nameAr?.trim()) { missing.push("nameAr"); values.push(row.name); }
-    if (row.description && !row.descriptionAr?.trim()) { missing.push("descriptionAr"); values.push(row.description); }
+    for (const field of fields) {
+      const translatedField = `${field}Ar`;
+      if (row[field] && !row[translatedField]?.trim()) {
+        missing.push(translatedField);
+        values.push(row[field]);
+      }
+    }
     if (!missing.length) continue;
 
     // Existing Arabic text is never overwritten; only empty translation fields are filled.
@@ -24,8 +29,8 @@ async function backfill(model, label) {
 }
 
 try {
-  await backfill(prisma.product, "Products");
-  await backfill(prisma.category, "Categories");
+  await backfill(prisma.product, "Products", ["name"]);
+  await backfill(prisma.category, "Categories", ["name"]);
 } catch (error) {
   console.error("Translation backfill failed:", error.message);
   process.exitCode = 1;

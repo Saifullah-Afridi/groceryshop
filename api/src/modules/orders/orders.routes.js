@@ -1,14 +1,13 @@
 import { Router } from "express";
-import rateLimit from "express-rate-limit";
+import { databaseRateLimit } from "../../middlewares/databaseRateLimit.js";
 import { requireAdmin, requireCustomer } from "../../middlewares/auth.js";
 import { cancel, create, getOne, listAll, listMine, updateStatus } from "./orders.controller.js";
 
-const placeOrderLimiter = rateLimit({
+const placeOrderLimiter = databaseRateLimit({
   windowMs: 60 * 60 * 1000,
   limit: 30,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { message: "Too many orders. Please try again later." },
+  namespace: "orders:create",
+  message: "Too many orders. Please try again later.",
 });
 
 const router = Router();

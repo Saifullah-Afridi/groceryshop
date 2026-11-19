@@ -9,8 +9,6 @@ const fields = z.object({
   removeImage: z.preprocess((value) => value === true || value === "true", z.boolean()).optional().default(false),
   name: z.string().trim().min(1, "Enter a product name").max(120),
   nameAr: z.string().trim().max(120).optional().default(""),
-  description: z.string().trim().max(2000).default(""),
-  descriptionAr: z.string().trim().max(2000).optional().default(""),
   farm: z.string().trim().max(120).default(""),
   categoryId: z.string().trim().min(1, "Choose a category"),
   unit: z.enum(UNITS).default("kg"),
@@ -46,7 +44,31 @@ const checkStockThreshold = (data, ctx) => {
 
 export const createProductSchema = fields.superRefine(checkStockThreshold);
 // On update the unit may not be sent. In that case the service re-checks against the stored unit.
-export const updateProductSchema = fields.partial().superRefine((data, ctx) => (data.unit ? checkStockThreshold(data, ctx) : undefined));
+export const updateProductSchema = fields.partial();
+
+export function validateProductInventoryUpdate(data, current) {
+  const touchesInventory = data.unit !== undefined || data.minQuantity !== undefined || data.stockQuantity !== undefined;
+  if (!touchesInventory) return;
+  const unit = data.unit ?? current.unit;
+  const step = unit === "kg" ? 0.25 : 1;
+  const values = {
+    minQuantity: data.minQuantity ?? Number(current.minQuantity),
+    stockQuantity: data.stockQuantity ?? Number(current.stockQuantity),
+  };
+  for (const [field, value] of Object.entries(values)) {
+    if (value === 0) continue;
+    const steps = value / step;
+    if (Math.abs(steps - Math.round(steps)) > 1e-9) {
+      throw new z.ZodError([{
+        code: z.ZodIssueCode.custom,
+        path: [field],
+        message: step === 0.25
+          ? `${field === "stockQuantity" ? "Stock quantity" : "Stock alert threshold"} must use 0.25 kg steps.`
+          : `${field === "stockQuantity" ? "Stock quantity" : "Stock alert threshold"} must be a whole number.`,
+      }]);
+    }
+  }
+}
 
 export const listQuerySchema = z.object({
   category: z.string().trim().optional(),

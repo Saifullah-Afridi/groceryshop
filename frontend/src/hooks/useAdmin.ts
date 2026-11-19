@@ -14,7 +14,6 @@ import {
   deleteCity,
   deleteCustomer,
   deleteProduct,
-  archiveProduct,
   getAdminCategories,
   getAdminCities,
   getAdminCustomers,
@@ -102,15 +101,10 @@ export const useSaveProduct = () =>
     ({ id }) => i18n.t(id ? "admin.products.updated" : "admin.products.created"),
   );
 
-export const useArchiveProduct = () =>
-  useChange(
-    (id: number) => archiveProduct(id),
-    () => "Product moved to archive.",
-  );
 export const useDeleteProduct = () =>
   useChange(
     (id: number) => deleteProduct(id),
-    () => "Product permanently deleted.",
+    () => "Product moved to archive.",
   );
 export const useRestoreProduct = () =>
   useChange(
@@ -160,6 +154,7 @@ export const useAdminOrders = (query: { status?: OrderStatus; q?: string }) =>
     queryKey: ["admin", "orders", query],
     queryFn: () => getAdminOrders(query),
     placeholderData: keepPreviousData,
+    refetchInterval: 30_000, // new orders show up without a refresh
   });
 export const useSetOrderStatus = () =>
   useChange(

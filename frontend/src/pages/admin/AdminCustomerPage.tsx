@@ -287,7 +287,7 @@ export function AdminCustomerPage() {
           </InfoItem>
 
           <InfoItem icon={<MapPin size={17} />} label={t("address")}>
-            {user.address || (
+            {(isArabic ? (user.addressAr || user.address) : user.address) || (
               <span className="text-muted">{t("admin.users.notSet")}</span>
             )}
           </InfoItem>

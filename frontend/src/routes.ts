@@ -25,5 +25,3 @@ export const PRELOAD: Record<string, () => Promise<unknown>> = {
   "/orders": OrdersPage.preload,
   "/contact": ContactPage.preload,
 };
-
-export const AdminConfigurationPage = lazyRoute(named(() => import("./pages/admin/AdminConfigurationPage"), "AdminConfigurationPage"));

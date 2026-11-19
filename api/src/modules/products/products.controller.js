@@ -1,6 +1,6 @@
 import { asyncHandler } from "../../lib/asyncHandler.js";
 import { httpError } from "../../lib/httpError.js";
-import { archiveProduct, createProduct, deleteProduct, getProduct, getSearchSuggestions, listProducts, restoreProduct, updateProduct } from "./products.service.js";
+import { archiveProduct, createProduct, getProduct, getSearchSuggestions, listProducts, restoreProduct, updateProduct } from "./products.service.js";
 import { createProductSchema, listQuerySchema, updateProductSchema } from "./products.validation.js";
 
 function readId(req) {
@@ -39,10 +39,6 @@ export const update = asyncHandler(async (req, res) => {
 });
 
 export const remove = asyncHandler(async (req, res) => {
-  res.json(await deleteProduct(readId(req)));
-});
-
-export const archive = asyncHandler(async (req, res) => {
   res.json(await archiveProduct(readId(req)));
 });
 

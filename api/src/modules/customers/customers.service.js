@@ -7,12 +7,13 @@ import { sendMail } from "../../lib/mailer.js";
 import { generateOtp, hashOtp } from "../../lib/otp.js";
 import { prisma } from "../../lib/prisma.js";
 import { safeEqual } from "../../lib/safeEqual.js";
+import { translateCustomerField } from "../../lib/translate.js";
 
 const OTP_MINUTES = 10; // how long a code works
 const OTP_MAX_ATTEMPTS = 5; // wrong guesses allowed per code
 const RESEND_SECONDS = 60; // wait between emails
 
-const toDto = (c) => ({ id: c.id, name: c.name, email: c.email, phone: c.phone, address: c.address });
+const toDto = (c) => ({ id: c.id, name: c.name, email: c.email, phone: c.phone, address: c.address, addressAr: c.addressAr ?? "" });
 
 // Only a verified customer ever gets a token, so having one means the email was confirmed.
 const signIn = (c) => ({
@@ -62,15 +63,22 @@ async function sendOtp(customer) {
   }
 }
 
-export async function registerCustomer({ name, email, phone, password, address }) {
+export async function registerCustomer({ name, email, phone, password, address, language = "en" }) {
   const existing = await prisma.customer.findUnique({ where: { email } });
   if (existing?.emailVerified) throw httpError(409, "An account with this email already exists. Try signing in.");
+  let addressPair;
+  try {
+    addressPair = await translateCustomerField(address, language);
+  } catch (error) {
+    console.error("Customer registration address translation failed:", error.message);
+    throw httpError(503, "Address translation is temporarily unavailable. Please try again in a moment.");
+  }
 
   const passwordHash = await bcrypt.hash(password, 12);
   // An unverified account can register again, for example after a typo or a lost code.
   const customer = existing
-    ? await prisma.customer.update({ where: { id: existing.id }, data: { name, phone, address, passwordHash } })
-    : await prisma.customer.create({ data: { name, email, phone, address, passwordHash } });
+    ? await prisma.customer.update({ where: { id: existing.id }, data: { name, phone, address: addressPair.en, addressAr: addressPair.ar, passwordHash } })
+    : await prisma.customer.create({ data: { name, email, phone, address: addressPair.en, addressAr: addressPair.ar, passwordHash } });
 
   await sendOtp(customer);
   return { email: customer.email, message: "We sent a 6-digit code to your email." };
@@ -167,7 +175,7 @@ async function assertEmailFree(email, exceptId) {
 }
 
 export async function listCustomers() {
-  const rows = await prisma.customer.findMany({ orderBy: { id: "desc" } });
+  const rows = await prisma.customer.findMany({ orderBy: { id: "desc" }, select: { id: true, name: true, email: true, phone: true, address: true, addressAr: true, emailVerified: true, createdAt: true } });
   return rows.map(adminDto);
 }
 
@@ -185,8 +193,10 @@ export async function getAdminCustomer(id) {
     name: order.name,
     phone: order.phone,
     address: order.address,
+    addressAr: order.addressAr ?? "",
     city: order.city,
     note: order.note,
+    noteAr: order.noteAr ?? "",
     subtotal: Number(order.subtotal),
     deliveryFee: Number(order.deliveryFee),
     total: Number(order.total),
@@ -222,17 +232,30 @@ export async function getAdminCustomer(id) {
 }
 
 // An account made by the admin is already verified.
-export async function createCustomer({ password, ...data }) {
+export async function createCustomer({ password, language = "en", ...data }) {
   await assertEmailFree(data.email);
   const passwordHash = await bcrypt.hash(password, 12);
-  return adminDto(await prisma.customer.create({ data: { ...data, passwordHash, emailVerified: true } }));
+  let addressPair;
+  try { addressPair = await translateCustomerField(data.address, language); }
+  catch (error) {
+    console.error("Admin customer address translation failed:", error.message);
+    throw httpError(503, "Address translation is temporarily unavailable. Please try again in a moment.");
+  }
+  return adminDto(await prisma.customer.create({
+    data: { ...data, address: addressPair.en, addressAr: addressPair.ar, passwordHash, emailVerified: true },
+  }));
 }
 
-export async function updateCustomer(id, { password, ...data }) {
-  await findOrFail(id);
+export async function updateCustomer(id, { password, language = "en", ...data }) {
+  const current = await findOrFail(id);
   if (data.email) await assertEmailFree(data.email, id);
   const passwordHash = password ? await bcrypt.hash(password, 12) : undefined;
-  return adminDto(await prisma.customer.update({ where: { id }, data: { ...data, ...(passwordHash && { passwordHash }) } }));
+  let addressFields = {};
+  if (data.address !== undefined) {
+    try { const pair = await translateCustomerField(data.address, language); addressFields = { address: pair.en, addressAr: pair.ar }; }
+    catch (error) { throw httpError(503, "Address translation is temporarily unavailable. Please try again in a moment."); }
+  }
+  return adminDto(await prisma.customer.update({ where: { id }, data: { ...data, ...addressFields, ...(passwordHash && { passwordHash }) } }));
 }
 
 // Their old orders stay, with the delivery details they were placed with.

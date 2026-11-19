@@ -3,6 +3,7 @@
 -- claims minted by the API. Only notification rows for that audience are visible.
 
 ALTER TABLE public."Notification" ENABLE ROW LEVEL SECURITY;
+GRANT USAGE ON SCHEMA public TO authenticated;
 GRANT SELECT ON TABLE public."Notification" TO authenticated;
 
 DROP POLICY IF EXISTS "rakan_notifications_realtime_select" ON public."Notification";

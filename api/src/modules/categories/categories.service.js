@@ -9,8 +9,6 @@ const toDto = (c) => ({
   id: c.id,
   name: c.name,
   nameAr: c.nameAr,
-  description: c.description,
-  descriptionAr: c.descriptionAr,
   icon: c.icon,
   color: c.color,
   tint: c.tint,
@@ -33,8 +31,8 @@ export async function getCategory(id) {
 }
 
 export async function createCategory(data, file) {
-  const bilingual = await buildBilingualContent(data, data.language);
-  const { language, name, description, removeImage, ...rest } = data;
+  const bilingual = await buildBilingualContent(data, data.language, {}, ["name"]);
+  const { language, name, removeImage, ...rest } = data;
   data = { ...rest, ...bilingual };
   const id = slugify(data.name) || `category-${Date.now()}`;
   if (await prisma.category.findUnique({ where: { id } })) {
@@ -51,8 +49,8 @@ export async function createCategory(data, file) {
 
 export async function updateCategory(id, data, file) {
   const current = await findOrFail(id);
-  const bilingual = await buildBilingualContent(data, data.language ?? "en", current);
-  const { language, name, description, ...rest } = data;
+  const bilingual = await buildBilingualContent(data, data.language ?? "en", current, ["name"]);
+  const { language, name, ...rest } = data;
   data = { ...rest, ...bilingual };
   const image = file ? await uploadImage(file, "categories") : undefined;
   const shouldRemoveImage = Boolean(data.removeImage) && !file;

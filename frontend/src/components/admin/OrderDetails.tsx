@@ -127,7 +127,7 @@ export function OrderDetails({ order, onClose }: OrderDetailsProps) {
         </div>
 
         <p className="mt-2 text-sm text-gray-700">
-          {order.name}, {order.address}, {order.city}
+          {order.name}, {isArabic ? (order.addressAr || order.address) : order.address}, {order.city}
         </p>
 
         <p className="mt-1.5 text-sm font-bold text-gray-800">
@@ -137,9 +137,9 @@ export function OrderDetails({ order, onClose }: OrderDetailsProps) {
           </a>
         </p>
 
-        {order.note && (
+        {(isArabic ? (order.noteAr || order.note) : order.note) && (
           <p className="mt-2.5 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs italic text-gray-600">
-            {t("admin.od.note", { note: order.note })}
+            {t("admin.od.note", { note: isArabic ? (order.noteAr || order.note) : order.note })}
           </p>
         )}
       </div>

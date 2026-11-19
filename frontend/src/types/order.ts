@@ -17,8 +17,10 @@ export interface Order {
   name: string;
   phone: string;
   address: string;
+  addressAr?: string;
   city: string;
   note: string;
+  noteAr?: string;
   subtotal: number;
   deliveryFee: number;
   total: number;
@@ -34,6 +36,7 @@ export interface OrderInput {
   phone: string;
   address: string;
   note: string;
+  language: "en" | "ar";
 }
 
 export interface City {
