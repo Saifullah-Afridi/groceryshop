@@ -533,5 +533,7 @@
   "admin.ud.stat.total": "إجمالي الطلبات",
   "admin.ud.view": "عرض الطلب",
   "admin.ud.viewCustomer": "عرض تفاصيل {{name}}",
-  "admin.products.searchByName": "ابحث باسم المنتج"
+  "admin.products.searchByName": "ابحث باسم المنتج",
+  "admin.nav.outOfStock": "نفدت الكمية",
+  "admin.nav.lowStock": "مخزون منخفض"
 }

@@ -37,8 +37,8 @@ import { statusKey } from "../utils/orderStatus";
 
 export const useAdminCategories = (query: AdminListQuery) =>
   useQuery({ queryKey: ["admin", "categories", query], queryFn: () => getAdminCategories(query), placeholderData: keepPreviousData });
-export const useAdminProducts = (query: AdminListQuery) =>
-  useQuery({ queryKey: ["admin", "products", query], queryFn: () => getAdminProducts(query), placeholderData: keepPreviousData });
+export const useAdminProducts = (query: AdminListQuery, refetchInterval?: number) =>
+  useQuery({ queryKey: ["admin", "products", query], queryFn: () => getAdminProducts(query), placeholderData: keepPreviousData, refetchInterval });
 
 // After any change: reload the admin lists and show a toast with the result.
 function useChange<V>(

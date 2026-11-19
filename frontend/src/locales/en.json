@@ -521,5 +521,7 @@
   "admin.ud.stat.total": "Total orders",
   "admin.ud.view": "View order",
   "admin.ud.viewCustomer": "View details for {{name}}",
-  "admin.products.searchByName": "Search by product name"
+  "admin.products.searchByName": "Search by product name",
+  "admin.nav.outOfStock": "Out of Stock",
+  "admin.nav.lowStock": "Low Stock"
 }

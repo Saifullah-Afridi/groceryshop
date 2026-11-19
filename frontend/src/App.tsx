@@ -14,6 +14,8 @@ import {
   AdminLayout,
   AdminLoginPage,
   AdminOrdersPage,
+  AdminOutOfStockPage,
+  AdminLowStockPage,
   AdminProductsPage,
   ContactPage,
   HomePage,
@@ -47,6 +49,8 @@ export default function App() {
               <Route index element={<AdminDashboardPage />} />
               <Route path="orders" element={<AdminOrdersPage />} />
               <Route path="products" element={<AdminProductsPage />} />
+              <Route path="out-of-stock" element={<AdminOutOfStockPage />} />
+              <Route path="low-stock" element={<AdminLowStockPage />} />
               <Route path="categories" element={<AdminCategoriesPage />} />
               <Route path="users" element={<AdminCustomersPage />} />
               <Route path="users/:id" element={<AdminCustomerPage />} />
