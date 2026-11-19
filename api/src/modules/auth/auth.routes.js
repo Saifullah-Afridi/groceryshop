@@ -1,6 +1,7 @@
 import { Router } from "express";
+import { requireAdmin } from "../../middlewares/auth.js";
 import { databaseRateLimit } from "../../middlewares/databaseRateLimit.js";
-import { login } from "./auth.controller.js";
+import { login, readAdminSettings, saveAdminSettings } from "./auth.controller.js";
 
 const loginLimiter = databaseRateLimit({
   windowMs: 15 * 60 * 1000,
@@ -11,5 +12,7 @@ const loginLimiter = databaseRateLimit({
 
 const router = Router();
 router.post("/login", loginLimiter, login);
+router.get("/settings", requireAdmin, readAdminSettings);
+router.put("/settings", requireAdmin, saveAdminSettings);
 
 export default router;

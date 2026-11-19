@@ -132,3 +132,12 @@ model Notification {
   @@index([audience, isRead, createdAt])
   @@index([customerId, isRead, createdAt])
 }
+
+
+// Single administrator account used by the admin configuration page.
+model AdminAccount {
+  id           String   @id @default("primary")
+  email        String   @unique
+  passwordHash String
+  updatedAt    DateTime @updatedAt
+}

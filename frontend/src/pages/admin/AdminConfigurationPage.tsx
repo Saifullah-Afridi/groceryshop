@@ -9,12 +9,15 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
+import { useAuth } from "../../context/AuthContext";
 import {
   getAdminSettings,
   updateAdminSettings,
+  type AdminSettings,
 } from "../../services/authService";
 
 export function AdminConfigurationPage() {
+  const { updateEmail } = useAuth();
   const [email, setEmail] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [password, setPassword] = useState("");
@@ -28,7 +31,7 @@ export function AdminConfigurationPage() {
     let active = true;
 
     getAdminSettings()
-      .then((settings) => {
+      .then((settings: AdminSettings) => {
         if (active) setEmail(settings.email);
       })
       .catch((err: Error) => {
@@ -71,6 +74,7 @@ export function AdminConfigurationPage() {
       });
 
       setEmail(result.email);
+      updateEmail(result.email);
       setCurrentPassword("");
       setPassword("");
       setConfirmPassword("");

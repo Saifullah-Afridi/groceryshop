@@ -6,6 +6,7 @@ interface AuthValue {
   user: AdminUser | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  updateEmail: (email: string) => void;
 }
 const AuthContext = createContext<AuthValue | null>(null);
 const KEY = "rakan-admin-session";
@@ -25,13 +26,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(KEY, JSON.stringify(admin));
     setUser(admin);
   };
+  const updateEmail = (email: string) => {
+    setUser((current) => {
+      if (!current) return current;
+      const updated = { ...current, email };
+      localStorage.setItem(KEY, JSON.stringify(updated));
+      return updated;
+    });
+  };
   const logout = () => {
     localStorage.removeItem(KEY);
     clearToken();
     setUser(null);
   };
 
-  return <AuthContext.Provider value={{ user, login, logout }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, login, logout, updateEmail }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
