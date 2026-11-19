@@ -1,40 +1,77 @@
-# Dependencies (including nested folders)
-node_modules/
+**/node_modules/
 
-# Build output (including nested folders)
-dist/
-.dist/
+**/dist/
+**/.dist/
+**/build/
+**/out/
 
-# Environment variables
-.env
-.env.*
-!.env.example
+**/.env
+**/.env.*
+**/.env.example
 
-# Logs
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-pnpm-debug.log*
+**/*.zip
+**/*.rar
+**/*.7z
+**/*.tar
+**/*.gz
+**/*.tgz
 
-# Cache
-.cache/
-.turbo/
-.next/
-.nuxt/
-.vite/
+**/logs/
+**/*.log
+**/npm-debug.log*
+**/yarn-debug.log*
+**/pnpm-debug.log*
 
-# OS files
-.DS_Store
-Thumbs.db
+**/.cache/
+**/.turbo/
+**/.next/
+**/.nuxt/
+**/.vite/
+**/.parcel-cache/
+**/.eslintcache/
+**/.stylelintcache/
 
-# Editor settings
-.vscode/
-.idea/
+**/.DS_Store
+**/Thumbs.db
+**/Desktop.ini
 
-# Testing
-coverage/
+**/.vscode/
+**/.idea/
+**/*.swp
+**/*.swo
+**/*~
 
-# Temporary files
-*.tmp
-*.swp
+**/coverage/
+**/test-results/
+**/playwright-report/
+**/nyc_output/
+
+**/*.tmp
+**/*.temp
+**/*.bak
+**/*.old
+
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+
+**/*.sqlite
+**/*.sqlite3
+**/*.db
+
+**/*.map
+
+**/.npm/
+**/.yarn/cache/
+**/.pnpm-store/
+
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/.pytest_cache/
+**/.mypy_cache/
+**/.venv/
+**/venv/
+
+**/*.code-workspace
