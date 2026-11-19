@@ -27,5 +27,9 @@ export const statusSchema = z.object({ status: z.enum(ORDER_STATUSES) });
 
 export const listQuerySchema = z.object({
   status: z.enum(ORDER_STATUSES).optional(),
-  q: z.string().trim().optional(),
+  q: z.string().trim().max(120).optional(),
+  search: z.string().trim().max(120).optional(),
+  page: z.coerce.number().int().min(1).max(1000000).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  sort: z.enum(["newest", "oldest"]).default("newest"),
 });

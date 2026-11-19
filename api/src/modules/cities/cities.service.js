@@ -10,15 +10,30 @@ async function findOrFail(id) {
 }
 
 async function assertNameFree(name, exceptId) {
-  const same = (await prisma.city.findMany({ where: {} })).find(
-    (c) => c.name.toLowerCase() === name.toLowerCase() && c.id !== exceptId,
-  );
+  const same = await prisma.city.findFirst({
+    where: { name: { equals: name, mode: "insensitive" }, ...(exceptId ? { id: { not: exceptId } } : {}) },
+    select: { id: true },
+  });
   if (same) throw httpError(409, "A city with this name already exists.");
 }
 
 // Shoppers only see active cities. The admin sees all of them.
-export async function listCities({ onlyActive }) {
-  const rows = await prisma.city.findMany({ where: onlyActive ? { active: true } : {}, orderBy: { id: "asc" } });
+export async function listCities({ onlyActive, page, limit, search = "", sort = "oldest" }) {
+  const where = { ...(onlyActive ? { active: true } : {}), ...(search ? { name: { contains: search, mode: "insensitive" } } : {}) };
+  const orderBy = sort === "oldest" ? [{ id: "asc" }] : sort === "name-desc" ? [{ name: "desc" }, { id: "desc" }]
+    : sort === "fee-asc" ? [{ fee: "asc" }, { id: "asc" }]
+    : sort === "fee-desc" ? [{ fee: "desc" }, { id: "desc" }]
+    : [{ name: "asc" }, { id: "asc" }];
+  if (page && limit) {
+    const skip = (page - 1) * limit;
+    const [rows, total] = await prisma.$transaction([
+      prisma.city.findMany({ where, skip, take: limit, orderBy }),
+      prisma.city.count({ where }),
+    ]);
+    const totalPages = Math.ceil(total / limit);
+    return { data: rows.map(toDto), pagination: { page, limit, total, totalPages, hasNextPage: page < totalPages, hasPreviousPage: page > 1 && totalPages > 0 } };
+  }
+  const rows = await prisma.city.findMany({ where, orderBy });
   return rows.map(toDto);
 }
 

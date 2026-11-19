@@ -17,7 +17,8 @@ export const cancel = asyncHandler(async (req, res) => {
 });
 
 export const listAll = asyncHandler(async (req, res) => {
-  res.json(await listOrders(listQuerySchema.parse(req.query)));
+  const query = listQuerySchema.parse(req.query);
+  res.json(await listOrders({ ...query, search: query.search ?? query.q }));
 });
 
 export const getOne = asyncHandler(async (req, res) => {

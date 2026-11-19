@@ -22,28 +22,17 @@ const PAGE_SIZE = 8;
 
 export function AdminCitiesPage() {
   const { t, money, isArabic } = useLanguage();
-
-  const { data: cities = [], isLoading } = useAdminCities();
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const { data: cityResult, isLoading, isError, error } = useAdminCities({ page: currentPage, limit: PAGE_SIZE });
+  const cities = cityResult?.data ?? [];
+  const pagination = cityResult?.pagination;
+  const totalPages = Math.max(1, pagination?.totalPages ?? 1);
+  useEffect(() => { if (currentPage > totalPages) setCurrentPage(totalPages); }, [currentPage, totalPages]);
+  const paginatedCities = cities;
   const save = useSaveCity();
   const remove = useDeleteCity();
-
   const [editing, setEditing] = useState<City | "new" | null>(null);
   const [deleting, setDeleting] = useState<City | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const totalPages = Math.max(1, Math.ceil(cities.length / PAGE_SIZE));
-
-  const paginatedCities = cities.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
-  );
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
 
   const openForm = (value: City | "new") => {
     save.reset();
@@ -93,15 +82,16 @@ export function AdminCitiesPage() {
         <p className="text-sm text-muted">{t("admin.cities.title")}</p>
 
         <p className="mt-1 text-2xl font-semibold tracking-tight text-brand">
-          {cities.length}
+          {pagination?.total ?? 0}
         </p>
       </div>
 
       {/* Loading */}
       {isLoading && <TableSkeleton />}
+      {isError && <Message title="Could not load delivery cities" text={error instanceof Error ? error.message : "Please try again."} />}
 
       {/* Empty state */}
-      {!isLoading && cities.length === 0 && (
+      {!isLoading && !isError && cities.length === 0 && (
         <div className="rounded-xl border border-edge bg-white p-8">
           <Message
             title={t("admin.cities.none")}
@@ -137,7 +127,7 @@ export function AdminCitiesPage() {
       )}
 
       {/* Cities table */}
-      {!isLoading && cities.length > 0 && (
+      {!isLoading && !isError && cities.length > 0 && (
         <>
           <div className="overflow-hidden rounded-xl border border-edge bg-white">
             <div className="overflow-x-auto">
@@ -239,7 +229,7 @@ export function AdminCitiesPage() {
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            totalItems={cities.length}
+            totalItems={pagination?.total ?? 0}
             pageSize={PAGE_SIZE}
             itemLabel="cities"
             onPageChange={setCurrentPage}

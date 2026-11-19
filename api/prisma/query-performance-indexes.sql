@@ -15,3 +15,5 @@ CREATE INDEX IF NOT EXISTS "Order_phone_trgm_idx" ON public."Order" USING GIN ("
 CREATE INDEX IF NOT EXISTS "Order_city_trgm_idx" ON public."Order" USING GIN ("city" gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS "Order_createdAt_id_idx" ON public."Order" ("createdAt" DESC, "id" DESC);
 CREATE INDEX IF NOT EXISTS "Order_customerId_createdAt_idx" ON public."Order" ("customerId", "createdAt" DESC);
+
+CREATE INDEX IF NOT EXISTS "City_name_trgm_idx" ON public."City" USING GIN ("name" gin_trgm_ops);

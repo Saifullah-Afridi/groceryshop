@@ -21,29 +21,18 @@ const PAGE_SIZE = 8;
 
 export function AdminCategoriesPage() {
   const { t, language, isArabic } = useLanguage();
-
-  const { data: categories = [], isLoading } = useAdminCategories();
+  const [currentPage, setCurrentPage] = useState(1);
+  const { data: categoryResult, isLoading, isError, error } = useAdminCategories({ page: currentPage, limit: PAGE_SIZE });
+  const categories = categoryResult?.data ?? [];
+  const pagination = categoryResult?.pagination;
+  const totalPages = Math.max(1, pagination?.totalPages ?? 1);
+  useEffect(() => { if (currentPage > totalPages) setCurrentPage(totalPages); }, [currentPage, totalPages]);
+  const paginatedCategories = categories;
 
   const save = useSaveCategory();
   const remove = useDeleteCategory();
-
   const [editing, setEditing] = useState<Category | "new" | null>(null);
   const [deleting, setDeleting] = useState<Category | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const totalPages = Math.max(1, Math.ceil(categories.length / PAGE_SIZE));
-
-  const paginatedCategories = categories.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
-  );
-
-  // Return to the last available page if categories are deleted.
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
 
   const openForm = (value: Category | "new") => {
     save.reset();
@@ -99,16 +88,17 @@ export function AdminCategoriesPage() {
           <p className="text-sm text-muted">{t("admin.categories.title")}</p>
 
           <p className="mt-1 text-2xl font-semibold tracking-tight text-brand">
-            {categories.length}
+            {pagination?.total ?? 0}
           </p>
         </div>
       )}
 
       {/* Loading */}
       {isLoading && <TableSkeleton />}
+      {isError && <Message title="Could not load categories" text={error instanceof Error ? error.message : "Please try again."} />}
 
       {/* Empty State */}
-      {!isLoading && categories.length === 0 && (
+      {!isLoading && !isError && categories.length === 0 && (
         <div className="rounded-xl border border-edge bg-white p-8">
           <Message
             title={t("admin.categories.none")}
@@ -129,7 +119,7 @@ export function AdminCategoriesPage() {
       )}
 
       {/* Categories Table */}
-      {!isLoading && categories.length > 0 && (
+      {!isLoading && !isError && categories.length > 0 && (
         <div className="overflow-hidden rounded-xl border border-edge bg-white">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] text-sm">
@@ -238,7 +228,7 @@ export function AdminCategoriesPage() {
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            totalItems={categories.length}
+            totalItems={pagination?.total ?? 0}
             pageSize={PAGE_SIZE}
             itemLabel="categories"
             onPageChange={setCurrentPage}

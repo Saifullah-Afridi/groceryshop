@@ -21,8 +21,25 @@ async function findOrFail(id) {
   return category;
 }
 
-export async function listCategories() {
-  const rows = await prisma.category.findMany({ orderBy: { createdAt: "asc" } });
+export async function listCategories({ page, limit, search = "", sort = "oldest" } = {}) {
+  const where = search ? { OR: [
+    { name: { contains: search, mode: "insensitive" } },
+    { nameAr: { contains: search, mode: "insensitive" } },
+  ] } : {};
+  const orderBy = sort === "newest" ? [{ createdAt: "desc" }, { id: "desc" }]
+    : sort === "name-desc" ? [{ name: "desc" }, { id: "desc" }]
+    : sort === "name-asc" ? [{ name: "asc" }, { id: "asc" }]
+    : [{ createdAt: "asc" }, { id: "asc" }];
+  if (page && limit) {
+    const skip = (page - 1) * limit;
+    const [rows, total] = await prisma.$transaction([
+      prisma.category.findMany({ where, skip, take: limit, orderBy }),
+      prisma.category.count({ where }),
+    ]);
+    const totalPages = Math.ceil(total / limit);
+    return { data: rows.map(toDto), pagination: { page, limit, total, totalPages, hasNextPage: page < totalPages, hasPreviousPage: page > 1 && totalPages > 0 } };
+  }
+  const rows = await prisma.category.findMany({ orderBy });
   return rows.map(toDto);
 }
 

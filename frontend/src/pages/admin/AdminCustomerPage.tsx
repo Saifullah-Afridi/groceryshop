@@ -115,38 +115,24 @@ export function AdminCustomerPage() {
   const userId = Number(id);
 
   const { t, money, date, isArabic } = useLanguage();
-
-  const { data: user, isLoading, isError } = useAdminCustomer(userId);
-
   const [filter, setFilter] = useState<OrderStatus | "ALL">("ALL");
   const [viewing, setViewing] = useState<Order | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-
-  // Keep all hooks before conditional returns.
+  const queryStatus = filter === "ALL" ? undefined : filter;
+  const { data: user, isLoading, isError } = useAdminCustomer(userId, { page: currentPage, limit: PAGE_SIZE, status: queryStatus });
   const orders = user?.orders ?? [];
-
-  const shown =
-    filter === "ALL"
-      ? orders
-      : orders.filter((order) => order.status === filter);
-
-  const countOf = (status: OrderStatus | "ALL") =>
-    status === "ALL"
-      ? orders.length
-      : orders.filter((order) => order.status === status).length;
-
-  const totalPages = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
-
-  const paginatedOrders = shown.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
-  );
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
+  const shown = orders;
+  const orderPagination = user?.ordersPagination;
+  const totalPages = Math.max(1, orderPagination?.totalPages ?? 1);
+  useEffect(() => { if (currentPage > totalPages) setCurrentPage(totalPages); }, [currentPage, totalPages]);
+  const paginatedOrders = orders;
+  const countOf = (status: OrderStatus | "ALL") => {
+    if (status === "ALL") return user?.stats.totalOrders ?? 0;
+    if (status === "PENDING") return user?.stats.pending ?? 0;
+    if (status === "ON_THE_WAY") return user?.stats.onTheWay ?? 0;
+    if (status === "DELIVERED") return user?.stats.delivered ?? 0;
+    return user?.stats.cancelled ?? 0;
+  };
 
   const handleFilterChange = (status: OrderStatus | "ALL") => {
     setFilter(status);
@@ -382,7 +368,7 @@ export function AdminCustomerPage() {
 
           <p className="mt-1 text-sm text-muted">
             {t("admin.orders.count", {
-              count: orders.length,
+              count: user.stats.totalOrders,
             })}
           </p>
         </div>
@@ -432,7 +418,7 @@ export function AdminCustomerPage() {
         </div>
 
         {/* Empty states */}
-        {orders.length === 0 ? (
+        {user.stats.totalOrders === 0 ? (
           <div className="rounded-xl border border-edge bg-white p-6">
             <Message
               title={t("admin.ud.noOrdersYet")}
@@ -582,7 +568,7 @@ export function AdminCustomerPage() {
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
-              totalItems={shown.length}
+              totalItems={orderPagination?.total ?? 0}
               pageSize={PAGE_SIZE}
               itemLabel="orders"
               onPageChange={setCurrentPage}

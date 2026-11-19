@@ -27,40 +27,26 @@ export function AdminOrdersPage() {
   const [search, setSearch] = useState("");
   const [viewingId, setViewingId] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const timer = window.setTimeout(() => { setDebouncedSearch(search.trim()); setCurrentPage(1); }, 300);
+    return () => window.clearTimeout(timer);
+  }, [search]);
+  useEffect(() => { setCurrentPage(1); }, [status]);
 
-  // Fetch by search only, so the tab counts always match the search.
-  const { data: allOrders = [], isLoading } = useAdminOrders({
-    q: search.trim() || undefined,
+  const { data: orderResult, isLoading, isError, error } = useAdminOrders({
+    q: debouncedSearch || undefined, status: status || undefined,
+    page: currentPage, limit: PAGE_SIZE, sort: "newest",
   });
-
+  const allOrders = orderResult?.data ?? [];
+  const pagination = orderResult?.pagination;
+  const statusCounts = orderResult?.statusCounts ?? { PENDING: 0, ON_THE_WAY: 0, DELIVERED: 0, CANCELLED: 0 };
   const setOrderStatus = useSetOrderStatus();
-
-  const countOf = (s: OrderStatus) =>
-    allOrders.filter((order) => order.status === s).length;
-
-  const orders = status
-    ? allOrders.filter((order) => order.status === status)
-    : allOrders;
-
-  const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
-
-  const paginatedOrders = orders.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
-  );
-
-  // Always read the live order, so the drawer updates after a status change
+  const countOf = (s: OrderStatus) => statusCounts[s] ?? 0;
+  const totalPages = Math.max(1, pagination?.totalPages ?? 1);
+  useEffect(() => { if (currentPage > totalPages) setCurrentPage(totalPages); }, [currentPage, totalPages]);
+  const paginatedOrders = allOrders;
   const viewing = allOrders.find((order) => order.id === viewingId) ?? null;
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [status, search]);
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
 
   const handleStatusChange = (orderId: number, newStatus: OrderStatus) => {
     setOrderStatus.mutate({ id: orderId, status: newStatus });
@@ -70,7 +56,7 @@ export function AdminOrdersPage() {
     {
       value: "",
       label: t("admin.orders.allStatuses"),
-      count: allOrders.length,
+      count: statusCounts.PENDING + statusCounts.ON_THE_WAY + statusCounts.DELIVERED + statusCounts.CANCELLED,
     },
     ...ADMIN_ORDER_STATUSES.map((s) => ({
       value: s,
@@ -135,11 +121,13 @@ export function AdminOrdersPage() {
 
       {/* Orders table */}
       <section className="space-y-4">
-        {isLoading ? (
+        {isError ? (
+          <Message title="Could not load orders" text={error instanceof Error ? error.message : "Please try again."} />
+        ) : isLoading ? (
           <div className="overflow-hidden rounded-xl border border-edge bg-white p-3">
             <TableSkeleton />
           </div>
-        ) : orders.length === 0 ? (
+        ) : (pagination?.total ?? 0) === 0 ? (
           <div className="rounded-xl border border-edge bg-white p-6">
             <Message
               title={t("admin.orders.none")}
@@ -280,7 +268,7 @@ export function AdminOrdersPage() {
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
-              totalItems={orders.length}
+              totalItems={pagination?.total ?? 0}
               pageSize={PAGE_SIZE}
               itemLabel="orders"
               onPageChange={setCurrentPage}

@@ -23,7 +23,6 @@ const toDto = (p) => ({
   image: p.image ?? "",
 });
 
-const ORDER = { newest: { id: "desc" }, "price-asc": { price: "asc" }, "price-desc": { price: "desc" } };
 
 const normalizeSearch = (value = "") => String(value)
   .normalize("NFKD")
@@ -110,21 +109,48 @@ async function assertCategoryExists(categoryId) {
   }
 }
 
-export async function listProducts({ category, q, sort, offers, includeArchived = false }) {
+export async function listProducts({ category, q, search, sort, offers, includeArchived = false, archivedOnly = false, page, limit }) {
+  const term = String(search ?? q ?? "").trim();
+  const baseWhere = {
+    ...(includeArchived ? (archivedOnly ? { isArchived: true } : { isArchived: false }) : { isArchived: false }),
+    ...(category && { categoryId: category }),
+    ...(offers && { discount: { gt: 0 } }),
+  };
+  const orderBy = sort === "newest" ? [{ id: "desc" }]
+    : sort === "price-asc" ? [{ price: "asc" }, { id: "asc" }]
+    : sort === "price-desc" ? [{ price: "desc" }, { id: "desc" }]
+    : [{ id: "asc" }];
+
+  // Admin list: filtering, sorting, pagination and count all happen in PostgreSQL.
+  if (page && limit) {
+    const where = {
+      ...baseWhere,
+      ...(term && { OR: [
+        { name: { contains: term, mode: "insensitive" } },
+        { nameAr: { contains: term, mode: "insensitive" } },
+        { farm: { contains: term, mode: "insensitive" } },
+        { category: { name: { contains: term, mode: "insensitive" } } },
+        { category: { nameAr: { contains: term, mode: "insensitive" } } },
+      ] }),
+    };
+    const skip = (page - 1) * limit;
+    const [rows, total] = await prisma.$transaction([
+      prisma.product.findMany({ where, skip, take: limit, orderBy, include: { category: true } }),
+      prisma.product.count({ where }),
+    ]);
+    const totalPages = Math.ceil(total / limit);
+    return { data: rows.map(toDto), pagination: { page, limit, total, totalPages, hasNextPage: page < totalPages, hasPreviousPage: page > 1 && totalPages > 0 } };
+  }
+
+  // Public catalogue retains the existing relevance scoring behavior.
   const rows = await prisma.product.findMany({
-    where: {
-      ...(includeArchived ? {} : { isArchived: false }),
-      ...(category && { categoryId: category }),
-      ...(offers && { discount: { gt: 0 } }),
-    },
-    include: q ? { category: true } : undefined,
-    orderBy: ORDER[sort] ?? { id: "asc" },
+    where: baseWhere,
+    include: term ? { category: true } : undefined,
+    orderBy: sort === "newest" ? { id: "desc" } : sort === "price-asc" ? { price: "asc" } : sort === "price-desc" ? { price: "desc" } : { id: "asc" },
   });
-
-  if (!q) return rows.map(toDto);
-
+  if (!term) return rows.map(toDto);
   return rows
-    .map((row) => ({ row, score: productSearchScore(row, q) }))
+    .map((row) => ({ row, score: productSearchScore(row, term) }))
     .filter(({ score }) => score > 0)
     .sort((a, b) => b.score - a.score)
     .map(({ row }) => toDto(row));

@@ -3,7 +3,20 @@ import type { CategoryInput, ProductInput } from "../types/admin";
 import type { AdminCustomer, CustomerInput } from "../types/customer";
 import type { City, CityInput, Order, OrderStatus } from "../types/order";
 import { api } from "./apiClient";
-import i18n from "../i18n";
+
+export interface PaginationMeta {
+  page: number; limit: number; total: number; totalPages: number;
+  hasNextPage: boolean; hasPreviousPage: boolean;
+}
+export interface PaginatedResponse<T> { data: T[]; pagination: PaginationMeta }
+export interface AdminListQuery { page?: number; limit?: number; search?: string; q?: string; sort?: string; category?: string; archived?: boolean; status?: OrderStatus }
+function listParams(query: AdminListQuery = {}) {
+  const params = new URLSearchParams();
+  Object.entries(query).forEach(([key, value]) => {
+    if (value !== undefined && value !== "") params.set(key, String(value));
+  });
+  return params.toString();
+}
 
 // Every function here is one API call. Images are sent as multipart form data.
 
@@ -35,7 +48,7 @@ function productForm(input: ProductInput, imageFile?: File | null) {
 }
 
 // ---------- categories ----------
-export const getAdminCategories = () => api<Category[]>("/categories");
+export const getAdminCategories = (query: AdminListQuery = {}) => api<PaginatedResponse<Category>>(`/categories/admin/all?${listParams(query)}`);
 
 export const createCategory = (input: CategoryInput, imageFile?: File | null) =>
   api<Category>("/categories", { method: "POST", body: categoryForm(input, imageFile) });
@@ -46,7 +59,7 @@ export const updateCategory = (id: string, input: CategoryInput, imageFile?: Fil
 export const deleteCategory = (id: string) => api<void>(`/categories/${encodeURIComponent(id)}`, { method: "DELETE" });
 
 // ---------- products ----------
-export const getAdminProducts = () => api<Product[]>("/products/admin/all");
+export const getAdminProducts = (query: AdminListQuery = {}) => api<PaginatedResponse<Product>>(`/products/admin/all?${listParams(query)}`);
 
 export const createProduct = (input: ProductInput, imageFile?: File | null) =>
   api<Product>("/products", { method: "POST", body: productForm(input, imageFile) });
@@ -58,13 +71,13 @@ export const deleteProduct = (id: number) => api<void>(`/products/${id}/archive`
 export const restoreProduct = (id: number) => api<Product>(`/products/${id}/restore`, { method: "POST" });
 
 // ---------- delivery cities ----------
-export const getAdminCities = () => api<City[]>("/cities/all");
+export const getAdminCities = (query: AdminListQuery = {}) => api<PaginatedResponse<City>>(`/cities/all?${listParams(query)}`);
 export const createCity = (input: CityInput) => api<City>("/cities", { method: "POST", body: input });
 export const updateCity = (id: number, input: CityInput) => api<City>(`/cities/${id}`, { method: "PUT", body: input });
 export const deleteCity = (id: number) => api<void>(`/cities/${id}`, { method: "DELETE" });
 
 // ---------- customers ----------
-export const getAdminCustomers = () => api<AdminCustomer[]>("/customers");
+export const getAdminCustomers = (query: AdminListQuery = {}) => api<PaginatedResponse<AdminCustomer>>(`/customers?${listParams(query)}`);
 
 export interface AdminCustomerDetails extends AdminCustomer {
   stats: {
@@ -78,19 +91,18 @@ export interface AdminCustomerDetails extends AdminCustomer {
     cancelled: number;
   };
   orders: Order[];
+  ordersPagination?: PaginationMeta;
 }
-export const getAdminCustomer = (id: number) => api<AdminCustomerDetails>(`/customers/${id}`);
+export const getAdminCustomer = (id: number, query: AdminListQuery = {}) => api<AdminCustomerDetails & { ordersPagination: PaginationMeta }>(`/customers/${id}?${listParams(query)}`);
 export const createCustomer = (input: CustomerInput) => api<AdminCustomer>("/customers", { method: "POST", body: input });
 export const updateCustomer = (id: number, input: CustomerInput) =>
   api<AdminCustomer>(`/customers/${id}`, { method: "PUT", body: { ...input, password: input.password || undefined } });
 export const deleteCustomer = (id: number) => api<void>(`/customers/${id}`, { method: "DELETE" });
 
 // ---------- orders ----------
-export function getAdminOrders(query: { status?: OrderStatus; q?: string }) {
-  const params = new URLSearchParams();
-  if (query.status) params.set("status", query.status);
-  if (query.q) params.set("q", query.q);
-  return api<Order[]>(`/orders?${params}`);
+export interface AdminOrdersResponse extends PaginatedResponse<Order> { statusCounts: Record<OrderStatus, number> }
+export function getAdminOrders(query: AdminListQuery = {}) {
+  return api<AdminOrdersResponse>(`/orders?${listParams(query)}`);
 }
 export const updateOrderStatus = (id: number, status: OrderStatus) =>
   api<Order>(`/orders/${id}/status`, { method: "PUT", body: { status } });

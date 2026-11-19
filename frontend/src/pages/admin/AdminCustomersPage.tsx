@@ -24,28 +24,17 @@ const PAGE_SIZE = 8;
 export function AdminCustomersPage() {
   const { t, date, isArabic } = useLanguage();
   const navigate = useNavigate();
-
-  const { data: customers = [], isLoading } = useAdminCustomers();
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const { data: customerResult, isLoading, isError, error } = useAdminCustomers({ page: currentPage, limit: PAGE_SIZE });
+  const customers = customerResult?.data ?? [];
+  const pagination = customerResult?.pagination;
+  const totalPages = Math.max(1, pagination?.totalPages ?? 1);
+  useEffect(() => { if (currentPage > totalPages) setCurrentPage(totalPages); }, [currentPage, totalPages]);
+  const paginatedCustomers = customers;
   const save = useSaveCustomer();
   const remove = useDeleteCustomer();
-
   const [editing, setEditing] = useState<AdminCustomer | "new" | null>(null);
   const [deleting, setDeleting] = useState<AdminCustomer | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const totalPages = Math.max(1, Math.ceil(customers.length / PAGE_SIZE));
-
-  const paginatedCustomers = customers.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
-  );
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
 
   const openForm = (value: AdminCustomer | "new") => {
     save.reset();
@@ -101,15 +90,16 @@ export function AdminCustomersPage() {
         <p className="text-sm text-muted">{t("admin.users.title")}</p>
 
         <p className="mt-1 text-2xl font-semibold tracking-tight text-brand">
-          {customers.length}
+          {pagination?.total ?? 0}
         </p>
       </div>
 
       {/* Loading */}
       {isLoading && <TableSkeleton />}
+      {isError && <Message title="Could not load customers" text={error instanceof Error ? error.message : "Please try again."} />}
 
       {/* Empty state */}
-      {!isLoading && customers.length === 0 && (
+      {!isLoading && !isError && customers.length === 0 && (
         <div className="rounded-xl border border-edge bg-white p-8">
           <Message
             title={t("admin.users.none")}
@@ -146,7 +136,7 @@ export function AdminCustomersPage() {
       )}
 
       {/* Customers table */}
-      {!isLoading && customers.length > 0 && (
+      {!isLoading && !isError && customers.length > 0 && (
         <>
           <div className="overflow-hidden rounded-xl border border-edge bg-white">
             <div className="overflow-x-auto">
@@ -350,7 +340,7 @@ export function AdminCustomersPage() {
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            totalItems={customers.length}
+            totalItems={pagination?.total ?? 0}
             pageSize={PAGE_SIZE}
             itemLabel="customers"
             onPageChange={setCurrentPage}

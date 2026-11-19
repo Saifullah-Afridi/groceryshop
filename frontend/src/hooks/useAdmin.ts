@@ -15,6 +15,7 @@ import {
   deleteCustomer,
   deleteProduct,
   getAdminCategories,
+  type AdminListQuery,
   getAdminCities,
   getAdminCustomers,
   getAdminCustomer,
@@ -34,10 +35,10 @@ import type { CityInput, OrderStatus } from "../types/order";
 import i18n from "../i18n";
 import { statusKey } from "../utils/orderStatus";
 
-export const useAdminCategories = () =>
-  useQuery({ queryKey: ["admin", "categories"], queryFn: getAdminCategories });
-export const useAdminProducts = () =>
-  useQuery({ queryKey: ["admin", "products"], queryFn: getAdminProducts });
+export const useAdminCategories = (query: AdminListQuery) =>
+  useQuery({ queryKey: ["admin", "categories", query], queryFn: () => getAdminCategories(query), placeholderData: keepPreviousData });
+export const useAdminProducts = (query: AdminListQuery) =>
+  useQuery({ queryKey: ["admin", "products", query], queryFn: () => getAdminProducts(query), placeholderData: keepPreviousData });
 
 // After any change: reload the admin lists and show a toast with the result.
 function useChange<V>(
@@ -113,8 +114,8 @@ export const useRestoreProduct = () =>
   );
 
 // ---------- delivery cities ----------
-export const useAdminCities = () =>
-  useQuery({ queryKey: ["admin", "cities"], queryFn: getAdminCities });
+export const useAdminCities = (query: AdminListQuery) =>
+  useQuery({ queryKey: ["admin", "cities", query], queryFn: () => getAdminCities(query), placeholderData: keepPreviousData });
 export const useSaveCity = () =>
   useChange(
     ({ id, input }: { id?: number; input: CityInput }) =>
@@ -128,12 +129,12 @@ export const useDeleteCity = () =>
   );
 
 // ---------- customers ----------
-export const useAdminCustomers = () =>
-  useQuery({ queryKey: ["admin", "customers"], queryFn: getAdminCustomers });
-export const useAdminCustomer = (id: number) =>
+export const useAdminCustomers = (query: AdminListQuery) =>
+  useQuery({ queryKey: ["admin", "customers", query], queryFn: () => getAdminCustomers(query), placeholderData: keepPreviousData });
+export const useAdminCustomer = (id: number, query: AdminListQuery) =>
   useQuery({
-    queryKey: ["admin", "customers", id],
-    queryFn: () => getAdminCustomer(id),
+    queryKey: ["admin", "customers", id, query],
+    queryFn: () => getAdminCustomer(id, query),
     enabled: Number.isInteger(id) && id > 0,
   });
 export const useSaveCustomer = () =>
@@ -149,7 +150,7 @@ export const useDeleteCustomer = () =>
   );
 
 // ---------- orders ----------
-export const useAdminOrders = (query: { status?: OrderStatus; q?: string }) =>
+export const useAdminOrders = (query: AdminListQuery) =>
   useQuery({
     queryKey: ["admin", "orders", query],
     queryFn: () => getAdminOrders(query),

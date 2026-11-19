@@ -167,26 +167,35 @@ export async function cancelMyOrder(customerId, id) {
 }
 
 // ---------- admin ----------
-export async function listOrders({ status, q }) {
-  const asNumber = Number(q);
-  const rows = await prisma.order.findMany({
-    where: {
-      ...(status === "ON_THE_WAY"
-        ? { status: { in: ["ON_THE_WAY", "CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY"] } }
-        : status && { status }),
-      ...(q && {
-        OR: [
-          { name: { contains: q, mode: "insensitive" } },
-          { phone: { contains: q, mode: "insensitive" } },
-          { city: { contains: q, mode: "insensitive" } },
-          ...(Number.isInteger(asNumber) ? [{ id: asNumber }] : []),
-        ],
-      }),
-    },
-    orderBy: { id: "desc" },
-    include: { items: true },
-  });
-  return rows.map(toDto);
+export async function listOrders({ status, q, search, page = 1, limit = 20, sort = "newest" }) {
+  const term = String(search ?? q ?? "").trim();
+  const asNumber = Number(term);
+  const where = {
+    ...(status === "ON_THE_WAY"
+      ? { status: { in: ["ON_THE_WAY", "CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY"] } }
+      : status && { status }),
+    ...(term && { OR: [
+      { name: { contains: term, mode: "insensitive" } },
+      { phone: { contains: term, mode: "insensitive" } },
+      { city: { contains: term, mode: "insensitive" } },
+      ...(Number.isInteger(asNumber) && asNumber > 0 ? [{ id: asNumber }] : []),
+    ] }),
+  };
+  const orderBy = sort === "oldest" ? [{ createdAt: "asc" }, { id: "asc" }] : [{ createdAt: "desc" }, { id: "desc" }];
+  const skip = (page - 1) * limit;
+  const countWhere = { ...(term && where.OR ? { OR: where.OR } : {}) };
+  const [rows, total, grouped] = await prisma.$transaction([
+    prisma.order.findMany({ where, skip, take: limit, orderBy, include: { items: true } }),
+    prisma.order.count({ where }),
+    prisma.order.groupBy({ by: ["status"], where: countWhere, _count: { _all: true } }),
+  ]);
+  const statusCounts = { PENDING: 0, ON_THE_WAY: 0, DELIVERED: 0, CANCELLED: 0 };
+  for (const group of grouped) {
+    const key = normalizeOrderStatus(group.status);
+    statusCounts[key] = (statusCounts[key] ?? 0) + group._count._all;
+  }
+  const totalPages = Math.ceil(total / limit);
+  return { data: rows.map(toDto), statusCounts, pagination: { page, limit, total, totalPages, hasNextPage: page < totalPages, hasPreviousPage: page > 1 && totalPages > 0 } };
 }
 
 export async function getOrder(id) {

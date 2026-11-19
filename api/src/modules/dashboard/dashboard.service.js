@@ -6,17 +6,13 @@ export async function getDashboard() {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const activeOrderWhere = { createdAt: { gte: monthStart }, status: { not: "CANCELLED" } };
 
-  const [products, categoriesCount, today, month, pendingOrders, recentOrders, newCustomersToday, bestSellerGroups] = await Promise.all([
-    prisma.product.findMany({
-      where: { isArchived: false },
-      select: { id: true, name: true, nameAr: true, stockQuantity: true, minQuantity: true, unit: true },
-      orderBy: { name: "asc" },
-    }),
+  const [productsCount, categoriesCount, today, month, pendingOrders, recentOrders, newCustomersToday, bestSellerGroups, lowStock, outOfStock] = await Promise.all([
+    prisma.product.count({ where: { isArchived: false } }),
     prisma.category.count(),
     prisma.order.aggregate({ where: { createdAt: { gte: start }, status: { not: "CANCELLED" } }, _sum: { total: true }, _count: { _all: true } }),
     prisma.order.aggregate({ where: activeOrderWhere, _sum: { total: true } }),
     prisma.order.count({ where: { status: "PENDING" } }),
-    prisma.order.findMany({ take: 8, orderBy: { createdAt: "desc" }, select: { id: true, name: true, total: true, status: true, createdAt: true, _count: { select: { items: true } } } }),
+    prisma.order.findMany({ take: 8, orderBy: [{ createdAt: "desc" }, { id: "desc" }], select: { id: true, name: true, total: true, status: true, createdAt: true, _count: { select: { items: true } } } }),
     prisma.customer.count({ where: { createdAt: { gte: start } } }),
     prisma.orderItem.groupBy({
       by: ["productId", "productName"],
@@ -25,10 +21,19 @@ export async function getDashboard() {
       orderBy: { _sum: { quantity: "desc" } },
       take: 5,
     }),
+    prisma.$queryRaw`SELECT "id", "name", "nameAr", "stockQuantity", "minQuantity", "unit"
+      FROM "Product"
+      WHERE "isArchived" = false AND "minQuantity" > 0
+        AND "stockQuantity" > 0 AND "stockQuantity" <= "minQuantity"
+      ORDER BY "name" ASC, "id" ASC LIMIT 5`,
+    prisma.product.findMany({
+      where: { isArchived: false, stockQuantity: { lte: 0 } },
+      select: { id: true, name: true, nameAr: true, stockQuantity: true, unit: true },
+      orderBy: [{ id: "asc" }],
+      take: 5,
+    }),
   ]);
 
-  const lowStock = products.filter((p) => Number(p.minQuantity) > 0 && Number(p.stockQuantity) > 0 && Number(p.stockQuantity) <= Number(p.minQuantity));
-  const outOfStock = products.filter((p) => Number(p.stockQuantity) <= 0);
   const todayRevenue = Number(today._sum.total ?? 0);
   return {
     todayRevenue,
@@ -36,7 +41,7 @@ export async function getDashboard() {
     averageOrderValue: today._count._all ? todayRevenue / today._count._all : 0,
     monthRevenue: Number(month._sum.total ?? 0),
     pendingOrders,
-    productsCount: products.length,
+    productsCount,
     categoriesCount,
     newCustomersToday,
     lowStock: lowStock.map((p) => ({ id: p.id, name: p.name, nameAr: p.nameAr, stockQuantity: Number(p.stockQuantity), minQuantity: Number(p.minQuantity), unit: p.unit })),

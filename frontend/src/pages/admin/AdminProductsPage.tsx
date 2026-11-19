@@ -8,7 +8,7 @@ import {
   Archive,
   ArchiveRestore,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { TableSkeleton } from "../../components/Skeleton";
 import { Message } from "../../components/Message";
@@ -73,58 +73,34 @@ function ProductImage({
 
 export function AdminProductsPage() {
   const { t, language, isArabic, unitName, money } = useLanguage();
-
-  const { data: categories = [] } = useAdminCategories();
-  const { data: products = [], isLoading } = useAdminProducts();
-
-  const save = useSaveProduct();
-  const remove = useDeleteProduct();
-  const restore = useRestoreProduct();
-
-  const [editing, setEditing] = useState<Product | "new" | null>(null);
-  const [deleting, setDeleting] = useState<Product | null>(null);
-
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showArchived, setShowArchived] = useState(false);
-
-  const filteredProducts = useMemo(() => {
-    const text = search.trim().toLowerCase();
-
-    return products.filter((product) => {
-      if (Boolean(product.isArchived) !== showArchived) return false;
-      const matchesCategory = !categoryId || product.categoryId === categoryId;
-
-      const searchableText = [
-        product.name,
-        product.nameAr ?? "",
-      ]
-        .join(" ")
-        .toLowerCase();
-
-      const matchesSearch = !text || searchableText.includes(text);
-
-      return matchesCategory && matchesSearch;
-    });
-  }, [products, search, categoryId, showArchived]);
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredProducts.length / PAGE_SIZE),
-  );
-
-  const paginatedProducts = filteredProducts.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
-  );
-
-  // Return to the last available page if products are deleted or filtered.
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
+    const timer = window.setTimeout(() => { setDebouncedSearch(search.trim()); setCurrentPage(1); }, 300);
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
+  const { data: categoryResult } = useAdminCategories({ page: 1, limit: 100 });
+  const categories = categoryResult?.data ?? [];
+  const { data: productResult, isLoading, isError, error } = useAdminProducts({
+    page: currentPage, limit: PAGE_SIZE, search: debouncedSearch,
+    category: categoryId || undefined, archived: showArchived, sort: "oldest",
+  });
+  const products = productResult?.data ?? [];
+  const pagination = productResult?.pagination;
+  const filteredProducts = products;
+  const paginatedProducts = products;
+  const totalPages = Math.max(1, pagination?.totalPages ?? 1);
+  useEffect(() => { if (currentPage > totalPages) setCurrentPage(totalPages); }, [currentPage, totalPages]);
+
+  const save = useSaveProduct();
+  const remove = useDeleteProduct();
+  const restore = useRestoreProduct();
+  const [editing, setEditing] = useState<Product | "new" | null>(null);
+  const [deleting, setDeleting] = useState<Product | null>(null);
 
   const categoryOf = (id: string) =>
     categories.find((category) => category.id === id);
@@ -190,7 +166,7 @@ export function AdminProductsPage() {
           <p className="text-sm text-muted">{t("admin.products.title")}</p>
 
           <p className="mt-1 text-2xl font-semibold tracking-tight text-brand">
-            {products.filter((product) => Boolean(product.isArchived) === showArchived).length}
+            {pagination?.total ?? 0}
           </p>
         </div>
       )}
@@ -212,10 +188,7 @@ export function AdminProductsPage() {
           <input
             type="text"
             value={search}
-            onChange={(event) => {
-              setSearch(event.target.value);
-              setCurrentPage(1);
-            }}
+            onChange={(event) => setSearch(event.target.value)}
             placeholder={t("admin.products.searchByName")}
             className={`${inputClass} ps-9`}
           />
@@ -245,16 +218,17 @@ export function AdminProductsPage() {
 
         <span className="shrink-0 text-sm text-muted">
           {t("admin.products.count", {
-            count: filteredProducts.length,
+            count: pagination?.total ?? 0,
           })}
         </span>
       </div>
 
       {/* Loading */}
       {isLoading && <TableSkeleton />}
+      {isError && <Message title="Could not load products" text={error instanceof Error ? error.message : "Please try again."} />}
 
       {/* Empty State */}
-      {!isLoading && filteredProducts.length === 0 && (
+      {!isLoading && !isError && (pagination?.total ?? 0) === 0 && (
         <div className="rounded-xl border border-edge bg-white p-8">
           <Message
             title={
@@ -265,7 +239,7 @@ export function AdminProductsPage() {
             text={t("admin.products.noneText")}
           />
 
-          {products.length === 0 && (
+          {(pagination?.total ?? 0) === 0 && (
             <div className="mt-5 flex justify-center">
               <button
                 type="button"
@@ -474,7 +448,7 @@ export function AdminProductsPage() {
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            totalItems={filteredProducts.length}
+            totalItems={pagination?.total ?? 0}
             pageSize={PAGE_SIZE}
             itemLabel="products"
             onPageChange={setCurrentPage}

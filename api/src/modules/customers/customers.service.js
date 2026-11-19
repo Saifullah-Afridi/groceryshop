@@ -174,60 +174,74 @@ async function assertEmailFree(email, exceptId) {
   if (same && same.id !== exceptId) throw httpError(409, "An account with this email already exists.");
 }
 
-export async function listCustomers() {
-  const rows = await prisma.customer.findMany({ orderBy: { id: "desc" }, select: { id: true, name: true, email: true, phone: true, address: true, addressAr: true, emailVerified: true, createdAt: true } });
-  return rows.map(adminDto);
+export async function listCustomers({ page = 1, limit = 20, search = "", sort = "newest" } = {}) {
+  const where = search ? { OR: [
+    { name: { contains: search, mode: "insensitive" } },
+    { email: { contains: search, mode: "insensitive" } },
+    { phone: { contains: search, mode: "insensitive" } },
+  ] } : {};
+  const orderBy = sort === "oldest" ? [{ id: "asc" }] : [{ id: "desc" }];
+  const skip = (page - 1) * limit;
+  const [rows, total] = await prisma.$transaction([
+    prisma.customer.findMany({ where, skip, take: limit, orderBy, select: { id: true, name: true, email: true, phone: true, address: true, addressAr: true, emailVerified: true, createdAt: true } }),
+    prisma.customer.count({ where }),
+  ]);
+  const totalPages = Math.ceil(total / limit);
+  return { data: rows.map(adminDto), pagination: { page, limit, total, totalPages, hasNextPage: page < totalPages, hasPreviousPage: page > 1 && totalPages > 0 } };
 }
 
 // Admin customer profile with a snapshot of the customer's order history.
-export async function getAdminCustomer(id) {
-  const customer = await prisma.customer.findUnique({
-    where: { id },
-    include: { orders: { orderBy: { createdAt: "desc" }, include: { items: true } } },
-  });
+export async function getAdminCustomer(id, { page = 1, limit = 8, status, search = "" } = {}) {
+  const customer = await prisma.customer.findUnique({ where: { id } });
   if (!customer) throw httpError(404, "Customer not found.");
-
-  const orders = customer.orders.map((order) => ({
+  const asNumber = Number(search);
+  const where = {
+    customerId: id,
+    ...(status === "ON_THE_WAY" ? { status: { in: ["ON_THE_WAY", "CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY"] } } : status ? { status } : {}),
+    ...(search && { OR: [
+      { name: { contains: search, mode: "insensitive" } },
+      { phone: { contains: search, mode: "insensitive" } },
+      { city: { contains: search, mode: "insensitive" } },
+      ...(Number.isInteger(asNumber) && asNumber > 0 ? [{ id: asNumber }] : []),
+    ] }),
+  };
+  const baseWhere = { customerId: id };
+  const skip = (page - 1) * limit;
+  const [orders, total, grouped, aggregate, lastOrder] = await prisma.$transaction([
+    prisma.order.findMany({ where, skip, take: limit, orderBy: [{ createdAt: "desc" }, { id: "desc" }], include: { items: true } }),
+    prisma.order.count({ where }),
+    prisma.order.groupBy({ by: ["status"], where: baseWhere, _count: { _all: true } }),
+    prisma.order.aggregate({ where: { ...baseWhere, status: { not: "CANCELLED" } }, _sum: { total: true }, _count: { _all: true } }),
+    prisma.order.findFirst({ where: baseWhere, orderBy: [{ createdAt: "desc" }, { id: "desc" }], select: { createdAt: true } }),
+  ]);
+  const statusCounts = { pending: 0, onTheWay: 0, delivered: 0, cancelled: 0 };
+  for (const group of grouped) {
+    const statusKey = ["CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY"].includes(group.status) ? "ON_THE_WAY" : group.status;
+    const key = statusKey === "PENDING" ? "pending" : statusKey === "ON_THE_WAY" ? "onTheWay" : statusKey === "DELIVERED" ? "delivered" : "cancelled";
+    statusCounts[key] += group._count._all;
+  }
+  const totalSpent = Number(aggregate._sum.total ?? 0);
+  const dtoOrders = orders.map((order) => ({
     id: order.id,
     status: ["CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY"].includes(order.status) ? "ON_THE_WAY" : order.status,
-    name: order.name,
-    phone: order.phone,
-    address: order.address,
-    addressAr: order.addressAr ?? "",
-    city: order.city,
-    note: order.note,
-    noteAr: order.noteAr ?? "",
-    subtotal: Number(order.subtotal),
-    deliveryFee: Number(order.deliveryFee),
-    total: Number(order.total),
+    name: order.name, phone: order.phone, address: order.address, addressAr: order.addressAr ?? "",
+    city: order.city, note: order.note, noteAr: order.noteAr ?? "",
+    subtotal: Number(order.subtotal), deliveryFee: Number(order.deliveryFee), total: Number(order.total),
     createdAt: order.createdAt.toISOString(),
-    items: order.items.map((item) => ({
-      id: item.id,
-      productId: item.productId,
-      productName: item.productName,
-      unit: item.unit,
-      unitPrice: Number(item.unitPrice),
-      quantity: item.quantity,
-      lineTotal: Number(item.lineTotal),
-    })),
+    items: order.items.map((item) => ({ id: item.id, productId: item.productId, productName: item.productName, unit: item.unit, unitPrice: Number(item.unitPrice), quantity: item.quantity, lineTotal: Number(item.lineTotal) })),
   }));
-  const countedOrders = orders.filter((order) => order.status !== "CANCELLED");
-  const totalSpent = countedOrders.reduce((sum, order) => sum + order.total, 0);
-  const lastOrder = orders[0];
-
+  const totalPages = Math.ceil(total / limit);
   return {
     ...adminDto(customer),
     stats: {
-      totalOrders: orders.length,
+      totalOrders: grouped.reduce((sum, group) => sum + group._count._all, 0),
       totalSpent,
-      averageOrder: countedOrders.length ? totalSpent / countedOrders.length : 0,
-      lastOrderAt: lastOrder?.createdAt ?? null,
-      pending: orders.filter((order) => order.status === "PENDING").length,
-      onTheWay: orders.filter((order) => order.status === "ON_THE_WAY").length,
-      delivered: orders.filter((order) => order.status === "DELIVERED").length,
-      cancelled: orders.filter((order) => order.status === "CANCELLED").length,
+      averageOrder: aggregate._count._all ? totalSpent / aggregate._count._all : 0,
+      lastOrderAt: lastOrder?.createdAt?.toISOString() ?? null,
+      ...statusCounts,
     },
-    orders,
+    orders: dtoOrders,
+    ordersPagination: { page, limit, total, totalPages, hasNextPage: page < totalPages, hasPreviousPage: page > 1 && totalPages > 0 },
   };
 }
 

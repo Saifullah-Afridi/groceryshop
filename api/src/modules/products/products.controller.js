@@ -1,3 +1,4 @@
+import { readPagination } from "../../lib/pagination.js";
 import { asyncHandler } from "../../lib/asyncHandler.js";
 import { httpError } from "../../lib/httpError.js";
 import { archiveProduct, createProduct, getProduct, getSearchSuggestions, listProducts, restoreProduct, updateProduct } from "./products.service.js";
@@ -14,8 +15,17 @@ export const list = asyncHandler(async (req, res) => {
   res.json(await listProducts({ ...query, includeArchived: false }));
 });
 
-export const adminList = asyncHandler(async (_req, res) => {
-  res.json(await listProducts({ includeArchived: true }));
+export const adminList = asyncHandler(async (req, res) => {
+  const pagination = readPagination(req.query);
+  const category = typeof req.query.category === "string" ? req.query.category.trim() : undefined;
+  const allowedSorts = ["newest", "oldest", "price-asc", "price-desc"];
+  if (req.query.sort && !allowedSorts.includes(req.query.sort)) throw httpError(400, "Invalid product sort option.");
+  const sort = req.query.sort || "oldest";
+  if (req.query.archived !== undefined && !["true", "false", "1", "0"].includes(req.query.archived)) {
+    throw httpError(400, "Invalid archived filter.");
+  }
+  const archivedOnly = req.query.archived === "true" || req.query.archived === "1";
+  res.json(await listProducts({ ...pagination, q: pagination.search, category, sort, includeArchived: true, archivedOnly }));
 });
 
 export const suggestions = asyncHandler(async (req, res) => {
